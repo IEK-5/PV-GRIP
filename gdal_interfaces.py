@@ -26,6 +26,12 @@ class GDALInterface(object):
             'BOTTOM_RIGHT': (lrx, lry),
         }
 
+
+    def get_resolution(self):
+        _, xres, _, _, _, yres = self.geo_transform
+        return (abs(xres), abs(yres))
+
+
     def loadMetadata(self):
         # open the raster and its spatial reference
         self.src = gdal.Open(self.tif_path)
@@ -141,7 +147,8 @@ class GDALTileInterface(object):
                                 coords['TOP_LEFT'][0],  # longitude min
                                 coords['TOP_RIGHT'][0],  # longitude max
 
-                                )
+                                ),
+                    'resolution': i.get_resolution()
                 }
             ]
 
@@ -168,7 +175,8 @@ class GDALTileInterface(object):
             coords = nearest[0].object
 
             gdal_interface = self._open_gdal_interface(coords['file'])
-            return int(gdal_interface.lookup(lat, lng))
+            return {'elevation': int(gdal_interface.lookup(lat, lng)),
+                    'resolution': coords['resolution']}
 
     def _build_index(self):
         index_id = 1

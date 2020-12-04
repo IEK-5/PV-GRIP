@@ -27,7 +27,9 @@ def get_elevation(lat, lng):
     :return:
     """
     try:
-        elevation = interface.lookup(lat, lng)
+        res = interface.lookup(lat, lng)
+        elevation = res['elevation']
+        resolution = res['resolution']
     except:
         return {
             'latitude': lat,
@@ -38,7 +40,8 @@ def get_elevation(lat, lng):
     return {
         'latitude': lat,
         'longitude': lng,
-        'elevation': elevation
+        'elevation': elevation,
+        'resolution': resolution
     }
 
 
