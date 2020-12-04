@@ -175,6 +175,12 @@ class GDALTileInterface(object):
 
         self._build_index()
 
+
+    def get_directories(self):
+        return list(set([os.path.dirname(fn['file']) \
+                         for fn in self.all_coords]))
+
+
     def lookup(self, lat, lng):
 
         nearest = list(self.index.nearest((lat, lng), 1, objects='raw'))
