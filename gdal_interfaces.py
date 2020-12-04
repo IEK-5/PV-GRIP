@@ -120,7 +120,11 @@ class GDALTileInterface(object):
             return interface
 
     def _all_files(self):
-        return [f for f in listdir(self.tiles_folder) if isfile(join(self.tiles_folder, f)) and f.endswith(u'.tif')]
+        return [f \
+                for f in listdir(self.tiles_folder) \
+                if isfile(join(self.tiles_folder, f)) \
+                and (f.endswith(u'.tif') \
+                     or  f.endswith(u'.hgt'))]
 
     def create_summary_json(self):
         all_coords = []
