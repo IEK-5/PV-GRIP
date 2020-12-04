@@ -7,6 +7,8 @@ from os.path import isfile, join
 import json
 from rtree import index
 
+import numpy as np
+
 # Originally based on https://stackoverflow.com/questions/13439357/extract-point-from-raster-in-gdal
 class GDALInterface(object):
     SEA_LEVEL = 0
@@ -167,16 +169,21 @@ class GDALTileInterface(object):
 
     def lookup(self, lat, lng):
 
-        nearest = list(self.index.nearest((lat, lng), 1, objects=True))
+        nearest = list(self.index.nearest((lat, lng), 1, objects='raw'))
 
         if not nearest:
             raise Exception('Invalid latitude/longitude')
-        else:
-            coords = nearest[0].object
 
-            gdal_interface = self._open_gdal_interface(coords['file'])
-            return {'elevation': int(gdal_interface.lookup(lat, lng)),
-                    'resolution': coords['resolution']}
+        if len(nearest) > 1:
+            idx = np.argmin([np.prod(x['resolution']) \
+                             for x in nearest])
+        else:
+            idx = 0
+        coords = nearest[idx]
+
+        gdal_interface = self._open_gdal_interface(coords['file'])
+        return {'elevation': int(gdal_interface.lookup(lat, lng)),
+                'resolution': coords['resolution']}
 
     def _build_index(self):
         index_id = 1
