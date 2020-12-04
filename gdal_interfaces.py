@@ -1,4 +1,5 @@
-import gdal, osr
+import osgeo.gdal as gdal
+import osgeo.osr as osr
 from lazy import lazy
 from pprint import pprint
 from os import listdir
