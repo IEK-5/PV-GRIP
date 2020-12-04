@@ -2,8 +2,8 @@ import osgeo.gdal as gdal
 import osgeo.osr as osr
 from lazy import lazy
 from pprint import pprint
-from os import listdir
-from os.path import isfile, join
+import sys
+import os
 import json
 from rtree import index
 
@@ -127,32 +127,39 @@ class GDALTileInterface(object):
 
             return interface
 
+
     def _all_files(self):
-        return [f \
-                for f in listdir(self.tiles_folder) \
-                if isfile(join(self.tiles_folder, f)) \
-                and (f.endswith(u'.tif') \
-                     or  f.endswith(u'.hgt'))]
+        return [os.path.join(dp, f) \
+                for dp, dn, filenames in \
+                os.walk(self.tiles_folder) \
+                for f in filenames]
+
 
     def create_summary_json(self):
         all_coords = []
-        for file in self._all_files():
+        for fn in self._all_files():
+            try:
+                i = self._open_gdal_interface(fn)
+                coords = i.get_corner_coords()
+                all_coords += [
+                    {
+                        'file': fn,
+                        'coords': ( coords['BOTTOM_RIGHT'][1],  # latitude min
+                                    coords['TOP_RIGHT'][1],  # latitude max
+                                    coords['TOP_LEFT'][0],  # longitude min
+                                    coords['TOP_RIGHT'][0],  # longitude max
 
-            full_path = join(self.tiles_folder,file)
-            i = self._open_gdal_interface(full_path)
-            coords = i.get_corner_coords()
-            all_coords += [
-                {
-                    'file': full_path,
-                    'coords': ( coords['BOTTOM_RIGHT'][1],  # latitude min
-                                coords['TOP_RIGHT'][1],  # latitude max
-                                coords['TOP_LEFT'][0],  # longitude min
-                                coords['TOP_RIGHT'][0],  # longitude max
-
-                                ),
-                    'resolution': i.get_resolution()
-                }
-            ]
+                        ),
+                        'resolution': i.get_resolution()
+                    }
+                ]
+            except:
+                print("""
+                      Could not process file:
+                          %s
+                      Skipping...""" % fn,
+                      file = sys.stderr)
+                continue
 
         with open(self.summary_file, 'w') as f:
             json.dump(all_coords, f)
@@ -160,6 +167,7 @@ class GDALTileInterface(object):
         self.all_coords = all_coords
 
         self._build_index()
+
 
     def read_summary_json(self):
         with open(self.summary_file) as f:
