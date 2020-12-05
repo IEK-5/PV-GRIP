@@ -1,14 +1,16 @@
-import osgeo.gdal as gdal
-import osgeo.osr as osr
-from lazy import lazy
-from pprint import pprint
-import sys
-import re
-import os
 import json
-from rtree import index
+import os
+import re
+import sys
 
 import numpy as np
+import osgeo.gdal as gdal
+import osgeo.osr as osr
+
+from cachetools import LRUCache
+from lazy import lazy
+from pprint import pprint
+from rtree import index
 
 # Originally based on https://stackoverflow.com/questions/13439357/extract-point-from-raster-in-gdal
 class GDALInterface(object):
@@ -101,32 +103,19 @@ class GDALTileInterface(object):
         self.tiles_folder = tiles_folder
         self.summary_file = summary_file
         self.index = index.Index()
-        self.cached_open_interfaces = []
-        self.cached_open_interfaces_dict = {}
-        self.open_interfaces_size = open_interfaces_size
+        self.interfaces = LRUCache(maxsize = open_interfaces_size)
+
 
     def _open_gdal_interface(self, path):
-        if path in self.cached_open_interfaces_dict:
-            interface = self.cached_open_interfaces_dict[path]
-            self.cached_open_interfaces.remove(path)
-            self.cached_open_interfaces += [path]
+        if path not in self.interfaces:
+            # close cleanly the oldest interface
+            if self.interfaces.currsize >= self.interfaces.maxsize:
+                oldest = self.interfaces.popitem()[1]
+                oldest.close()
 
-            return interface
-        else:
+            self.interfaces[path] = GDALInterface(path)
 
-            interface = GDALInterface(path)
-            self.cached_open_interfaces += [path]
-            self.cached_open_interfaces_dict[path] = interface
-
-            if len(self.cached_open_interfaces) > self.open_interfaces_size:
-                last_interface_path = self.cached_open_interfaces.pop(0)
-                last_interface = self.cached_open_interfaces_dict[last_interface_path]
-                last_interface.close()
-
-                self.cached_open_interfaces_dict[last_interface_path] = None
-                del self.cached_open_interfaces_dict[last_interface_path]
-
-            return interface
+        return self.interfaces[path]
 
 
     def _all_files(self):

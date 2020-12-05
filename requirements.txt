@@ -3,3 +3,4 @@ GDAL
 bottle
 rtree
 gunicorn
+cachetools
