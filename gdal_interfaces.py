@@ -194,8 +194,6 @@ class GDALTileInterface(object):
                 'resolution': coords['resolution']}
 
     def _build_index(self):
-        index_id = 1
         for e in self.all_coords:
-            e['index_id'] = index_id
             left, bottom, right, top = (e['coords'][0], e['coords'][2], e['coords'][1], e['coords'][3])
-            self.index.insert( index_id, (left, bottom, right, top), obj=e)
+            self.index.insert( 0, (left, bottom, right, top), obj=e)
