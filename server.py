@@ -51,7 +51,7 @@ def get_elevation(lat, lng, data_re):
 def enable_cors():
     """
     Enable CORS support.
-    :return: 
+    :return:
     """
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'PUT, GET, POST, DELETE, OPTIONS'
@@ -61,8 +61,8 @@ def enable_cors():
 def lat_lng_from_location(location_with_comma):
     """
     Parse the latitude and longitude of a location in the format "xx.xxx,yy.yyy" (which we accept as a query string)
-    :param location_with_comma: 
-    :return: 
+    :param location_with_comma:
+    :return:
     """
     try:
         lat, lng = [float(i) for i in location_with_comma.split(',')]
@@ -138,7 +138,7 @@ def cors_handler():
 def get_lookup():
     """
     GET method. Uses query_to_locations.
-    :return: 
+    :return:
     """
     return do_lookup(query_to_locations)
 
@@ -146,9 +146,9 @@ def get_lookup():
 @route(URL_ENDPOINT, method=['POST'])
 def post_lookup():
     """
-        GET method. Uses body_to_locations.
-        :return: 
-        """
+    GET method. Uses body_to_locations.
+    :return:
+    """
     return do_lookup(body_to_locations)
 
 

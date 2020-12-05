@@ -12,13 +12,15 @@ from lazy import lazy
 from pprint import pprint
 from rtree import index
 
+
 # Originally based on https://stackoverflow.com/questions/13439357/extract-point-from-raster-in-gdal
 class GDALInterface(object):
     SEA_LEVEL = 0
-    def __init__(self, tif_path):
+    def __init__(self, path):
         super(GDALInterface, self).__init__()
-        self.tif_path = tif_path
+        self.path = path
         self.loadMetadata()
+
 
     def get_corner_coords(self):
         ulx, xres, xskew, uly, yskew, yres = self.geo_transform
@@ -39,15 +41,14 @@ class GDALInterface(object):
 
     def loadMetadata(self):
         # open the raster and its spatial reference
-        self.src = gdal.Open(self.tif_path)
+        self.src = gdal.Open(self.path)
 
         if self.src is None:
-            raise Exception('Could not load GDAL file "%s"' % self.tif_path)
+            raise Exception('Could not load GDAL file "%s"' % self.path)
         spatial_reference_raster = osr.SpatialReference(self.src.GetProjection())
 
-        # get the WGS84 spatial reference
         spatial_reference = osr.SpatialReference()
-        spatial_reference.ImportFromEPSG(4326)  # WGS84
+        spatial_reference.ImportFromEPSG(4326) # WGS84
 
         # coordinate transformation
         self.coordinate_transform = osr.CoordinateTransformation(spatial_reference, spatial_reference_raster)
@@ -57,11 +58,11 @@ class GDALInterface(object):
                                   gt[3], -gt[4] / dev, gt[1] / dev)
 
 
-
     @lazy
     def points_array(self):
         b = self.src.GetRasterBand(1)
         return b.ReadAsArray()
+
 
     def print_statistics(self):
         print(self.src.GetRasterBand(1).GetStatistics(True, True))
@@ -88,6 +89,7 @@ class GDALInterface(object):
             print(e)
             return self.SEA_LEVEL
 
+
     def close(self):
         self.src = None
 
@@ -96,6 +98,7 @@ class GDALInterface(object):
 
     def __exit__(self, type, value, traceback):
         self.close()
+
 
 class GDALTileInterface(object):
     def __init__(self, tiles_folder, summary_file, open_interfaces_size=5):
@@ -143,11 +146,13 @@ class GDALTileInterface(object):
                         'resolution': i.get_resolution()
                     }
                 ]
-            except:
+            except Exception as e:
                 print("""
-                      Could not process file:
-                          %s
-                      Skipping...""" % fn,
+Could not process file:
+        %s
+Error:
+        %s
+Skipping...""" % (fn, str(e)),
                       file = sys.stderr)
                 continue
 
@@ -160,7 +165,7 @@ class GDALTileInterface(object):
 
 
     def read_summary_json(self):
-        with open(self.summary_file) as f:
+        with open(self.summary_file, 'r') as f:
             self.all_coords = json.load(f)
 
         self._build_index()
@@ -192,6 +197,7 @@ class GDALTileInterface(object):
         gdal_interface = self._open_gdal_interface(coords['file'])
         return {'elevation': float(gdal_interface.lookup(lat, lng)),
                 'resolution': coords['resolution']}
+
 
     def _build_index(self):
         for e in self.all_coords:
