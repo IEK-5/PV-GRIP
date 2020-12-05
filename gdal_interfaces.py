@@ -190,7 +190,7 @@ class GDALTileInterface(object):
         coords = nearest[idx]
 
         gdal_interface = self._open_gdal_interface(coords['file'])
-        return {'elevation': int(gdal_interface.lookup(lat, lng)),
+        return {'elevation': float(gdal_interface.lookup(lat, lng)),
                 'resolution': coords['resolution']}
 
     def _build_index(self):
