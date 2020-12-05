@@ -3,6 +3,7 @@ import osgeo.osr as osr
 from lazy import lazy
 from pprint import pprint
 import sys
+import re
 import os
 import json
 from rtree import index
@@ -181,9 +182,13 @@ class GDALTileInterface(object):
                          for fn in self.all_coords]))
 
 
-    def lookup(self, lat, lng):
+    def lookup(self, lat, lng, data_re):
 
         nearest = list(self.index.nearest((lat, lng), 1, objects='raw'))
+
+        if data_re:
+            data_re = re.compile(data_re)
+            nearest = [x for x in nearest if data_re.match(x['file'])]
 
         if not nearest:
             raise Exception('Invalid latitude/longitude')

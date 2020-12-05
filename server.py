@@ -19,15 +19,17 @@ Initialize a global interface. This can grow quite large, because it has a cache
 interface = GDALTileInterface('data/', 'data/summary.json')
 interface.create_summary_json()
 
-def get_elevation(lat, lng):
+def get_elevation(lat, lng, data_re):
     """
     Get the elevation at point (lat,lng) using the currently opened interface
-    :param lat: 
-    :param lng: 
+    :param lat:
+    :param lng:
     :return:
     """
     try:
-        res = interface.lookup(lat, lng)
+        res = interface.lookup(lat = lat,
+                               lng = lng,
+                               data_re = data_re)
         elevation = res['elevation']
         resolution = res['resolution']
     except:
@@ -72,22 +74,27 @@ def lat_lng_from_location(location_with_comma):
 def query_to_locations():
     """
     Grab a list of locations from the query and turn them into [(lat,lng),(lat,lng),...]
-    :return: 
+    :return:
     """
     locations = request.query.locations
     if not locations:
         raise InternalException(json.dumps({'error': '"Locations" is required.'}))
 
-    return [lat_lng_from_location(l) for l in locations.split('|')]
+    data_re = request.query.data_re
+
+    return {'locations': [lat_lng_from_location(l) \
+                          for l in locations.split('|')],
+            'data_re': data_re}
 
 
 def body_to_locations():
     """
     Grab a list of locations from the body and turn them into [(lat,lng),(lat,lng),...]
-    :return: 
+    :return:
     """
     try:
         locations = request.json.get('locations', None)
+        data_re = request.json.get('data_re', None)
     except Exception:
         raise InternalException(json.dumps({'error': 'Invalid JSON.'}))
 
@@ -101,18 +108,19 @@ def body_to_locations():
         except KeyError:
             raise InternalException(json.dumps({'error': '"%s" is not in a valid format.' % l}))
 
-    return latlng
+    return {'locations': latlng, 'data_re': data_re}
 
 
 def do_lookup(get_locations_func):
     """
     Generic method which gets the locations in [(lat,lng),(lat,lng),...] format by calling get_locations_func
     and returns an answer ready to go to the client.
-    :return: 
+    :return:
     """
     try:
-        locations = get_locations_func()
-        return {'results': [get_elevation(lat, lng) for (lat, lng) in locations]}
+        inp = get_locations_func()
+        return {'results': [get_elevation(lat, lng, data_re = inp['data_re']) \
+                            for (lat, lng) in inp['locations']]}
     except InternalException as e:
         response.status = 400
         response.content_type = 'application/json'
