@@ -2,6 +2,7 @@ import json
 import os
 import re
 import sys
+import threading
 
 import numpy as np
 import osgeo.gdal as gdal
@@ -107,16 +108,18 @@ class GDALTileInterface(object):
         self.summary_file = summary_file
         self.index = index.Index()
         self.interfaces = LRUCache(maxsize = open_interfaces_size)
+        self.interfaces_lock = threading.RLock()
 
 
     def _open_gdal_interface(self, path):
         if path not in self.interfaces:
-            # close cleanly the oldest interface
-            if self.interfaces.currsize >= self.interfaces.maxsize:
-                oldest = self.interfaces.popitem()[1]
-                oldest.close()
+            with self.interfaces_lock:
+                # close cleanly the oldest interface
+                if self.interfaces.currsize >= self.interfaces.maxsize:
+                    oldest = self.interfaces.popitem()[1]
+                    oldest.close()
 
-            self.interfaces[path] = GDALInterface(path)
+                self.interfaces[path] = GDALInterface(path)
 
         return self.interfaces[path]
 
