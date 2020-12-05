@@ -1,16 +1,56 @@
-# Open-Elevation
+# Extended Open-Elevation
 
-[https://open-elevation.com](https://open-elevation.com)
 
-A free and open-source elevation API.
+This is a fork of
+[https://open-elevation.com](https://open-elevation.com) updated and
+extended by few things I need in my project.
 
-**Open-Elevation** is a free and open-source alternative to the [Google Elevation API](https://developers.google.com/maps/documentation/elevation/start) and similar offerings.
+Below are described new commands introduced to the server. For general
+references refer to the original project documentation.
 
-This service came out of the need to have a hosted, easy to use and easy to setup elevation API. While there are some alternatives out there, none of them work out of the box, and seem to point to dead datasets. <b>Open-Elevation</b> is [easy to setup](https://github.com/Jorl17/open-elevation/blob/master/docs/host-your-own.md), has its own docker image and provides scripts for you to easily acquire whatever datasets you want. We offer you the whole world with our [public API](https://github.com/Jorl17/open-elevation/blob/master/docs/api.md).
+## Running the server
 
-If you enjoy our service, please consider [donating to us](https://open-elevation.com#donate). Servers aren't free :)
+Say
+```
+./build.sh
+```
+to build a docker image.
 
-**API Docs are [available here](https://github.com/Jorl17/open-elevation/blob/master/docs/api.md)**
+Say
+```
+./run.sh
+```
+to run the image exposing port 8080.
 
-You can learn more about the project, including its **free public API** in [the website](https://open-elevation.com)
+## Data
 
+Unlike the original project multiple sources of data can be used. If
+the data for a query is duplicated, a dataset with higher resolution
+is selected.
+
+Data can be placed in several subdirectories. Only files capable of
+processing by GDAL are read, other files are ignored (i.e. all
+archives have to be decompressed).
+
+Say
+```
+./preprocess.sh
+```
+to preprocess data. That command converts all files to the WGS84
+coordinate system, and splits files on smaller chunks.
+
+On a active server, say
+```
+> curl localhost:8081/api/v1/datasets
+{"results": ["data/NRW-20", "data/srtm", "data/NRW-1sec"]}
+```
+to query a list of directories with data.
+
+By default data with highest resolution for each query is selected. To
+select some particular data for a query use `data_re` argument. For
+example,
+```
+curl http://localhost:8081/api/v1/lookup\?locations\=50.8793,6.1520\&data_re\='data/NRW-20'
+```
+where `data_re` accepts any valid regular expression (beware of the special
+symbols in url).
