@@ -2,7 +2,7 @@
 
 # This converts all data to a common format, split file on smaller chunks
 
-export src_dir="data"
+export src_dir="data/current"
 export chunk_size=3000
 
 function convert_to_wgs84 {

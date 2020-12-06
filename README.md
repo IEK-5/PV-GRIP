@@ -32,12 +32,26 @@ Data can be placed in several subdirectories. Only files capable of
 processing by GDAL are read, other files are ignored (i.e. all
 archives have to be decompressed).
 
+Note, all data should be placed in `data/current` directory.
+
 Say
 ```
 ./preprocess.sh
 ```
 to preprocess data. That command converts all files to the WGS84
 coordinate system, and splits files on smaller chunks.
+
+Some parts of the scripts depends on the version of GDAL being used
+(and also requires GDAL installed on the host machine). Hence, it is
+possible to run the scripts from inside the docker image
+```
+./run.sh ./preprocess.sh
+```
+
+Preprocess script create a backup of the data using the
+```
+cp -rl data/current data/current.bak
+```
 
 On a active server, say
 ```
