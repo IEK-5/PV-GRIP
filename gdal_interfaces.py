@@ -101,24 +101,28 @@ class GDALInterface(object):
         self.close()
 
 
+class Interface_LRUCache(LRUCache):
+    def popitem(self):
+        key, value = super().popitem()
+        value.close()
+
+        return key, value
+
+
 class GDALTileInterface(object):
     def __init__(self, tiles_folder, summary_file, open_interfaces_size=5):
         super(GDALTileInterface, self).__init__()
         self.tiles_folder = tiles_folder
         self.summary_file = summary_file
         self.index = index.Index()
-        self.interfaces = LRUCache(maxsize = open_interfaces_size)
+        self.interfaces = Interface_LRUCache\
+            (maxsize = open_interfaces_size)
         self.interfaces_lock = threading.RLock()
 
 
     def _open_gdal_interface(self, path):
         if path not in self.interfaces:
             with self.interfaces_lock:
-                # close cleanly the oldest interface
-                if self.interfaces.currsize >= self.interfaces.maxsize:
-                    oldest = self.interfaces.popitem()[1]
-                    oldest.close()
-
                 self.interfaces[path] = GDALInterface(path)
 
         return self.interfaces[path]
