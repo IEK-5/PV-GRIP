@@ -11,7 +11,8 @@ import osgeo.osr as osr
 from cachetools import LRUCache
 from lazy import lazy
 from pprint import pprint
-from rtree import index
+
+from rtree_uniq import SpatialFileIndex
 
 
 # Originally based on https://stackoverflow.com/questions/13439357/extract-point-from-raster-in-gdal
@@ -114,7 +115,7 @@ class GDALTileInterface(object):
         super(GDALTileInterface, self).__init__()
         self.tiles_folder = tiles_folder
         self.summary_file = summary_file
-        self.index = index.Index()
+        self.index = SpatialFileIndex()
         self.interfaces = Interface_LRUCache\
             (maxsize = open_interfaces_size)
         self.interfaces_lock = threading.RLock()
