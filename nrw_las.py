@@ -18,7 +18,7 @@ def list_files(path, regex):
     r = re.compile(regex)
     return [os.path.join(dp, f) \
             for dp, dn, filenames in \
-            os.walk(self.path) \
+            os.walk(path) \
             for f in filenames \
             if r.match(os.path.join(dp, f))]
 
@@ -119,9 +119,9 @@ class NRWData:
     def __init__(self, path, max_saved = 1000):
         """
 
-        :path: where meta.json file is located.
+        :path: where las_meta.json file is located.
 
-        meta.json should contain fields: 'root_url' (format string), 'step' the integer is multiplied to get coordinate value, 'resolution' resolution to use in sampling the lidar data, 'epsg' coordinate system, 'box_step' size of each rectangle data, 'fn_meta' path to the meta csv file, 'meta_entry_regex' regex how to match coordinates
+        las_meta.json should contain fields: 'root_url' (format string), 'step' the integer is multiplied to get coordinate value, 'resolution' resolution to use in sampling the lidar data, 'epsg' coordinate system, 'box_step' size of each rectangle data, 'fn_meta' path to the meta csv file, 'meta_entry_regex' regex how to match coordinates
 
         the data is stored in the subdirectory 'cache'
 
@@ -148,7 +148,7 @@ class NRWData:
 
     def _read_meta(self):
         with open(os.path.join\
-                  (self.path,'meta.json'),'r') as f:
+                  (self.path,'las_meta.json'),'r') as f:
             return json.load(f)
 
 

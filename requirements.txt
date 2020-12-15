@@ -5,3 +5,4 @@ rtree
 gunicorn
 cachetools
 pyproj
+requests

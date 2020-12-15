@@ -13,6 +13,20 @@ from lazy import lazy
 from pprint import pprint
 
 from rtree_uniq import SpatialFileIndex
+from nrw_las import \
+    list_files, NRWData
+
+
+def in_directory(fn, paths):
+    fn = os.path.abspath(fn)
+
+    for path in paths:
+        path = os.path.abspath(path)
+
+        if os.path.commonprefix([fn, path]) == path:
+            return path
+
+    return None
 
 
 # Originally based on https://stackoverflow.com/questions/13439357/extract-point-from-raster-in-gdal
@@ -111,45 +125,59 @@ class Interface_LRUCache(LRUCache):
 
 
 class GDALTileInterface(object):
-    def __init__(self, tiles_folder, summary_file, open_interfaces_size=5):
+    def __init__(self, tiles_folder, open_interfaces_size=5):
         super(GDALTileInterface, self).__init__()
-        self.tiles_folder = tiles_folder
-        self.summary_file = summary_file
-        self.index = SpatialFileIndex()
-        self.interfaces = Interface_LRUCache\
+        self.path = tiles_folder
+        self._index = SpatialFileIndex()
+        self._interfaces = Interface_LRUCache\
             (maxsize = open_interfaces_size)
-        self.interfaces_lock = threading.RLock()
+        self._interfaces_lock = threading.RLock()
+
+        self._las_dirs = dict()
+        self._find_las_dirs()
+
+        self._all_coords = []
+        self._fill_all_coords()
+
+        self._build_index()
+
+
+    def _find_las_dirs(self):
+        for fn in list_files(path = self.path,
+                             regex = '.*/las_meta\.json$'):
+            dn = os.path.dirname(fn)
+            self._las_dirs[dn] = NRWData(path = dn)
 
 
     def _open_gdal_interface(self, path):
-        if path not in self.interfaces:
-            with self.interfaces_lock:
-                self.interfaces[path] = GDALInterface(path)
+        if path not in self._interfaces:
+            las_path = in_directory(path, self._las_dirs.keys())
+            if las_path:
+                path = self._las_dirs[las_path].get_path(path)
 
-        return self.interfaces[path]
+            with self._interfaces_lock:
+                self._interfaces[path] = GDALInterface(path)
 
-
-    def _all_files(self):
-        return [os.path.join(dp, f) \
-                for dp, dn, filenames in \
-                os.walk(self.tiles_folder) \
-                for f in filenames]
+        return self._interfaces[path]
 
 
-    def create_summary_json(self):
-        all_coords = []
-        for fn in self._all_files():
+    def _fill_all_coords(self):
+        for fn in list_files(self.path, regex = '.*'):
+            # ignore las directories
+            if in_directory(fn, self._las_dirs.keys()):
+                continue
+
             try:
                 i = self._open_gdal_interface(fn)
                 coords = i.get_corner_coords()
-                all_coords += [
+                self._all_coords += [
                     {
                         'file': fn,
-                        'coords': ( coords['BOTTOM_RIGHT'][1],  # latitude min
-                                    coords['TOP_RIGHT'][1],  # latitude max
-                                    coords['TOP_LEFT'][0],  # longitude min
-                                    coords['TOP_RIGHT'][0],  # longitude max
-
+                        'coords': \
+                        ( coords['BOTTOM_RIGHT'][1],  # latitude min
+                          coords['TOP_RIGHT'][1],     # latitude max
+                          coords['TOP_LEFT'][0],      # longitude min
+                          coords['TOP_RIGHT'][0],     # longitude max
                         ),
                         'resolution': i.get_resolution()
                     }
@@ -164,29 +192,17 @@ Skipping...""" % (fn, str(e)),
                       file = sys.stderr)
                 continue
 
-        with open(self.summary_file, 'w') as f:
-            json.dump(all_coords, f)
-
-        self.all_coords = all_coords
-
-        self._build_index()
-
-
-    def read_summary_json(self):
-        with open(self.summary_file, 'r') as f:
-            self.all_coords = json.load(f)
-
-        self._build_index()
-
 
     def get_directories(self):
-        return list(set([os.path.dirname(fn['file']) \
-                         for fn in self.all_coords]))
+        res = list(set([os.path.dirname(fn['file']) \
+                        for fn in self._all_coords]))
+        res += list(self._las_dirs.keys())
+        return res
 
 
     def lookup(self, lat, lng, data_re):
 
-        nearest = list(self.index.nearest((lat, lng), 1, objects='raw'))
+        nearest = list(self._index.nearest((lat, lng), 1, objects='raw'))
 
         if data_re:
             data_re = re.compile(data_re)
@@ -208,6 +224,9 @@ Skipping...""" % (fn, str(e)),
 
 
     def _build_index(self):
-        for e in self.all_coords:
+        for e in self._all_coords:
             left, bottom, right, top = (e['coords'][0], e['coords'][2], e['coords'][1], e['coords'][3])
-            self.index.insert( 0, (left, bottom, right, top), obj=e)
+            self._index.insert( 0, (left, bottom, right, top), obj=e)
+
+        for _,v in self._las_dirs.items():
+            self._index = v.update_index(self._index)

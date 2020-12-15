@@ -1,7 +1,7 @@
 FROM osgeo/gdal:ubuntu-full-latest
 
-RUN apt-get update
-RUN apt-get install -y python3-pip libspatialindex-dev bc
+RUN apt-get update -y
+RUN apt-get install -y python3-pip libspatialindex-dev bc pdal
 
 ADD ./requirements.txt .
 RUN pip3 install -r requirements.txt

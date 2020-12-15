@@ -84,15 +84,15 @@ def test_NRWData():
         "box_resolution": 1,
         "epsg": 25832,
         "box_step": 1,
-        "fn_meta": "meta.csv",
+        "fn_meta": "las_meta.csv",
         "meta_entry_regex": "^test_(.*)_(.*)_.*$"
     }
     path = 'test_NRWData'
     os.makedirs(path, exist_ok = True)
-    with open(os.path.join(path, 'meta.json'),'w') as f:
+    with open(os.path.join(path, 'las_meta.json'),'w') as f:
         json.dump(meta, f)
 
-    with open(os.path.join(path, 'meta.csv'), 'w') as f:
+    with open(os.path.join(path, 'las_meta.csv'), 'w') as f:
         f.write('test_480_5663_dsfg\n')
         f.write('test_1241_325_dsfg\n')
         f.write('test_262_7535_dsfg\n')
