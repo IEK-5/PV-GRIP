@@ -85,7 +85,8 @@ def test_NRWData():
         "epsg": 25832,
         "box_step": 1,
         "fn_meta": "las_meta.csv",
-        "meta_entry_regex": "^test_(.*)_(.*)_.*$"
+        "meta_entry_regex": "^test_(.*)_(.*)_.*$",
+        "pdal_resolution": 1
     }
     path = 'test_NRWData'
     os.makedirs(path, exist_ok = True)
@@ -93,14 +94,15 @@ def test_NRWData():
         json.dump(meta, f)
 
     with open(os.path.join(path, 'las_meta.csv'), 'w') as f:
-        f.write('test_480_5663_dsfg\n')
-        f.write('test_1241_325_dsfg\n')
-        f.write('test_262_7535_dsfg\n')
+        f.write('test_459_5810_dsfg\n')
+        f.write('test_458_5806_dsfg\n')
         f.write('does_not_match\n')
 
     X = NRWData(path = path, max_saved = 100)
 
-    a = list(X._files.keys())[0]
+    assert 2 == len(X._files.keys())
 
-    assert 3 == len(X._files.keys())
+    a = list(X._files.keys())[0]
+    assert a == X.get_path(a)
+
     shutil.rmtree(path)

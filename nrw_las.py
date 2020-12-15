@@ -271,6 +271,7 @@ class NRWData:
         wdir = tempfile.mkdtemp(dir=self.path)
 
         self._download_laz(url = url, path = wdir)
+        self._write_pdaljson(path = wdir)
         self._run_pdal(path = wdir)
         self._convert_wgs84(path = wdir)
         os.rename(os.path.join(wdir,'res.tif'), path)
