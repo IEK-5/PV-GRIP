@@ -1,4 +1,15 @@
 import rtree
+import json
+
+def save_index_json(index, fn):
+    data = []
+    for x in index.intersection(index.bounds, objects = True):
+        data += [{'id': x.id,
+                  'bbox': x.bbox,
+                  'object': x.object}]
+
+    with open(fn, 'w') as f:
+        json.dump(data, f)
 
 
 class SpatialFileIndex(rtree.index.Index):

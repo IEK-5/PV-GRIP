@@ -12,7 +12,8 @@ from cachetools import LRUCache
 from lazy import lazy
 from pprint import pprint
 
-from rtree_uniq import SpatialFileIndex
+from rtree_uniq import \
+    SpatialFileIndex, save_index_json
 from nrw_las import \
     list_files, NRWData
 
@@ -125,7 +126,7 @@ class Interface_LRUCache(LRUCache):
 
 
 class GDALTileInterface(object):
-    def __init__(self, tiles_folder, open_interfaces_size=5):
+    def __init__(self, tiles_folder, index_file, open_interfaces_size=5):
         super(GDALTileInterface, self).__init__()
         self.path = tiles_folder
         self._index = SpatialFileIndex()
@@ -140,6 +141,7 @@ class GDALTileInterface(object):
         self._fill_all_coords()
 
         self._build_index()
+        save_index_json(self._index, index_file)
 
 
     def _find_las_dirs(self):
