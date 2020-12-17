@@ -4,6 +4,7 @@ import bottle
 from bottle import route, run, request, response, hook
 
 from gdal_interfaces import GDALTileInterface
+from nrw_las import TASK_RUNNING
 
 
 class InternalException(ValueError):
@@ -31,11 +32,20 @@ def get_elevation(lat, lng, data_re):
                                data_re = data_re)
         elevation = res['elevation']
         resolution = res['resolution']
-    except:
+    except TASK_RUNNING:
+        return {
+            'message': 'task is running'
+        }
+    except Exception as e:
         return {
             'latitude': lat,
             'longitude': lng,
-            'error': 'No such coordinate (%s, %s)' % (lat, lng)
+            'error':
+            """
+            Cannot process request!
+                Coordinate: (%s, %s)
+                     Error: %s
+            """ % (lat, lng, str(e))
         }
 
     return {

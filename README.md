@@ -12,13 +12,13 @@ references refer to the original project documentation.
 
 Say
 ```
-./build.sh
+./build_docker.sh
 ```
 to build a docker image.
 
 Say
 ```
-./run.sh
+./run_docker.sh
 ```
 to run the image exposing port 8080.
 

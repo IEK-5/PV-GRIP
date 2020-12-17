@@ -147,7 +147,7 @@ class GDALTileInterface(object):
     def _find_las_dirs(self):
         for fn in list_files(path = self.path,
                              regex = '.*/las_meta\.json$'):
-            dn = os.path.dirname(fn)
+            dn = os.path.abspath(os.path.dirname(fn))
             self._las_dirs[dn] = NRWData(path = dn)
 
 
@@ -203,7 +203,6 @@ Skipping...""" % (fn, str(e)),
 
 
     def lookup(self, lat, lng, data_re):
-
         nearest = list(self._index.nearest((lat, lng), 1, objects='raw'))
 
         if data_re:

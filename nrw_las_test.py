@@ -1,6 +1,9 @@
 import os
+import re
 import json
 import shutil
+
+import numpy as np
 
 from rtree import index
 
@@ -13,68 +16,97 @@ def touch(fname, times=None):
         os.utime(fname, times)
 
 
-def list_files(path):
+def list_files(path, regex = r'.*'):
+    regex = re.compile(regex)
     res = []
     for dp, dn, filenames in os.walk(path):
         for f in filenames:
-            res += [os.path.join(dp,f)]
+            fn = os.path.join(dp,f)
+            if regex.match(fn):
+                res += [fn]
 
     return res
 
 
 def test_Files_LRUCache(N = 10):
-    cache = _Files_LRUCache(maxsize = N)
     path="test_Files_LRUCache"
-    os.makedirs(path, exist_ok = True)
+    try:
+        os.makedirs(path, exist_ok = True)
+        cache = _Files_LRUCache(maxsize = N, path = path)
 
-    for i in range(2*N):
-        p = os.path.join(path, str(i))
-        touch(p)
-        cache[i] = p
+        for i in np.random.rand(2*N):
+            p = os.path.join(path, str(i) + "_test_file")
+            touch(p)
+            cache.add(p)
 
-    assert N == len(list_files(path))
+        assert N == len(cache)
+        assert N == len(list_files(path, regex=r'.*_test_file'))
+    finally:
+        shutil.rmtree(path)
 
-    shutil.rmtree(path)
+
+def test_Files_LRUCache_contains():
+    path="test_Files_LRUCache_contains"
+    try:
+        os.makedirs(path, exist_ok = True)
+        cache = _Files_LRUCache(maxsize = 2, path = path)
+
+        a = os.path.join(path, "a")
+        touch(a)
+        cache.add(a)
+
+        b = os.path.join(path, "b")
+        touch(b)
+        cache.add(b)
+
+        # here "one" is the first to evict
+        assert False == (a not in cache)
+
+        # after checking if "one" was there it should be "two"
+        assert b == cache.popleft()
+    finally:
+        shutil.rmtree(path)
 
 
 def test_NRWData_Cache(N = 10):
     path="test_NRWData_Cache"
-    os.makedirs(path, exist_ok = True)
+    try:
+        os.makedirs(path, exist_ok = True)
 
-    X = NRWData_Cache(path = path,
-                      regex = r'(.*)_(.*)\.tif',
-                      fmt = '%d_%d.tif',
-                      maxsize = N)
+        X = NRWData_Cache(path = path,
+                          regex = r'(.*)_(.*)\.tif',
+                          fmt = '%d_%d.tif',
+                          maxsize = N)
 
-    assert X.coord2fn((100,20)) == os.path.join(path,"100_20.tif")
+        assert X.coord2fn((100,20)) == os.path.join(path,"100_20.tif")
 
-    x = X.coord2fn((1,2))
-    touch(x)
-    X.add(x)
-
-    x = X.coord2fn((3,4))
-    touch(x)
-    X.add(x)
-
-    X = NRWData_Cache(path = path,
-                      regex = r'(.*)_(.*)\.tif',
-                      fmt = '%d_%d.tif',
-                      maxsize = N)
-
-    assert 2 == len(X.list_paths())
-    assert X.coord2fn((1,2)) == sorted(X.list_paths())[0]
-    assert X.coord2fn((3,4)) == sorted(X.list_paths())[1]
-    assert X.coord2fn((1,2)) in X
-    assert X.coord2fn((3,4)) in X
-
-    for i in range(N*2):
-        x = X.coord2fn((i*13,i*17))
+        x = X.coord2fn((1,2))
         touch(x)
         X.add(x)
 
-    assert N == len(X.list_paths())
+        x = X.coord2fn((3,4))
+        touch(x)
+        X.add(x)
 
-    shutil.rmtree(path)
+        X = NRWData_Cache(path = path,
+                          regex = r'(.*)_(.*)\.tif',
+                          fmt = '%d_%d.tif',
+                          maxsize = N)
+
+        assert 2 == len(X.list_paths())
+        assert X.coord2fn((1,2)) == sorted(X.list_paths())[0]
+        assert X.coord2fn((3,4)) == sorted(X.list_paths())[1]
+        assert X.coord2fn((1,2)) in X
+        assert X.coord2fn((3,4)) in X
+
+        for i in range(N*2):
+            x = X.coord2fn((i*13,i*17))
+            touch(x)
+            X.add(x)
+
+        assert N == len(X.list_paths())
+    finally:
+        shutil.rmtree(path)
 
 
 def test_NRWData():
@@ -89,20 +121,25 @@ def test_NRWData():
         "pdal_resolution": 1
     }
     path = 'test_NRWData'
-    os.makedirs(path, exist_ok = True)
-    with open(os.path.join(path, 'las_meta.json'),'w') as f:
-        json.dump(meta, f)
+    try:
+        os.makedirs(path, exist_ok = True)
+        with open(os.path.join(path, 'las_meta.json'),'w') as f:
+            json.dump(meta, f)
 
-    with open(os.path.join(path, 'las_meta.csv'), 'w') as f:
-        f.write('test_459_5810_dsfg\n')
-        f.write('test_458_5806_dsfg\n')
-        f.write('does_not_match\n')
+        with open(os.path.join(path, 'las_meta.csv'), 'w') as f:
+            f.write('test_459_5810_dsfg\n')
+            f.write('test_458_5806_dsfg\n')
+            f.write('does_not_match\n')
 
-    X = NRWData(path = path, max_saved = 100)
+        X = NRWData(path = path, max_saved = 100)
 
-    assert 2 == len(X._files.keys())
+        assert 2 == len(X._known_files.keys())
 
-    a = list(X._files.keys())[0]
-    assert a == X.get_path(a)
+        a = list(X._known_files.keys())[0]
+        # emulate processing a file
+        touch(a)
 
-    shutil.rmtree(path)
+        X = NRWData(path = path, max_saved = 100)
+        assert a == X.get_path(a)
+    finally:
+        shutil.rmtree(path)
