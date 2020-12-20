@@ -133,7 +133,7 @@ def test_NRWData():
 
         X = NRWData(path = path, max_saved = 100)
 
-        assert 2 == len(X._known_files.keys())
+        assert 2*len(X._las_whats) == len(X._known_files.keys())
 
         a = list(X._known_files.keys())[0]
         # emulate processing a file

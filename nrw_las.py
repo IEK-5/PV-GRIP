@@ -114,7 +114,13 @@ class NRWData_Cache:
 
 
     def fn2coord(self, fn):
-        return self.regex.findall(fn)[0]
+        return self.regex.findall(fn)[0][0:2]
+
+
+    def path2pathfmt(self, path):
+        return self.coord2fn\
+            (tuple([int(x) for x in self.fn2coord(path)]) \
+             + ('%s',))
 
 
     def add(self, path):
@@ -159,11 +165,12 @@ class NRWData:
         self._cache = NRWData_Cache\
             (path = os.path.abspath\
              (os.path.join(path,'cache')),
-             regex = r'(.*)_(.*)\.tif',
-             fmt = '%d_%d.tif',
+             regex = r'(.*)_(.*)_(.*)\.tif',
+             fmt = '%d_%d_%s.tif',
              maxsize = max_saved)
 
         self.path = path
+        self._las_whats = ['min','max','count']
 
         self._meta = self._read_meta()
 
@@ -180,13 +187,13 @@ class NRWData:
             return json.load(f)
 
 
-    def _coord_to_index_data(self, lat, lon):
+    def _coord_to_index_data(self, lat, lon, what):
         res = {}
         step = self._meta['step']
         box_step = self._meta['box_step']
         resolution = self._meta['box_resolution']
 
-        res['file'] = self._cache.coord2fn((lon,lat))
+        res['file'] = self._cache.coord2fn((lon,lat,what))
 
         cmin = self._proj_from.transform\
             (lon*step,lat*step)
@@ -217,15 +224,18 @@ class NRWData:
 
                 lat = int(regex.sub(r'\2', line))
                 lon = int(regex.sub(r'\1', line))
-                yield self._coord_to_index_data\
-                    (lat=lat, lon=lon)
+                for what in self._las_whats:
+                    yield self._coord_to_index_data\
+                        (lat=lat, lon=lon, what = what)
 
 
     def _search_cache(self):
         for fn in self._cache.list_paths():
             lon, lat = self._cache.fn2coord(fn)
-            yield self._coord_to_index_data\
-                (lat = int(lat), lon = int(lon))
+            for what in self._las_whats:
+                yield self._coord_to_index_data\
+                    (lat = int(lat), lon = int(lon),
+                     what = what)
 
 
     def _fill_files(self):
@@ -251,24 +261,25 @@ class NRWData:
         return index
 
 
-    def _processing_path(self, path):
+    def _processing_path(self, path_fmt):
         NRW_TASKS = diskcache.Cache\
             (os.path.join(self.path,
                           "_NRW_LAZ_Processing_Tasks"))
         with diskcache.RLock(NRW_TASKS,
-                             "lock: %s" % path):
-            if "processing: %s" % path in NRW_TASKS:
+                             "lock: %s" % path_fmt):
+            if "processing: %s" % path_fmt in NRW_TASKS:
                 raise TASK_RUNNING()
-            NRW_TASKS["processing: %s" % path] = True
+            NRW_TASKS["processing: %s" % path_fmt] = True
 
-        coord = self._cache.fn2coord(path)
+        coord = self._cache.fn2coord(path_fmt)
         url = self._meta['root_url'] % coord
 
         task_las_processing.delay\
             (url = url,
              spath = self.path,
-             dpath = path,
-             resolution = self._meta['pdal_resolution'])
+             dpath = path_fmt,
+             resolution = self._meta['pdal_resolution'],
+             whats = self._las_whats)
 
 
     def get_path(self, path):
@@ -276,9 +287,11 @@ class NRWData:
         if path not in self._known_files:
             return path
 
-        if path not in self._cache:
-            self._processing_path(path)
-            self._cache.add(path)
+        if path not in self._cache or not os.path.exists(path):
+            path_fmt = self._cache.path2pathfmt(path)
+            self._processing_path(path_fmt)
+            for what in self._las_whats:
+                self._cache.add(path_fmt % what)
             raise TASK_RUNNING()
 
         return path

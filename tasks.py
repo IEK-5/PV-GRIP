@@ -10,18 +10,19 @@ import subprocess
 CELERY_APP = celery.Celery()
 
 
-def _write_pdaljson(path, resolution):
+def _write_pdaljson(path, resolution, whats):
     data = {}
-    data['pipeline'] = [
-        'src.laz',
-        {
-            'filename': 'dtm_laz.tif',
+    data['pipeline'] = ['src.laz']
+
+    for what in whats:
+        data['pipeline'] += \
+        [{
+            'filename': 'dtm_laz_%s.tif' % what,
             'gdaldriver': 'GTiff',
-            'output_type': 'all',
+            'output_type': what,
             'resolution': resolution,
             'type': 'writers.gdal'
-        }
-    ]
+        }]
 
     with open(os.path.join(path, 'pdal.json'), 'w') as f:
         json.dump(data, f)
@@ -38,26 +39,30 @@ def _run_pdal(path):
                    cwd = path)
 
 
-def _convert_wgs84(path):
-    subprocess.run(['gdalwarp',
-                    'dtm_laz.tif',
-                    'res.tif',
-                    '-t_srs',
-                    '+proj=longlat +ellps=WGS84'],
-                   cwd = path)
+def _convert_wgs84(path, whats):
+    for what in whats:
+        subprocess.run(['gdalwarp',
+                        'dtm_laz_%s.tif' % what,
+                        'res_%s.tif' % what,
+                        '-t_srs','+proj=longlat +ellps=WGS84'],
+                       cwd = path)
 
 
 @CELERY_APP.task()
-def task_las_processing(url, spath, dpath, resolution):
+def task_las_processing(url, spath, dpath, resolution, whats):
     try:
         wdir = tempfile.mkdtemp(dir=spath)
 
         _download_laz(url = url, path = wdir)
         _write_pdaljson(path = wdir,
-                             resolution = resolution)
+                        resolution = resolution,
+                        whats = whats)
         _run_pdal(path = wdir)
-        _convert_wgs84(path = wdir)
-        os.rename(os.path.join(wdir,'res.tif'), dpath)
+        _convert_wgs84(path = wdir, whats = whats)
+
+        for what in whats:
+            os.rename(os.path.join(wdir,'res_%s.tif' % what),
+                      dpath % what)
 
         shutil.rmtree(wdir)
     finally:
