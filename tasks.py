@@ -39,15 +39,6 @@ def _run_pdal(path):
                    cwd = path)
 
 
-def _convert_wgs84(path, whats):
-    for what in whats:
-        subprocess.run(['gdalwarp',
-                        'dtm_laz_%s.tif' % what,
-                        'res_%s.tif' % what,
-                        '-t_srs','+proj=longlat +ellps=WGS84'],
-                       cwd = path)
-
-
 @CELERY_APP.task()
 def task_las_processing(url, spath, dpath, resolution, whats):
     try:
@@ -58,10 +49,9 @@ def task_las_processing(url, spath, dpath, resolution, whats):
                         resolution = resolution,
                         whats = whats)
         _run_pdal(path = wdir)
-        _convert_wgs84(path = wdir, whats = whats)
 
         for what in whats:
-            os.rename(os.path.join(wdir,'res_%s.tif' % what),
+            os.rename(os.path.join(wdir,'dtm_laz_%s.tif' % what),
                       dpath % what)
 
         shutil.rmtree(wdir)

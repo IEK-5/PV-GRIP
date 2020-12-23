@@ -63,9 +63,13 @@ class GDALInterface(object):
         if self.src is None:
             raise Exception('Could not load GDAL file "%s"' % self.path)
         spatial_reference_raster = osr.SpatialReference(self.src.GetProjection())
+        spatial_reference_raster.SetAxisMappingStrategy\
+            (osr.OAMS_TRADITIONAL_GIS_ORDER)
 
         spatial_reference = osr.SpatialReference()
         spatial_reference.ImportFromEPSG(4326) # WGS84
+        spatial_reference.SetAxisMappingStrategy\
+            (osr.OAMS_TRADITIONAL_GIS_ORDER)
 
         # coordinate transformation
         self.coordinate_transform = osr.CoordinateTransformation(spatial_reference, spatial_reference_raster)
