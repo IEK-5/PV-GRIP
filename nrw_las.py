@@ -7,6 +7,8 @@ import requests
 import diskcache
 import itertools
 
+from tqdm import tqdm
+
 from tasks import task_las_processing
 
 class TASK_RUNNING(Exception):
@@ -270,7 +272,8 @@ class NRWData:
 
 
     def update_index(self, index):
-        for _, data in self._known_files.items():
+        for _, data in tqdm(self._known_files.items(),
+                            desc = "Building %s index" % self.path):
             index.insert(0, data['box'],
                          obj = data['data'])
         return index

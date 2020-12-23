@@ -12,6 +12,8 @@ from cachetools import LRUCache
 from lazy import lazy
 from pprint import pprint
 
+from tqdm import tqdm
+
 from rtree_uniq import \
     SpatialFileIndex, save_index_json
 from nrw_las import \
@@ -168,7 +170,8 @@ class GDALTileInterface(object):
 
 
     def _fill_all_coords(self):
-        for fn in list_files(self.path, regex = '.*'):
+        for fn in tqdm(list_files(self.path, regex = '.*'),
+                       desc = "Searching for Geo files"):
             # ignore las directories
             if in_directory(fn, self._las_dirs.keys()):
                 continue
@@ -229,7 +232,8 @@ Skipping...""" % (fn, str(e)),
 
 
     def _build_index(self):
-        for e in self._all_coords:
+        for e in tqdm(self._all_coords,
+                      desc = "Building index"):
             left, bottom, right, top = (e['coords'][0], e['coords'][2], e['coords'][1], e['coords'][3])
             self._index.insert( 0, (left, bottom, right, top), obj=e)
 
