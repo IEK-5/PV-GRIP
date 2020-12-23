@@ -175,7 +175,8 @@ class NRWData:
         self._meta = self._read_meta()
 
         self._proj_from = pyproj\
-            .Transformer.from_crs(self._meta['epsg'], 4326)
+            .Transformer.from_crs(self._meta['epsg'], 4326,
+                                  always_xy=True)
 
         self._known_files = dict()
         self._fill_files()
@@ -196,11 +197,11 @@ class NRWData:
         res['file'] = self._cache.coord2fn((lon,lat,what))
 
         cmin = self._proj_from.transform\
-            (lon*step,lat*step)
+            (lon*step,lat*step)[::-1]
         cmax = self._proj_from.transform\
-            ((lon+box_step)*step,(lat+box_step)*step)
+            ((lon+box_step)*step,(lat+box_step)*step)[::-1]
         r = self._proj_from.transform\
-            (lon*step+resolution,lat*step+resolution)
+            (lon*step+resolution,lat*step+resolution)[::-1]
         res['coords'] = (cmin[0], cmax[0], cmin[1], cmax[1])
         res['resolution'] = \
             (abs(r[0] - cmin[0]),
