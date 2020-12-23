@@ -36,8 +36,15 @@ def _write_pdaljson(path, resolution, whats):
 
 def _download_laz(url, path):
     r = requests.get(url, allow_redirects=True)
-    open(os.path.join(path, 'src.laz'), 'wb')\
-        .write(r.content)
+
+    if 200 != r.status_code:
+        raise RuntimeError("""
+        cannot download data!
+        url: %s
+        """ % url)
+
+    with open(os.path.join(path, 'src.laz'), 'wb') as f:
+        f.write(r.content)
 
 
 def _run_pdal(path):
