@@ -269,7 +269,8 @@ class NRWData:
                              "lock: %s" % path_fmt):
             if "processing: %s" % path_fmt in NRW_TASKS:
                 raise TASK_RUNNING()
-            NRW_TASKS["processing: %s" % path_fmt] = True
+            NRW_TASKS.set("processing: %s" % path_fmt, True,
+                          expire=60*60)
 
         coord = self._cache.fn2coord(path_fmt)
         url = self._meta['root_url'] % coord

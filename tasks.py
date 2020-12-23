@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import celery
 import shutil
@@ -8,6 +9,11 @@ import diskcache
 import subprocess
 
 CELERY_APP = celery.Celery()
+
+
+def _touch(fname, times=None):
+    with open(fname, 'a'):
+        os.utime(fname, times)
 
 
 def _write_pdaljson(path, resolution, whats):
@@ -41,9 +47,12 @@ def _run_pdal(path):
 
 @CELERY_APP.task()
 def task_las_processing(url, spath, dpath, resolution, whats):
-    try:
-        wdir = tempfile.mkdtemp(dir=spath)
+    wdir = tempfile.mkdtemp(dir=spath)
 
+    try:
+        if os.path.exists(dpath + ".failed"):
+            raise RuntimeError("Fail file exists: %s" % \
+                               (dpath + ".failed",))
         _download_laz(url = url, path = wdir)
         _write_pdaljson(path = wdir,
                         resolution = resolution,
@@ -51,11 +60,19 @@ def task_las_processing(url, spath, dpath, resolution, whats):
         _run_pdal(path = wdir)
 
         for what in whats:
-            os.rename(os.path.join(wdir,'dtm_laz_%s.tif' % what),
+            os.rename(os.path.join\
+                      (wdir,'dtm_laz_%s.tif' % what),
                       dpath % what)
-
-        shutil.rmtree(wdir)
+    except Exception as e:
+        print("""
+        Cannot process file!
+        url:       %s
+        File name: %s
+        Error:     %s
+        """ % (url, dpath, str(e)), file=sys.stderr)
+        _touch(dpath + ".failed")
     finally:
+        shutil.rmtree(wdir)
         NRW_TASKS = diskcache.Cache\
             (os.path.join(spath,"_NRW_LAZ_Processing_Tasks"))
         with diskcache.RLock(NRW_TASKS,
