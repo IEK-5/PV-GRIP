@@ -3,6 +3,7 @@ import os
 import csv
 import json
 import pyproj
+import requests
 import diskcache
 import itertools
 
@@ -213,21 +214,34 @@ class NRWData:
                      res['coords'][3])
 
 
+    def _download_index(self):
+        url = self._meta['meta_url']
+        res = requests.get(url, allow_redirects = True)
+
+        if 200 != res.status_code:
+            raise RuntimeError("""
+            cannot download index data!
+            status_code: %d
+            url: %s
+            """ % (res.status_code, url))
+
+        return json.loads(res.text)
+
+
     def _search_meta(self):
         regex = re.compile(self._meta['meta_entry_regex'])
+        index = self._download_index()['datasets'][0]['files']
 
-        with open(os.path.join\
-                  (self.path,
-                   self._meta['fn_meta']),'r') as f:
-            for line in f:
-                if not regex.match(line):
-                    continue
+        for item in index:
+            fn = item['name']
+            if not regex.match(fn):
+                continue
 
-                lat = int(regex.sub(r'\2', line))
-                lon = int(regex.sub(r'\1', line))
-                for what in self._las_whats:
-                    yield self._coord_to_index_data\
-                        (lat=lat, lon=lon, what = what)
+            lon = int(regex.sub(r'\1', fn))
+            lat = int(regex.sub(r'\2', fn))
+            for what in self._las_whats:
+                yield self._coord_to_index_data\
+                    (lat=lat, lon=lon, what = what)
 
 
     def _search_cache(self):

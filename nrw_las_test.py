@@ -116,8 +116,8 @@ def test_NRWData():
         "box_resolution": 1,
         "epsg": 25832,
         "box_step": 1,
-        "fn_meta": "las_meta.csv",
-        "meta_entry_regex": "^test_(.*)_(.*)_.*$",
+        "meta_entry_regex": "^3dm_32_(.*)_(.*)_1_nw.*$",
+        "meta_url": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/index.json",
         "pdal_resolution": 1
     }
     path = 'test_NRWData'
@@ -126,20 +126,6 @@ def test_NRWData():
         with open(os.path.join(path, 'las_meta.json'),'w') as f:
             json.dump(meta, f)
 
-        with open(os.path.join(path, 'las_meta.csv'), 'w') as f:
-            f.write('test_459_5810_dsfg\n')
-            f.write('test_458_5806_dsfg\n')
-            f.write('does_not_match\n')
-
         X = NRWData(path = path, max_saved = 100)
-
-        assert 2*len(X._las_whats) == len(X._known_files.keys())
-
-        a = list(X._known_files.keys())[0]
-        # emulate processing a file
-        touch(a)
-
-        X = NRWData(path = path, max_saved = 100)
-        assert a == X.get_path(a)
     finally:
         shutil.rmtree(path)
