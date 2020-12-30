@@ -14,8 +14,8 @@ from pprint import pprint
 
 from tqdm import tqdm
 
-from rtree_uniq import \
-    SpatialFileIndex, save_index_json
+from polygon_index import \
+    Polygon_File_Index
 from nrw_las import \
     list_files, NRWData
 
@@ -42,14 +42,22 @@ class GDALInterface(object):
 
 
     def get_corner_coords(self):
-        ulx, xres, xskew, uly, yskew, yres = self.geo_transform
+        ulx, xres, _, uly, _, yres = self.geo_transform
         lrx = ulx + (self.src.RasterXSize * xres)
         lry = uly + (self.src.RasterYSize * yres)
         return {
-            'TOP_LEFT': (ulx, uly),
-            'TOP_RIGHT': (lrx, uly),
-            'BOTTOM_LEFT': (ulx, lry),
-            'BOTTOM_RIGHT': (lrx, lry),
+            'TOP_LEFT': \
+            self._coordinate_transform_inv\
+            .TransformPoint(ulx, uly, 0),
+            'TOP_RIGHT': \
+            self._coordinate_transform_inv\
+            .TransformPoint(lrx, uly, 0),
+            'BOTTOM_LEFT': \
+            self._coordinate_transform_inv\
+            .TransformPoint(ulx, lry, 0),
+            'BOTTOM_RIGHT': \
+            self._coordinate_transform_inv\
+            .TransformPoint(lrx, lry, 0),
         }
 
 
@@ -63,8 +71,10 @@ class GDALInterface(object):
         self.src = gdal.Open(self.path)
 
         if self.src is None:
-            raise Exception('Could not load GDAL file "%s"' % self.path)
-        spatial_reference_raster = osr.SpatialReference(self.src.GetProjection())
+            raise Exception\
+                ('Could not load GDAL file "%s"' % self.path)
+        spatial_reference_raster = osr.SpatialReference\
+            (self.src.GetProjection())
         spatial_reference_raster.SetAxisMappingStrategy\
             (osr.OAMS_TRADITIONAL_GIS_ORDER)
 
@@ -74,11 +84,17 @@ class GDALInterface(object):
             (osr.OAMS_TRADITIONAL_GIS_ORDER)
 
         # coordinate transformation
-        self.coordinate_transform = osr.CoordinateTransformation(spatial_reference, spatial_reference_raster)
+        self._coordinate_transform = \
+            osr.CoordinateTransformation\
+            (spatial_reference, spatial_reference_raster)
+        self._coordinate_transform_inv = \
+            osr.CoordinateTransformation\
+            (spatial_reference_raster, spatial_reference)
         gt = self.geo_transform = self.src.GetGeoTransform()
         dev = (gt[1] * gt[5] - gt[2] * gt[4])
-        self.geo_transform_inv = (gt[0], gt[5] / dev, -gt[2] / dev,
-                                  gt[3], -gt[4] / dev, gt[1] / dev)
+        self.geo_transform_inv = \
+            (gt[0], gt[5] / dev, -gt[2] / dev,
+             gt[3], -gt[4] / dev, gt[1] / dev)
 
 
     @lazy
@@ -88,21 +104,25 @@ class GDALInterface(object):
 
 
     def print_statistics(self):
-        print(self.src.GetRasterBand(1).GetStatistics(True, True))
+        print(self.src.GetRasterBand(1)\
+              .GetStatistics(True, True))
 
 
     def lookup(self, lat, lon):
         try:
 
             # get coordinate of the raster
-            xgeo, ygeo, zgeo = self.coordinate_transform.TransformPoint(lon, lat, 0)
+            xgeo, ygeo, zgeo = self._coordinate_transform\
+                                   .TransformPoint(lon, lat, 0)
 
             # convert it to pixel/line on band
             u = xgeo - self.geo_transform_inv[0]
             v = ygeo - self.geo_transform_inv[3]
             # FIXME this int() is probably bad idea, there should be half cell size thing needed
-            xpix = int(self.geo_transform_inv[1] * u + self.geo_transform_inv[2] * v)
-            ylin = int(self.geo_transform_inv[4] * u + self.geo_transform_inv[5] * v)
+            xpix = int(self.geo_transform_inv[1] * u + \
+                       self.geo_transform_inv[2] * v)
+            ylin = int(self.geo_transform_inv[4] * u + \
+                       self.geo_transform_inv[5] * v)
 
             # look the value up
             v = self.points_array[ylin, xpix]
@@ -135,7 +155,7 @@ class GDALTileInterface(object):
     def __init__(self, tiles_folder, index_file, open_interfaces_size=5):
         super(GDALTileInterface, self).__init__()
         self.path = tiles_folder
-        self._index = SpatialFileIndex()
+        self._index = Polygon_File_Index()
         self._interfaces = Interface_LRUCache\
             (maxsize = open_interfaces_size)
         self._interfaces_lock = threading.RLock()
@@ -147,7 +167,7 @@ class GDALTileInterface(object):
         self._fill_all_coords()
 
         self._build_index()
-        save_index_json(self._index, index_file)
+        self._index.save(index_file)
 
 
     def _find_las_dirs(self):
@@ -182,12 +202,12 @@ class GDALTileInterface(object):
                 self._all_coords += [
                     {
                         'file': fn,
-                        'coords': \
-                        ( coords['BOTTOM_RIGHT'][1],  # latitude min
-                          coords['TOP_RIGHT'][1],     # latitude max
-                          coords['TOP_LEFT'][0],      # longitude min
-                          coords['TOP_RIGHT'][0],     # longitude max
-                        ),
+                        'polygon': \
+                        [ coords['BOTTOM_LEFT'],
+                          coords['TOP_LEFT'],
+                          coords['TOP_RIGHT'],
+                          coords['BOTTOM_RIGHT'],
+                        ],
                         'resolution': i.get_resolution()
                     }
                 ]
@@ -209,15 +229,16 @@ Skipping...""" % (fn, str(e)),
         return res
 
 
-    def lookup(self, lat, lng, data_re):
-        nearest = list(self._index.nearest((lat, lng), 1, objects='raw'))
+    def lookup(self, lat, lon, data_re):
+        nearest = list(self._index.nearest((lon, lat)))
 
         if data_re:
             data_re = re.compile(data_re)
-            nearest = [x for x in nearest if data_re.match(x['file'])]
+            nearest = [x for x in nearest \
+                       if data_re.match(x['file'])]
 
         if not nearest:
-            raise Exception('Invalid latitude/longitude')
+            raise Exception('Unknown latitude/longitude')
 
         if len(nearest) > 1:
             idx = np.argmin([np.prod(x['resolution']) \
@@ -226,16 +247,16 @@ Skipping...""" % (fn, str(e)),
             idx = 0
         coords = nearest[idx]
 
-        gdal_interface = self._open_gdal_interface(coords['file'])
-        return {'elevation': float(gdal_interface.lookup(lat, lng)),
+        gdal_interface = self._open_gdal_interface\
+            (coords['file'])
+        return {'elevation': float(gdal_interface.lookup(lat, lon)),
                 'resolution': coords['resolution']}
 
 
     def _build_index(self):
         for e in tqdm(self._all_coords,
                       desc = "Building index"):
-            left, bottom, right, top = (e['coords'][0], e['coords'][2], e['coords'][1], e['coords'][3])
-            self._index.insert( 0, (left, bottom, right, top), obj=e)
+            self._index.insert(data=e)
 
         for _,v in self._las_dirs.items():
             self._index = v.update_index(self._index)

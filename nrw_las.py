@@ -199,21 +199,22 @@ class NRWData:
 
         res['file'] = self._cache.coord2fn((lon,lat,what))
 
-        cmin = self._proj_from.transform\
-            (lon*step,lat*step)[::-1]
-        cmax = self._proj_from.transform\
-            ((lon+box_step)*step,(lat+box_step)*step)[::-1]
+        p0 = self._proj_from.transform\
+            (lon*step,lat*step)
+        p1 = self._proj_from.transform\
+            ((lon+box_step)*step,lat*step)
+        p2 = self._proj_from.transform\
+            ((lon+box_step)*step,(lat+box_step)*step)
+        p3 = self._proj_from.transform\
+            (lon*step,(lat+box_step)*step)
         r = self._proj_from.transform\
-            (lon*step+resolution,lat*step+resolution)[::-1]
-        res['coords'] = (cmin[0], cmax[0], cmin[1], cmax[1])
-        res['resolution'] = \
-            (abs(r[0] - cmin[0]),
-             abs(r[1] - cmin[1]))
+            (lon*step+resolution,lat*step+resolution)
 
-        return res, (res['coords'][0],
-                     res['coords'][2],
-                     res['coords'][1],
-                     res['coords'][3])
+        res['polygon'] = [p0,p1,p2,p3]
+        res['resolution'] = (abs(r[0] - p0[0]),
+                             abs(r[1] - p1[1]))
+
+        return res
 
 
     def _download_index(self):
@@ -256,26 +257,17 @@ class NRWData:
 
 
     def _fill_files(self):
-        for data, box in self._search_meta():
-            self._known_files[data['file']] = \
-                {
-                    'data': data,
-                    'box': box
-                }
+        for data in self._search_meta():
+            self._known_files[data['file']] = data
 
-        for data, box in self._search_cache():
-            self._known_files[data['file']] = \
-                {
-                    'data': data,
-                    'box': box
-                }
+        for data in self._search_cache():
+            self._known_files[data['file']] = data
 
 
     def update_index(self, index):
         for _, data in tqdm(self._known_files.items(),
                             desc = "Building %s index" % self.path):
-            index.insert(0, data['box'],
-                         obj = data['data'])
+            index.insert(data = data)
         return index
 
 

@@ -28,7 +28,7 @@ def get_elevation(lat, lng, data_re):
     """
     try:
         res = interface.lookup(lat = lat,
-                               lng = lng,
+                               lon = lng,
                                data_re = data_re)
         elevation = res['elevation']
         resolution = res['resolution']
