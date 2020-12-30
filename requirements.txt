@@ -6,6 +6,7 @@ gunicorn
 cachetools
 pyproj
 diskcache
+shapely
 requests
 celery
 tqdm
