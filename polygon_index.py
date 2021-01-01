@@ -79,12 +79,12 @@ class Polygon_File_Index:
         """
         with open(fn, 'r') as f:
             for x in json.load(f):
-                if 'polygon' not in x.object:
+                if 'polygon' not in x['object']:
                     continue
-                if 'file' not in x.object:
+                if 'file' not in x['object']:
                     continue
 
-                self._rtree.insert(x.id, x.bbox,
-                                   obj = x.object)
-                self._polygons[x.object['file']] = \
-                    x.object['polygon']
+                self._rtree.insert(x['id'], x['bbox'],
+                                   obj = x['object'])
+                self._polygons[x['object']['file']] = \
+                    geometry.Polygon(x['object']['polygon'])
