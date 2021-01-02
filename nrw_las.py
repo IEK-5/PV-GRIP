@@ -101,7 +101,7 @@ class NRWData:
 
     """
 
-    def __init__(self, path, max_saved = 100):
+    def __init__(self, path):
         """
 
         :path: where las_meta.json file is located.
@@ -110,20 +110,18 @@ class NRWData:
 
         the data is stored in the subdirectory 'cache'
 
-        :max_saved: maximum size of files to keep in GB
-
         """
+        self.path = path
+        self._meta = self._read_meta()
+
         self._cache = NRWData_Cache\
             (path = os.path.abspath\
              (os.path.join(path,'cache')),
              regex = r'(.*)_(.*)_(.*)\.tif',
              fmt = '%d_%d_%s.tif',
-             maxsize = max_saved)
+             maxsize = self._meta['maxsize'])
 
-        self.path = path
-        self._las_whats = ['min','max','count']
-
-        self._meta = self._read_meta()
+        self._las_whats = self._meta['las_stats']
 
         self._proj_from = pyproj\
             .Transformer.from_crs(self._meta['epsg'], 4326,

@@ -63,7 +63,9 @@ def test_NRWData():
         "box_step": 1,
         "meta_entry_regex": "^3dm_32_(.*)_(.*)_1_nw.*$",
         "meta_url": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/index.json",
-        "pdal_resolution": 1
+        "pdal_resolution": 1,
+        "maxsize": 100,
+        "las_stats": ['min','max','count'],
     }
     path = 'test_NRWData'
     try:
@@ -71,6 +73,6 @@ def test_NRWData():
         with open(os.path.join(path, 'las_meta.json'),'w') as f:
             json.dump(meta, f)
 
-        X = NRWData(path = path, max_saved = 100)
+        X = NRWData(path = path)
     finally:
         shutil.rmtree(path)
