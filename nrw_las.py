@@ -25,30 +25,27 @@ def list_files(path, regex):
             if r.match(os.path.join(dp, f))]
 
 
-class NRWData_Cache:
+class NRWData_Cache(Files_LRUCache):
     """Keep track of stored files of the processes lidar data
 
     The class is thread-/ and process-safe
 
     """
 
-    def __init__(self, path, regex, fmt, maxsize):
+    def __init__(self, regex, fmt, *args, **kwargs):
         """
-
-        :path: path where files are stored
 
         :regex: regex which matches each stored file, with grouping corresponding to the coordinates
 
         :fmt: describes how to form a filename from a tuple of coordinates
 
-        :maxsize: maximum number of files to store
+        :args, kwargs: arguments passed to Files_LRUCache
 
         """
-        self.cache = Files_LRUCache(maxsize = maxsize, path = path)
-        self.path = path
+        super().__init__(*args, **kwargs)
+
         self.regex = re.compile(r'.*/' + regex)
         self.fmt = os.path.join(self.path, fmt)
-        os.makedirs(self.path, exist_ok = True)
         self._fill_cache()
 
 
@@ -79,7 +76,7 @@ class NRWData_Cache:
             raise RuntimeError\
                 ("provided path does not match regex")
 
-        self.cache.add(path)
+        super().add(path)
 
 
     def __contains__(self, path):
@@ -87,12 +84,12 @@ class NRWData_Cache:
             raise RuntimeError\
                 ("provided path does not match regex")
 
-        return path in self.cache
+        return super().__contains__(path)
 
 
     def list_paths(self):
-        with self.cache._deque.transact():
-            res = list(self.cache._deque)
+        with self._lock:
+            res = list(self._deque)
         return res
 
 

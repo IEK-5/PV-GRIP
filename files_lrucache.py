@@ -18,7 +18,11 @@ class Files_LRUCache:
         """
         self.maxsize = maxsize*(1024**3)
         self.check_every = check_every * (60**2)
-        path = os.path.join(path,"_Files_LRUCache")
+
+        self.path = path
+        os.makedirs(self.path, exist_ok = True)
+
+        path = os.path.join(self.path,"_Files_LRUCache")
         self._deque = diskcache.Deque\
             (directory = path + '_deque')
         self._sizes = diskcache.Cache\
