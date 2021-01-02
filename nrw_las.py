@@ -217,7 +217,8 @@ class NRWData:
     def _processing_path(self, path_fmt):
         NRW_TASKS = diskcache.Cache\
             (os.path.join(self.path,
-                          "_NRW_LAZ_Processing_Tasks"))
+                          "_NRW_LAZ_Processing_Tasks"),
+             size_limit = 100*(1024**2))
         with diskcache.RLock(NRW_TASKS,
                              "lock: %s" % path_fmt):
             if "processing: %s" % path_fmt in NRW_TASKS:

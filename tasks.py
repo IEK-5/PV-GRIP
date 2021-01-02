@@ -81,7 +81,8 @@ def task_las_processing(url, spath, dpath, resolution, whats):
     finally:
         shutil.rmtree(wdir)
         NRW_TASKS = diskcache.Cache\
-            (os.path.join(spath,"_NRW_LAZ_Processing_Tasks"))
+            (os.path.join(spath,"_NRW_LAZ_Processing_Tasks"),
+             size_limit = 100*(1024**2))
         with diskcache.RLock(NRW_TASKS,
                              "lock: %s" % dpath):
             NRW_TASKS.delete("processing: %s" % dpath)
