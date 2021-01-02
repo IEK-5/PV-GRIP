@@ -10,6 +10,7 @@ import itertools
 from tqdm import tqdm
 
 from tasks import task_las_processing
+from files_lrucache import Files_LRUCache
 
 class TASK_RUNNING(Exception):
     pass
@@ -22,59 +23,6 @@ def list_files(path, regex):
             os.walk(path) \
             for f in filenames \
             if r.match(os.path.join(dp, f))]
-
-
-class _Files_LRUCache:
-
-
-    def __init__(self, maxsize, path = '.'):
-        """Implements LRU list of file paths
-
-        :maxsize: maximum number of files to store
-
-        :path: path where to store diskcache db
-
-        """
-        self.maxsize = maxsize
-        self._deque = diskcache.Deque\
-            (directory = os.path.join\
-             (path,"_Files_LRUCache_Deque"))
-
-
-    def _update(self, item):
-        if item in self._deque:
-            self._deque.remove(item)
-        self._deque.append(item)
-
-
-    def add(self, item):
-        with self._deque.transact():
-            if len(self._deque) >= self.maxsize:
-                self.popleft()
-            self._update(item)
-
-
-    def __contains__(self, item):
-        res = item in self._deque
-
-        if res:
-            self._update(item)
-
-        return res
-
-
-    def __len__(self):
-        return len(self._deque)
-
-
-    def popleft(self):
-        with self._deque.transact():
-            item = self._deque.popleft()
-            try:
-                os.remove(item)
-            except:
-                pass
-            return item
 
 
 class NRWData_Cache:
@@ -96,7 +44,7 @@ class NRWData_Cache:
         :maxsize: maximum number of files to store
 
         """
-        self.cache = _Files_LRUCache(maxsize = maxsize, path = path)
+        self.cache = Files_LRUCache(maxsize = maxsize, path = path)
         self.path = path
         self.regex = re.compile(r'.*/' + regex)
         self.fmt = os.path.join(self.path, fmt)
@@ -153,7 +101,7 @@ class NRWData:
 
     """
 
-    def __init__(self, path, max_saved = 1000):
+    def __init__(self, path, max_saved = 100):
         """
 
         :path: where las_meta.json file is located.
@@ -162,7 +110,7 @@ class NRWData:
 
         the data is stored in the subdirectory 'cache'
 
-        :max_saved: maximum number of saved processed files
+        :max_saved: maximum size of files to keep in GB
 
         """
         self._cache = NRWData_Cache\
