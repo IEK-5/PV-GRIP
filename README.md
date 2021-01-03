@@ -87,10 +87,6 @@ processed server replies with result
 It takes about two minutes to process a single LAZ file, with 4
 workers allocated on a server side for these tasks.
 
-From a cloud point several statistic are computed: `min`, `max` and
-`count`. Those functions are taken for every region with a specified
-resolution.
-
 The behaviour of the LAS Data directories are defined by a special
 file called `las_meta.json`. For example, for the NRW data:
 ```
@@ -100,14 +96,28 @@ file called `las_meta.json`. For example, for the NRW data:
     "box_resolution": 1,
     "epsg": 25832,
     "box_step": 1,
-    "fn_meta": "3dm_nw.csv",
     "pdal_resolution": 0.5,
-    "meta_entry_regex": "^3dm_32_(.*)_(.*)_1_nw;.*$"
+    "meta_url": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/index.json",
+    "meta_entry_regex": "^3dm_32_(.*)_(.*)_1_nw.*$",
+    "maxsize": 100,
+    "las_stats": ["max","min","count"]
 }
 ```
 where `pdal_resolition` indicated that Lidar data is computed with a
 resolution of 50cm, resolution is given in terms of EPSG:25832, and
 hence in meters.
 
-`3dm_nw.csv` file is a meta file provided by opengeodata. This list
-all available las files, and is used to build the file index.
+From a cloud point several statistic are computed: `min`, `max` and
+`count` (controlled by variable `las_stats`). Those functions are
+taken for every region with a specified resolution. See more info on
+available statistics
+[here](https://pdal.io/stages/writers.gdal.html#writers-gdal).
+
+`maxsize` variable controls amount of saved data in GB.
+
+
+## List of more technical changes
+
+ - `rtree` index has been replaced with `open_elevation.polygon_index`
+
+    this allows to index more complex shapes of regions
