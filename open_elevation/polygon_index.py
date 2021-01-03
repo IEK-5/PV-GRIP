@@ -39,7 +39,7 @@ class Polygon_File_Index:
 
         pl = geometry.Polygon(data['polygon'])
         self._polygons[data['file']] = pl
-        self._rtree.insert(0, pl.bounds, obj = data)
+        self._rtree.insert(hash(data['file']), pl.bounds, obj = data)
 
 
     def nearest(self, point):
