@@ -177,6 +177,11 @@ class GDALTileInterface(object):
             self._las_dirs[dn] = NRWData(path = dn)
 
 
+    def print_used_las_space(self):
+        for path, las in self._las_dirs.items():
+            print("Size of cache in %s = %s GB)" % (path,las._cache.size()/(1024**3)))
+
+
     def _open_gdal_interface(self, path):
         if path not in self._interfaces:
             las_path = in_directory(path, self._las_dirs.keys())

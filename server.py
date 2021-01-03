@@ -20,6 +20,7 @@ class InternalException(ValueError):
 Initialize a global interface. This can grow quite large, because it has a cache.
 """
 interface = GDALTileInterface('data/','data/index.json')
+interface.print_used_las_space()
 
 def get_elevation(lat, lng, data_re):
     """
