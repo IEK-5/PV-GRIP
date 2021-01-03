@@ -51,15 +51,17 @@ class Files_LRUCache:
         """Check content of lists and remove deleted files
         """
         with self._lock:
+            [self._update_sizes(p) for p in self._deque]
             self._sizes['checked_at'] = time.time()
-            [p in self for p in self._deque]
 
 
-    def _update(self, item):
+    def _update_order(self, item):
         if item in self._deque:
             self._deque.remove(item)
         self._deque.append(item)
 
+
+    def _update_sizes(self, item):
         if not os.path.exists(item):
             if self._remove_from_sizes(item):
                 self._deque.remove(item)
@@ -77,6 +79,11 @@ class Files_LRUCache:
                 size - self._sizes['file://' + item]
             self._sizes['file://' + item] = size
             return
+
+
+    def _update(self, item):
+        self._update_order(item)
+        self._update_sizes(item)
 
         if (time.time() - self._sizes['checked_at']) > self.check_every:
             self.check_content()
