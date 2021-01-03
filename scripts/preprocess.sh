@@ -2,6 +2,8 @@
 
 # This converts all data to a common format, split file on smaller chunks
 
+cd $(git rev-parse --show-toplevel)
+
 export src_dir="data/current"
 export chunk_size=3000
 
@@ -30,7 +32,7 @@ function split_tiles {
 
     if [ "${xtiles}" -gt 1 ] || [ "${ytiles}" -gt 1 ]
     then
-        ./create-tiles.sh "${file}" "${xtiles}" "${ytiles}" && rm "${file}"
+        scripts/create-tiles.sh "${file}" "${xtiles}" "${ytiles}" && rm "${file}"
     fi
 }
 export -f split_tiles

@@ -9,8 +9,10 @@ import itertools
 
 from tqdm import tqdm
 
-from tasks import task_las_processing
-from files_lrucache import Files_LRUCache
+from open_elevation.tasks \
+    import task_las_processing
+from open_elevation.files_lrucache \
+    import Files_LRUCache
 
 class TASK_RUNNING(Exception):
     pass

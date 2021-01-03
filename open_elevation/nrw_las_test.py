@@ -6,10 +6,10 @@ import numpy as np
 
 from rtree import index
 
-from nrw_las import \
+from .nrw_las import \
     NRWData_Cache, NRWData
 
-from files_lrucache_test import touch
+from .files_lrucache_test import touch
 
 
 def test_NRWData_Cache(N = 10):

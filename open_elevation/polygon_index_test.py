@@ -1,6 +1,7 @@
 import os
 
-from polygon_index import Polygon_File_Index
+from open_elevation.polygon_index \
+    import Polygon_File_Index
 
 
 def test_polygon_index():

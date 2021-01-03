@@ -3,7 +3,7 @@ import os
 import shutil
 import numpy as np
 
-from files_lrucache import Files_LRUCache
+from .files_lrucache import Files_LRUCache
 
 
 def touch(fname, times=None, size = 1024):

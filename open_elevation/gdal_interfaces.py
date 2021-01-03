@@ -14,9 +14,9 @@ from pprint import pprint
 
 from tqdm import tqdm
 
-from polygon_index import \
+from open_elevation.polygon_index import \
     Polygon_File_Index
-from nrw_las import \
+from open_elevation.nrw_las import \
     list_files, NRWData
 
 
@@ -127,7 +127,7 @@ class GDALInterface(object):
             # look the value up
             v = self.points_array[ylin, xpix]
 
-            return v if v != -32768 else self.SEA_LEVEL
+            return v if v > -5000 else self.SEA_LEVEL
         except Exception as e:
             print(e)
             return self.SEA_LEVEL

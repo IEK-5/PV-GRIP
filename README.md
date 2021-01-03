@@ -12,13 +12,13 @@ references refer to the original project documentation.
 
 Say
 ```
-./build_docker.sh
+scripts/build_docker.sh
 ```
 to build a docker image.
 
 Say
 ```
-./run_docker.sh
+scripts/run_docker.sh
 ```
 to run the image exposing port 8080.
 
@@ -36,7 +36,7 @@ Note, all data should be placed in `data/current` directory.
 
 Say
 ```
-./preprocess.sh
+scripts/preprocess.sh
 ```
 to preprocess data. That command converts all files to the WGS84
 coordinate system, and splits files on smaller chunks.
@@ -45,7 +45,7 @@ Some parts of the scripts depends on the version of GDAL being used
 (and also requires GDAL installed on the host machine). Hence, it is
 possible to run the scripts from inside the docker image
 ```
-./run.sh ./preprocess.sh
+scripts/run_docker.sh scripts/preprocess.sh
 ```
 
 Preprocess script create a backup of the data using the

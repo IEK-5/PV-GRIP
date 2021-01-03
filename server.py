@@ -3,8 +3,10 @@ import json
 import bottle
 from bottle import route, run, request, response, hook
 
-from gdal_interfaces import GDALTileInterface
-from nrw_las import TASK_RUNNING
+from open_elevation.gdal_interfaces \
+    import GDALTileInterface
+from open_elevation.nrw_las \
+    import TASK_RUNNING
 
 
 class InternalException(ValueError):

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd $(git rev-parse --show-toplevel)
+
 celery -A tasks \
        multi stop tasks_worker \
        -l INFO \
