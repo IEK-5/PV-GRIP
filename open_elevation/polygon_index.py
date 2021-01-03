@@ -14,7 +14,13 @@ class Polygon_File_Index:
         """
         self._polygons = dict()
         self._rtree = index.Index()
-        pass
+
+
+    def _check_data(self, data):
+        if 'file' not in data:
+            raise RuntimeError("'file' not in data")
+        if 'polygon' not in data:
+            raise RuntimeError("'polygon' not in data")
 
 
     def insert(self, data):
@@ -26,10 +32,7 @@ class Polygon_File_Index:
         https://shapely.readthedocs.io/en/latest/manual.html#polygons
 
         """
-        if 'file' not in data:
-            raise RuntimeError("'file' not in data")
-        if 'polygon' not in data:
-            raise RuntimeError("'polygon' not in data")
+        self._check_data(data)
 
         if data['file'] in self._polygons:
             return
@@ -79,9 +82,9 @@ class Polygon_File_Index:
         """
         with open(fn, 'r') as f:
             for x in json.load(f):
-                if 'polygon' not in x['object']:
-                    continue
-                if 'file' not in x['object']:
+                try:
+                    self._check_data(x['object'])
+                except:
                     continue
 
                 self._rtree.insert(x['id'], x['bbox'],
