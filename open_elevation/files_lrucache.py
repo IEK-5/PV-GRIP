@@ -51,6 +51,7 @@ class Files_LRUCache:
         """Check content of lists and remove deleted files
         """
         with self._lock:
+            self._sizes['checked_at'] = time.time()
             [p in self for p in self._deque]
 
 
