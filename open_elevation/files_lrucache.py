@@ -2,6 +2,9 @@ import os
 import time
 import diskcache
 
+from open_elevation.tasks import \
+    task_check_files_lrucache
+
 
 class Files_LRUCache:
 
@@ -52,7 +55,6 @@ class Files_LRUCache:
         """
         with self._lock:
             [self._update_sizes(p) for p in self._deque]
-            self._sizes['checked_at'] = time.time()
 
 
     def _update_order(self, item):
@@ -86,7 +88,11 @@ class Files_LRUCache:
         self._update_sizes(item)
 
         if (time.time() - self._sizes['checked_at']) > self.check_every:
-            self.check_content()
+            self._sizes['checked_at'] = time.time()
+            task_check_files_lrucache.delay\
+                (maxsize = self.maxsize / (1024**3),
+                 path = self.path,
+                 check_every = self.check_every / (60**2))
 
 
     def add(self, fn):

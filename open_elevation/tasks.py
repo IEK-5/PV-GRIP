@@ -8,6 +8,7 @@ import tempfile
 import diskcache
 import subprocess
 
+
 CELERY_APP = celery.Celery()
 
 
@@ -86,3 +87,10 @@ def task_las_processing(url, spath, dpath, resolution, whats):
         with diskcache.RLock(NRW_TASKS,
                              "lock: %s" % dpath):
             NRW_TASKS.delete("processing: %s" % dpath)
+
+
+@CELERY_APP.task()
+def task_check_files_lrucache(**files_lrucache_args):
+    from open_elevation.files_lrucache import Files_LRUCache
+    cache = Files_LRUCache(**files_lrucache_args)
+    cache.check_content()
