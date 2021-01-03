@@ -41,3 +41,24 @@ def test_polygon_index_save_load():
     y.load('test_polygon_index.json')
     assert 1 == len(list(y.nearest((0.5,0.5))))
     os.remove('test_polygon_index.json')
+
+
+def test_polygon_index_update():
+    x = Polygon_File_Index()
+
+    x.insert(data = {'file':'one',
+                     'polygon': [(0,0),(0,1),(1,1),(1,0)]})
+    assert 1 == len(list(x.nearest((0.5,0.5))))
+    assert 0 == len(list(x.nearest((2.5,2.5))))
+
+    assert True == x.update\
+        (data = {'file':'one',
+                 'polygon': [(2,2),(2,3),(3,3),(3,2)]})
+    assert 0 == len(list(x.nearest((0.5,0.5))))
+    assert 1 == len(list(x.nearest((2.5,2.5))))
+
+    assert False == x.update\
+        (data = {'file':'one',
+                 'polygon': [(2,2),(2,3),(3,3),(3,2)]})
+    assert 0 == len(list(x.nearest((0.5,0.5))))
+    assert 1 == len(list(x.nearest((2.5,2.5))))

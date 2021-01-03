@@ -42,6 +42,24 @@ class Polygon_File_Index:
         self._rtree.insert(hash(data['file']), pl.bounds, obj = data)
 
 
+    def update(self, data):
+        """Update index with a new data
+
+        :data: same as in self.insert
+
+        """
+        self._check_data(data)
+
+        pl = self._polygons[data['file']]
+        if pl.almost_equals(geometry.Polygon(data['polygon'])):
+            return False
+
+        self._rtree.delete(hash(data['file']), pl.bounds)
+        del self._polygons[data['file']]
+        self.insert(data)
+        return True
+
+
     def nearest(self, point):
         """Yield index data that contain a given point
 

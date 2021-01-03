@@ -194,6 +194,18 @@ class GDALTileInterface(object):
         return self._interfaces[path]
 
 
+    def _get_index_data(self, fn, interface):
+        coords = interface.get_corner_coords()
+        return {'file': fn,
+                'resolution': interface.get_resolution(),
+                'polygon': \
+                [ coords['BOTTOM_LEFT'],
+                  coords['TOP_LEFT'],
+                  coords['TOP_RIGHT'],
+                  coords['BOTTOM_RIGHT'],
+                ]}
+
+
     def _fill_all_coords(self):
         for fn in tqdm(list_files(self.path, regex = '.*'),
                        desc = "Searching for Geo files"):
@@ -204,18 +216,8 @@ class GDALTileInterface(object):
             try:
                 i = self._open_gdal_interface(fn)
                 coords = i.get_corner_coords()
-                self._all_coords += [
-                    {
-                        'file': fn,
-                        'polygon': \
-                        [ coords['BOTTOM_LEFT'],
-                          coords['TOP_LEFT'],
-                          coords['TOP_RIGHT'],
-                          coords['BOTTOM_RIGHT'],
-                        ],
-                        'resolution': i.get_resolution()
-                    }
-                ]
+                self._all_coords += \
+                    [self._get_index_data(fn, i)]
             except Exception as e:
                 print("""
 Could not process file:
