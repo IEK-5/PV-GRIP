@@ -2,7 +2,7 @@
 
 cd $(git rev-parse --show-toplevel)
 
-celery -A tasks \
+celery -A open_elevation.tasks \
        multi stop tasks_worker \
        -l INFO \
        --pidfile='data/celery/pid/%n.pid' \
