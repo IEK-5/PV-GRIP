@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 import diskcache
 
 from open_elevation.tasks import \
@@ -147,4 +148,10 @@ class Files_LRUCache:
                 pass
 
             self._remove_from_sizes(item)
+            logging.info("""
+            file is removed from cache: {}
+            Files_LRUCache size: {:.5f} GB
+            Files_LRUCache usage: {:.2%}
+            """.format(item, self.size()/(1024**3),
+                       self.size() / self.maxsize))
             return item

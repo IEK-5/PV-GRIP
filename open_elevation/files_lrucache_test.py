@@ -121,3 +121,20 @@ def test_Files_LRUCache_contains():
         assert b == cache.popleft()
     finally:
         shutil.rmtree(path)
+
+
+def test_Files_LRUCache_large_number_of_files(N = int(1e+3)):
+    path="test_Files_LRUCache_large_number_of_files"
+    try:
+        os.makedirs(path, exist_ok = True)
+        cache = Files_LRUCache(maxsize = (2*N*1024)/(1024**3), path = path)
+
+        for i in np.random.rand(N):
+            p = os.path.join(path, str(i) + "_test_file")
+            touch(p, size = 1024)
+            cache.add(p)
+
+        assert N == len(cache)
+        assert N*1024 == cache.size()
+    finally:
+        shutil.rmtree(path)
