@@ -168,5 +168,4 @@ def post_lookup():
 def get_datasets():
     return {'results': interface.get_directories()}
 
-#run(host='0.0.0.0', port=8080)
-run(host='0.0.0.0', port=8080, server='gunicorn', workers=4)
+run(host='0.0.0.0', port=8080, server='gunicorn', workers=8, timeout=60)
