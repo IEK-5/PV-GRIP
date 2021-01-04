@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import threading
+import logging
 
 import numpy as np
 import osgeo.gdal as gdal
@@ -129,7 +130,12 @@ class GDALInterface(object):
 
             return v if v > -5000 else self.SEA_LEVEL
         except Exception as e:
-            print(e)
+            logging.error("""
+            cannot lookup coordinate!
+            lon = %f
+            lat = %f
+            error: %s
+            """ % (lon, lat, str(e)))
             return self.SEA_LEVEL
 
 
@@ -148,6 +154,9 @@ class Interface_LRUCache(LRUCache):
         key, value = super().popitem()
         value.close()
 
+        logging.info("""
+        pop GDAL Interface from memory: %s
+        """ % key)
         return key, value
 
 
@@ -178,8 +187,11 @@ class GDALTileInterface(object):
 
 
     def print_used_las_space(self):
+        res = []
         for path, las in self._las_dirs.items():
-            print("Size of cache in %s = %s GB)" % (path,las._cache.size()/(1024**3)))
+            res += [("Size of cache in %s = %s GB)" %
+                     (path,las._cache.size()/(1024**3)))]
+        return '\n'.join(res)
 
 
     def _open_gdal_interface(self, path):
@@ -219,13 +231,11 @@ class GDALTileInterface(object):
                 self._all_coords += \
                     [self._get_index_data(fn, i)]
             except Exception as e:
-                print("""
-Could not process file:
-        %s
-Error:
-        %s
-Skipping...""" % (fn, str(e)),
-                      file = sys.stderr)
+                logging.error("""
+                Could not process file: %s
+                Error: %s
+                Skipping...
+                """ % (fn, str(e)))
                 continue
 
 
