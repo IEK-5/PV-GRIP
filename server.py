@@ -2,7 +2,7 @@ import json
 import logging
 logging.basicConfig(filename = 'data/server.log',
                     level = logging.DEBUG,
-                    format = "%(levelname)s;%(created)f;%(threadName)s;%(filename)s;%(funcName)s;%(message)s")
+                    format = "[%(asctime)s] %(levelname)s: %(filename)s::%(funcName)s %(message)s")
 
 import bottle
 from bottle import route, run, request, response, hook
