@@ -1,3 +1,4 @@
+import re
 import json
 
 from rtree import index
@@ -73,6 +74,38 @@ class Polygon_File_Index:
             if self._polygons[x['file']]\
                    .intersects(geometry.Point(point)):
                 yield x
+
+
+    def intersect(self, polygon, regex=r'.*'):
+        """Intersect index with a polygon
+
+        :polygon: list of tuple coordinates
+
+        :regex: filter filenames by regex
+
+        :return: smaller Polygon_File_Index
+        """
+        res = Polygon_File_Index()
+        regex = re.compile(regex)
+        polygon = geometry.Polygon(polygon)
+
+        for x in self._rtree.intersection(polygon.bounds,
+                                          objects='raw'):
+            if not regex.match(x['file']):
+                continue
+
+            schnitt = polygon.intersection\
+                (self._polygons[x['file']])
+
+            if schnitt.is_empty:
+                continue
+
+            data = x
+            data.update({'polygon': \
+                         list(schnitt.exterior.coords)})
+            res.insert(data)
+
+        return res
 
 
     def save(self, fn):
