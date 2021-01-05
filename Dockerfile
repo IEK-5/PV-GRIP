@@ -1,7 +1,11 @@
 FROM osgeo/gdal:ubuntu-full-latest
 
 RUN apt-get update -y
-RUN apt-get install -y python3-pip libspatialindex-dev bc pdal rabbitmq-server git
+RUN apt-get install -y \
+    python3-pip libspatialindex-dev \
+    bc pdal \
+    rabbitmq-server git \
+    memcached python3-pylibmc
 
 RUN mkdir /code
 ADD . /code/

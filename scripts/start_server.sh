@@ -2,11 +2,18 @@
 
 cd $(git rev-parse --show-toplevel)
 
-mkdir -p data/celery/logs
 rm -rf data/celery/pid
+rm -rf data/memcached/pid
+mkdir -p data/celery/logs
 mkdir -p data/celery/pid
+mkdir -p data/memcached/
 
 rabbitmq-server -detached
+
+memcached -d -u memcache -P data/memcached/pid  \
+          -m 2048 -c 1024 \
+          -l 127.0.0.1 \
+          -o modern,drop_privileges
 
 celery -A open_elevation.tasks \
        multi start tasks_worker \
