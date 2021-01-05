@@ -14,6 +14,8 @@ from open_elevation.celery_tasks.las_processing \
     import task_las_processing
 from open_elevation.files_lrucache \
     import Files_LRUCache
+import open_elevation.utils
+
 
 class TASK_RUNNING(Exception):
     pass
@@ -254,7 +256,11 @@ class NRWData:
         coord = self._cache.fn2coord(path_fmt)
         url = self._meta['root_url'] % coord
 
-        task_las_processing.delay\
+        run_task = task_las_processing
+        if not open_elevation.utils.if_in_celery():
+            run_task = task_las_processing.delay
+
+        run_task\
             (url = url,
              spath = self.path,
              dpath = path_fmt,
