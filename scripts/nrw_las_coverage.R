@@ -36,6 +36,9 @@ data$lon <- as.numeric(gsub(re,"\\1",data$name))
 data$lat <- as.numeric(gsub(re,"\\2",data$name))
 data$updated_at <- format(data$timestamp,"%Y-%m")
 
+print(paste("Total LAZ-files volume:",sum(data$size)/1024^3,"GB"))
+print(paste("Total volume of 5 computed statistic with raster files:",nrow(data)*32*5/1024,"GB"))
+
 g2 <- ggplot(data, aes(y = lat, x = lon)) +
     geom_raster(aes(fill=updated_at))
 
