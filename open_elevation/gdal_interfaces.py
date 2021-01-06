@@ -166,7 +166,8 @@ class Interface_LRUCache(LRUCache):
 
 
 class GDALTileInterface(object):
-    def __init__(self, tiles_folder, index_file, open_interfaces_size=5):
+    def __init__(self, tiles_folder, index_file,
+                 open_interfaces_size=5):
         super(GDALTileInterface, self).__init__()
         self.path = tiles_folder
         self._index = Polygon_File_Index()
@@ -180,8 +181,38 @@ class GDALTileInterface(object):
         self._all_coords = []
         self._fill_all_coords()
 
+        if self._files_timestamp() < \
+           os.stat(index_file).st_mtime:
+            if os.path.exists(index_file):
+                self._index.load(index_file)
+                return
+
         self._build_index()
         self._index.save(index_file)
+
+
+    def _files_timestamp(self):
+        files = {}
+        res = 0
+        for x in self._all_coords:
+            fn = os.path.dirname\
+                (os.path.abspath(x['file']))
+            if fn in files:
+                continue
+            mtime = os.stat(fn).st_mtime
+            files[fn] = mtime
+            if mtime > res:
+                res = mtime
+
+        for path, _ in self._las_dirs.items():
+            if path in files:
+                continue
+            mtime = os.stat(path).st_mtime
+            files[path] = mtime
+            if mtime > res:
+                res = mtime
+
+        return res
 
 
     def _find_las_dirs(self):
