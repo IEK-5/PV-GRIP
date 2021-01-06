@@ -10,3 +10,4 @@ shapely
 requests
 celery
 tqdm
+numpy
