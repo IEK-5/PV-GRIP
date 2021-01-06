@@ -1,6 +1,7 @@
 import re
 import os
 import csv
+import time
 import json
 import pyproj
 import requests
@@ -100,7 +101,7 @@ class NRWData:
 
     """
 
-    def __init__(self, path):
+    def __init__(self, path, update_index = 1):
         """
 
         :path: where las_meta.json file is located.
@@ -109,8 +110,11 @@ class NRWData:
 
         the data is stored in the subdirectory 'cache'
 
+        :update_index: number of days between index update
+
         """
         self.path = path
+        self._update_index = update_index*24*60*60
         self._meta = self._read_meta()
 
         self._cache = NRWData_Cache\
@@ -162,7 +166,7 @@ class NRWData:
         return res
 
 
-    def _download_index(self):
+    def _download_index(self, ofn):
         url = self._meta['meta_url']
         res = requests.get(url, allow_redirects = True)
 
@@ -172,13 +176,30 @@ class NRWData:
             status_code: %d
             url: %s
             """ % (res.status_code, url))
+        index = json.loads(res.text)
 
-        return json.loads(res.text)
+        with open(ofn, 'w') as f:
+            json.dump(index, f)
+
+        return index
+
+
+    def _load_index(self):
+        fn = os.path.join(self.path, 'meta_info.json')
+
+        try:
+            if time.time() - os.stat(fn).st_mtime < self._update_index:
+                with open(fn, 'r') as f:
+                    return json.load(f)
+            else:
+                return self._download_index(fn)
+        except:
+            return self._download_index(fn)
 
 
     def _search_meta(self):
         regex = re.compile(self._meta['meta_entry_regex'])
-        index = self._download_index()['datasets'][0]['files']
+        index = self._load_index()['datasets'][0]['files']
 
         for item in index:
             fn = item['name']
