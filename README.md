@@ -55,7 +55,7 @@ cp -rl data/current data/current.bak
 
 On a active server, say
 ```
-> curl localhost:8081/api/v1/datasets
+> curl localhost:8080/api/v1/datasets
 {"results": ["data/NRW-20", "data/srtm", "data/NRW-1sec"]}
 ```
 to query a list of directories with data.
@@ -64,7 +64,7 @@ By default data with highest resolution for each query is selected. To
 select some particular data for a query use `data_re` argument. For
 example,
 ```
-curl http://localhost:8081/api/v1/lookup\?locations\=50.8793,6.1520\&data_re\='data/NRW-20'
+curl http://localhost:8080/api/v1/lookup\?locations\=50.8793,6.1520\&data_re\='data/NRW-20'
 ```
 where `data_re` accepts any valid regular expression (beware of the special
 symbols in url).
@@ -78,14 +78,13 @@ To do so a certain processing is required. Server downloads data from
 [the
 opengeodata](https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/)
 and converts point clouds to raster images. The processed data is
-cached, with about 100GB allocated. If the requested region is being
+cached, with maximum 100GB allocated. If the requested region is being
 processed server replies with result
 ```
 {"message": "task is running"}
 ```
 
-It takes about two minutes to process a single LAZ file, with 4
-workers allocated on a server side for these tasks.
+It takes about a minute to process a single LAZ file.
 
 The behaviour of the LAS Data directories are defined by a special
 file called `las_meta.json`. For example, for the NRW data:
