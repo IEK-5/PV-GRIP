@@ -3,7 +3,7 @@ import time
 import logging
 import diskcache
 
-from open_elevation.tasks import \
+from open_elevation.celery_tasks.check_files_lrucache import \
     task_check_files_lrucache
 
 

@@ -9,9 +9,8 @@ import diskcache
 import subprocess
 
 
-CELERY_APP = celery.Celery(broker='amqp://guest:guest@127.0.0.1:5672//',
-                           backend='cache+memcached://127.0.0.1:11211/',
-                           task_track_started=True)
+from open_elevation.celery_tasks.app \
+    import CELERY_APP
 
 
 def _touch(fname, times=None):
@@ -89,10 +88,3 @@ def task_las_processing(url, spath, dpath, resolution, whats):
         with diskcache.RLock(NRW_TASKS,
                              "lock: %s" % dpath):
             NRW_TASKS.delete("processing: %s" % dpath)
-
-
-@CELERY_APP.task()
-def task_check_files_lrucache(**files_lrucache_args):
-    from open_elevation.files_lrucache import Files_LRUCache
-    cache = Files_LRUCache(**files_lrucache_args)
-    cache.check_content()

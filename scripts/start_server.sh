@@ -15,7 +15,7 @@ memcached -d -u memcache -P data/memcached/pid  \
           -l 127.0.0.1 \
           -o modern,drop_privileges
 
-celery -A open_elevation.tasks \
+celery -A open_elevation.celery_tasks \
        multi start tasks_worker \
        -l INFO \
        --pidfile='data/celery/pid/%n.pid' \

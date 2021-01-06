@@ -10,7 +10,7 @@ import itertools
 
 from tqdm import tqdm
 
-from open_elevation.tasks \
+from open_elevation.celery_tasks.las_processing \
     import task_las_processing
 from open_elevation.files_lrucache \
     import Files_LRUCache
