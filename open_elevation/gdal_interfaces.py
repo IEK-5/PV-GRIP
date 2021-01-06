@@ -109,21 +109,26 @@ class GDALInterface(object):
               .GetStatistics(True, True))
 
 
+    def _get_pixel(self, lat, lon):
+        # get coordinate of the raster
+        xgeo, ygeo, zgeo = self._coordinate_transform\
+                               .TransformPoint(lon, lat, 0)
+
+        # convert it to pixel/line on band
+        u = xgeo - self.geo_transform_inv[0]
+        v = ygeo - self.geo_transform_inv[3]
+        # FIXME this int() is probably bad idea, there should be half cell size thing needed
+        xpix = int(self.geo_transform_inv[1] * u + \
+                   self.geo_transform_inv[2] * v)
+        ylin = int(self.geo_transform_inv[4] * u + \
+                   self.geo_transform_inv[5] * v)
+
+        return ylin, xpix
+
+
     def lookup(self, lat, lon):
         try:
-
-            # get coordinate of the raster
-            xgeo, ygeo, zgeo = self._coordinate_transform\
-                                   .TransformPoint(lon, lat, 0)
-
-            # convert it to pixel/line on band
-            u = xgeo - self.geo_transform_inv[0]
-            v = ygeo - self.geo_transform_inv[3]
-            # FIXME this int() is probably bad idea, there should be half cell size thing needed
-            xpix = int(self.geo_transform_inv[1] * u + \
-                       self.geo_transform_inv[2] * v)
-            ylin = int(self.geo_transform_inv[4] * u + \
-                       self.geo_transform_inv[5] * v)
+            ylin, xpix = self._get_pixel(lat = lat, lon = lon)
 
             # look the value up
             v = self.points_array[ylin, xpix]
@@ -246,6 +251,17 @@ class GDALTileInterface(object):
         return res
 
 
+    def _choose_highest_resolution(self, nearest):
+        if not nearest:
+            raise Exception('No data for coordinate exist')
+
+        if len(nearest) == 1:
+            return nearest[0]
+
+        return nearest[np.argmin([np.prod(x['resolution']) \
+                                  for x in nearest])]
+
+
     def lookup(self, lat, lon, data_re):
         nearest = list(self._index.nearest((lon, lat)))
 
@@ -254,16 +270,7 @@ class GDALTileInterface(object):
             nearest = [x for x in nearest \
                        if data_re.match(x['file'])]
 
-        if not nearest:
-            raise Exception('Unknown latitude/longitude')
-
-        if len(nearest) > 1:
-            idx = np.argmin([np.prod(x['resolution']) \
-                             for x in nearest])
-        else:
-            idx = 0
-        coords = nearest[idx]
-
+        coords = self._choose_highest_resolution(nearest)
         gdal_interface = self._open_gdal_interface\
             (coords['file'])
         return {'elevation': float(gdal_interface.lookup(lat, lon)),
