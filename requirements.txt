@@ -8,7 +8,7 @@ pyproj
 diskcache
 shapely
 requests
-celery
+celery[redis]
 tqdm
 numpy
-pylibmc
+celery_once

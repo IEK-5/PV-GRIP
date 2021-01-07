@@ -1,6 +1,14 @@
 import celery
 
 
-CELERY_APP = celery.Celery(broker='amqp://guest:guest@127.0.0.1:5672//',
-                           backend='cache+memcached://127.0.0.1:11211/',
+CELERY_APP = celery.Celery(broker='redis://localhost:6379/0',
+                           backend='redis://localhost:6379/0',
                            task_track_started=True)
+
+CELERY_APP.conf.ONCE = {
+    'backend': 'celery_once.backends.Redis',
+    'settings': {
+        'url': 'redis://localhost:6379/0',
+        'default_timeout': 60*60
+    }
+}

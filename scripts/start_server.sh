@@ -7,13 +7,10 @@ rm -rf data/memcached/pid
 mkdir -p data/celery/logs
 mkdir -p data/celery/pid
 mkdir -p data/memcached/
+mkdir -p data/redis
+cp redis/redis.conf data/redis/.
 
-rabbitmq-server -detached
-
-memcached -d -u memcache -P data/memcached/pid  \
-          -m 2048 -c 1024 \
-          -l 127.0.0.1 \
-          -o modern,drop_privileges
+redis-server data/redis/redis.conf
 
 celery -A open_elevation.celery_tasks \
        multi start tasks_worker \

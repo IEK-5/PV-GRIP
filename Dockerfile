@@ -4,8 +4,7 @@ RUN apt-get update -y
 RUN apt-get install -y \
     python3-pip libspatialindex-dev \
     bc pdal \
-    rabbitmq-server git \
-    memcached python3-pylibmc
+    redis git
 
 RUN mkdir /code
 ADD . /code/
