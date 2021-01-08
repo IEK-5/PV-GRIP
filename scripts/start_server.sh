@@ -3,7 +3,6 @@
 cd $(git rev-parse --show-toplevel)
 
 rm -rf data/celery/pid
-rm -rf data/memcached/pid
 mkdir -p data/celery/logs
 mkdir -p data/celery/pid
 mkdir -p data/memcached/

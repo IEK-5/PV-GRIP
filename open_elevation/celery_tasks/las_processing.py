@@ -1,16 +1,14 @@
 import os
 import sys
 import json
-import celery
 import shutil
 import requests
 import tempfile
-import diskcache
 import subprocess
 
+from celery_once import QueueOnce
 
-from open_elevation.celery_tasks.app \
-    import CELERY_APP
+import open_elevation.celery_tasks.app as app
 
 
 def _touch(fname, times=None):
@@ -54,7 +52,7 @@ def _run_pdal(path):
                    cwd = path)
 
 
-@CELERY_APP.task()
+@app.CELERY_APP.task(base=QueueOnce)
 def task_las_processing(url, spath, dpath, resolution, whats):
     wdir = tempfile.mkdtemp(dir=spath)
 
@@ -82,9 +80,3 @@ def task_las_processing(url, spath, dpath, resolution, whats):
         _touch(dpath + ".failed")
     finally:
         shutil.rmtree(wdir)
-        NRW_TASKS = diskcache.Cache\
-            (os.path.join(spath,"_NRW_LAZ_Processing_Tasks"),
-             size_limit = 100*(1024**2))
-        with diskcache.RLock(NRW_TASKS,
-                             "lock: %s" % dpath):
-            NRW_TASKS.delete("processing: %s" % dpath)

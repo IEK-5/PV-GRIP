@@ -1,10 +1,19 @@
+import time
+
+from celery_once import QueueOnce
+
 import open_elevation.utils
-from open_elevation.celery_tasks.app \
-    import CELERY_APP
+import open_elevation.celery_tasks.app as app
 
 
-@CELERY_APP.task(bind = True)
+@app.CELERY_APP.task()
 def task_test_no_nested_celery():
     if open_elevation.utils.if_in_celery():
-        return CELERY_APP.current_worker_task.id
+        return True
     return False
+
+
+@app.CELERY_APP.task(base=QueueOnce, once={'keys': ['sleep']})
+def task_test_queueonce(sleep = 5, dummy = 1):
+    time.sleep(sleep)
+    return True

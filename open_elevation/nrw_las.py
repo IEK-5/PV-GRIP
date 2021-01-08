@@ -5,10 +5,11 @@ import time
 import json
 import pyproj
 import requests
-import diskcache
 import itertools
 
 from tqdm import tqdm
+
+from celery_once import AlreadyQueued
 
 from open_elevation.celery_tasks.las_processing \
     import task_las_processing
@@ -242,17 +243,6 @@ class NRWData:
 
 
     def _processing_path(self, path_fmt):
-        NRW_TASKS = diskcache.Cache\
-            (os.path.join(self.path,
-                          "_NRW_LAZ_Processing_Tasks"),
-             size_limit = 100*(1024**2))
-        with diskcache.RLock(NRW_TASKS,
-                             "lock: %s" % path_fmt):
-            if "processing: %s" % path_fmt in NRW_TASKS:
-                raise TASK_RUNNING()
-            NRW_TASKS.set("processing: %s" % path_fmt, True,
-                          expire=60*60)
-
         coord = self._cache.fn2coord(path_fmt)
         url = self._meta['root_url'] % coord
 
@@ -260,12 +250,15 @@ class NRWData:
         if not open_elevation.utils.if_in_celery():
             run_task = task_las_processing.delay
 
-        run_task\
-            (url = url,
-             spath = self.path,
-             dpath = path_fmt,
-             resolution = self._meta['pdal_resolution'],
-             whats = self._las_whats)
+        try:
+            run_task\
+                (url = url,
+                 spath = self.path,
+                 dpath = path_fmt,
+                 resolution = self._meta['pdal_resolution'],
+                 whats = self._las_whats)
+        except AlreadyQueued:
+            raise TASK_RUNNING()
 
 
     def get_path(self, path):
