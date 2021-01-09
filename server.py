@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 logging.basicConfig(filename = 'data/server.log',
@@ -7,10 +8,12 @@ logging.basicConfig(filename = 'data/server.log',
 import bottle
 from bottle import route, run, request, response, hook
 
-from open_elevation.gdal_interfaces \
-    import GDALTileInterface
-from open_elevation.nrw_las \
-    import TASK_RUNNING
+from celery.result import AsyncResult
+
+import open_elevation.gdal_interfaces as gdal
+import open_elevation.utils as utils
+import open_elevation.nrw_las as nrw_las
+import open_elevation.celery_tasks as tasks
 
 
 class InternalException(ValueError):
@@ -23,7 +26,7 @@ class InternalException(ValueError):
 """
 Initialize a global interface. This can grow quite large, because it has a cache.
 """
-interface = GDALTileInterface('data/','data/index.json',9)
+interface = gdal.GDALTileInterface('data/','data/index.json',9)
 logging.info(interface.print_used_las_space())
 
 def get_elevation(lat, lng, data_re):
@@ -39,7 +42,7 @@ def get_elevation(lat, lng, data_re):
                                data_re = data_re)
         elevation = res['elevation']
         resolution = res['resolution']
-    except TASK_RUNNING:
+    except utils.TASK_RUNNING:
         return {
             'message': 'task is running'
         }
@@ -52,7 +55,8 @@ def get_elevation(lat, lng, data_re):
             Cannot process request!
                 Coordinate: (%s, %s)
                      Error: %s
-            """ % (lat, lng, str(e))
+            """ % (lat, lng,
+                   type(e).__name__ + ": " + str(e))
         }
 
     return {
@@ -172,4 +176,67 @@ def post_lookup():
 def get_datasets():
     return {'results': interface.get_directories()}
 
-run(host='0.0.0.0', port=8080, server='gunicorn', workers=8, timeout=60)
+
+def _parse_args(data, defaults):
+    res = {}
+    for key, item in defaults.items():
+        if key not in data:
+            res[key] = item
+        else:
+            new = data[key]
+            if type(item) != type(new) \
+               and isinstance(new, str):
+                new = json.loads(new)
+            res[key] = type(item)(new)
+
+    return res
+
+
+def _get_raster(args):
+    try:
+        fn = tasks.start_sample_from_box\
+            (gdal = interface, **args)
+        with open(fn,'rb') as f:
+            return f.read()
+    except utils.TASK_RUNNING:
+        return {'results': {'message': 'task is running'}}
+    except Exception as e:
+        return {'results': {
+            'error':
+            """
+            Task failed!
+            Task: get_raster
+            Arguments: %s
+            Error: %s
+            """ % (str(args),
+                   type(e).__name__ + ": " + str(e))
+        }}
+
+
+
+def _raster_defaults():
+    return {'box': [50.865,7.119,50.867,7.121],
+            'data_re': r'.*',
+            'step': float(1),
+            'mesh_type': 'metric'}
+
+
+@route('/api/v1/raster', method=['GET'])
+def get_raster():
+    args = _parse_args(data = request.query,
+                       defaults = _raster_defaults())
+
+    return _get_raster(args)
+
+
+@route('/api/v1/raster', method=['POST'])
+def get_raster():
+    args = _parse_args(data = request.json,
+                       defaults = _raster_defaults())
+
+    return _get_raster(args)
+
+
+run(host='0.0.0.0', port=8080,
+    server='gunicorn',
+    workers=8, timeout=60)

@@ -1,9 +1,10 @@
-import json
 import os
 import re
 import sys
-import threading
+import json
 import logging
+import tempfile
+import threading
 
 import numpy as np
 import osgeo.gdal as gdal
@@ -11,14 +12,19 @@ import osgeo.osr as osr
 
 from cachetools import LRUCache
 from lazy import lazy
-from pprint import pprint
 
 from tqdm import tqdm
 
-from open_elevation.polygon_index import \
-    Polygon_File_Index
-from open_elevation.nrw_las import \
-    list_files, NRWData
+import open_elevation.polygon_index as polygon_index
+import open_elevation.nrw_las as nrw_las
+import open_elevation.utils as utils
+
+
+def _polygon_from_box(box):
+    return [(box[1],box[0]),
+            (box[3],box[0]),
+            (box[3],box[2]),
+            (box[1],box[2])]
 
 
 def in_directory(fn, paths):
@@ -31,6 +37,17 @@ def in_directory(fn, paths):
             return path
 
     return None
+
+
+def choose_highest_resolution(nearest):
+    if not nearest:
+        raise Exception('No data for coordinate exist')
+
+    if len(nearest) == 1:
+        return nearest[0]
+
+    return nearest[np.argmin([np.prod(x['resolution']) \
+                              for x in nearest])]
 
 
 # Originally based on https://stackoverflow.com/questions/13439357/extract-point-from-raster-in-gdal
@@ -167,28 +184,58 @@ class Interface_LRUCache(LRUCache):
 
 class GDALTileInterface(object):
     def __init__(self, tiles_folder, index_file,
-                 open_interfaces_size=5):
+                 open_interfaces_size=5,
+                 use_only_index = False):
+        """The class keeps cache of the read files
+
+        :open_interfaces_size: size of the LRU cache of the loaded interfaces. The interfaces are read lazily.
+
+        :use_only_index: if True, then tiles_folder are ignored
+        and files are not searched. Instead the index is loaded directly from the index_file path. The index_file is not saved
+
+        """
         super(GDALTileInterface, self).__init__()
         self.path = tiles_folder
-        self._index = Polygon_File_Index()
+        self._index_fn = index_file
+        self._index = polygon_index.Polygon_File_Index()
         self._interfaces = Interface_LRUCache\
             (maxsize = open_interfaces_size)
         self._interfaces_lock = threading.RLock()
 
         self._las_dirs = dict()
-        self._find_las_dirs()
-
         self._all_coords = []
+
+        if use_only_index:
+            self.path = os.path.dirname(self._index_fn)
+            self._data_from_index()
+            return
+
+        self._data_from_files()
+
+
+    def _data_from_files(self):
+        self._find_las_dirs(path = self.path)
         self._fill_all_coords()
 
-        if self._files_timestamp() < \
-           os.stat(index_file).st_mtime:
-            if os.path.exists(index_file):
-                self._index.load(index_file)
-                return
+        if os.path.exists(self._index_fn) \
+           and self._files_timestamp() < \
+           os.stat(self._index_fn).st_mtime:
+            self._index.load(self._index_fn)
+            return
 
         self._build_index()
-        self._index.save(index_file)
+        self._index.save(self._index_fn)
+
+
+    def _data_from_index(self):
+        self._index.load(self._index_fn)
+
+        path = os.path.commonprefix\
+            ([x for x in self._index.files()
+              if x is not None] + \
+             [x for x in self._index.files(what = 'las_meta')
+              if x is not None])
+        self._find_las_dirs(path)
 
 
     def _files_timestamp(self):
@@ -215,11 +262,12 @@ class GDALTileInterface(object):
         return res
 
 
-    def _find_las_dirs(self):
-        for fn in list_files(path = self.path,
-                             regex = '.*/las_meta\.json$'):
+    def _find_las_dirs(self, path):
+        for fn in utils.list_files\
+            (path = path,
+             regex = '.*/las_meta\.json$'):
             dn = os.path.abspath(os.path.dirname(fn))
-            self._las_dirs[dn] = NRWData(path = dn)
+            self._las_dirs[dn] = nrw_las.NRWData(path = dn)
 
 
     def print_used_las_space(self):
@@ -230,7 +278,7 @@ class GDALTileInterface(object):
         return '\n'.join(res)
 
 
-    def _open_gdal_interface(self, path):
+    def open_gdal_interface(self, path):
         if path not in self._interfaces:
             las_path = in_directory(path, self._las_dirs.keys())
             if las_path:
@@ -255,14 +303,14 @@ class GDALTileInterface(object):
 
 
     def _fill_all_coords(self):
-        for fn in tqdm(list_files(self.path, regex = '.*'),
+        for fn in tqdm(utils.list_files(self.path, regex = '.*'),
                        desc = "Searching for Geo files"):
             # ignore las directories
             if in_directory(fn, self._las_dirs.keys()):
                 continue
 
             try:
-                i = self._open_gdal_interface(fn)
+                i = self.open_gdal_interface(fn)
                 coords = i.get_corner_coords()
                 self._all_coords += \
                     [self._get_index_data(fn, i)]
@@ -282,17 +330,6 @@ class GDALTileInterface(object):
         return res
 
 
-    def _choose_highest_resolution(self, nearest):
-        if not nearest:
-            raise Exception('No data for coordinate exist')
-
-        if len(nearest) == 1:
-            return nearest[0]
-
-        return nearest[np.argmin([np.prod(x['resolution']) \
-                                  for x in nearest])]
-
-
     def lookup(self, lat, lon, data_re):
         nearest = list(self._index.nearest((lon, lat)))
 
@@ -301,11 +338,22 @@ class GDALTileInterface(object):
             nearest = [x for x in nearest \
                        if data_re.match(x['file'])]
 
-        coords = self._choose_highest_resolution(nearest)
-        gdal_interface = self._open_gdal_interface\
+        coords = choose_highest_resolution(nearest)
+        gdal_interface = self.open_gdal_interface\
             (coords['file'])
         return {'elevation': float(gdal_interface.lookup(lat, lon)),
                 'resolution': coords['resolution']}
+
+
+    def subset(self, box, data_re):
+        index = self._index.intersect\
+            (regex = data_re,
+             polygon = _polygon_from_box(box))
+        fd = tempfile.NamedTemporaryFile\
+            (dir = self.path, delete = False)
+        fn = os.path.join(self.path,fd.name)
+        index.save(fn)
+        return fn
 
 
     def _build_index(self):

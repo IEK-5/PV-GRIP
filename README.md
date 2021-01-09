@@ -114,6 +114,14 @@ available statistics
 
 `maxsize` variable controls amount of saved data in GB.
 
+### Sample raster images
+
+It is possible to query a coordinate from a bounding box. For example,
+```
+> curl localhost:8080/api/v1/raster\?box="\[50.7731,6.0793,50.7780,6.0882\]"\&data_re='.*_max' -o test.pickle
+```
+the box argument is given either as a list (in POST query) or as a json string list (in GET query).
+
 
 ## List of more technical changes
 

@@ -18,19 +18,6 @@ from open_elevation.files_lrucache \
 import open_elevation.utils
 
 
-class TASK_RUNNING(Exception):
-    pass
-
-
-def list_files(path, regex):
-    r = re.compile(regex)
-    return [os.path.join(dp, f) \
-            for dp, dn, filenames in \
-            os.walk(path) \
-            for f in filenames \
-            if r.match(os.path.join(dp, f))]
-
-
 class NRWData_Cache(Files_LRUCache):
     """Keep track of stored files of the processes lidar data
 
@@ -258,7 +245,7 @@ class NRWData:
                  resolution = self._meta['pdal_resolution'],
                  whats = self._las_whats)
         except AlreadyQueued:
-            raise TASK_RUNNING()
+            raise utils.TASK_RUNNING()
 
 
     def get_path(self, path):
@@ -271,6 +258,6 @@ class NRWData:
             self._processing_path(path_fmt)
             for what in self._las_whats:
                 self._cache.add(path_fmt % what)
-            raise TASK_RUNNING()
+            raise utils.TASK_RUNNING()
 
         return path

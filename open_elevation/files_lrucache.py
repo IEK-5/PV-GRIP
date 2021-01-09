@@ -3,9 +3,6 @@ import time
 import logging
 import diskcache
 
-from open_elevation.celery_tasks.check_files_lrucache import \
-    task_check_files_lrucache
-
 
 class Files_LRUCache:
 
@@ -90,6 +87,11 @@ class Files_LRUCache:
 
         if (time.time() - self._sizes['checked_at']) > self.check_every:
             self._sizes['checked_at'] = time.time()
+            from open_elevation\
+                .celery_tasks\
+                .check_files_lrucache \
+                import task_check_files_lrucache
+
             task_check_files_lrucache.delay\
                 (maxsize = self.maxsize / (1024**3),
                  path = self.path,
