@@ -142,3 +142,15 @@ class Polygon_File_Index:
                                    obj = x['object'])
                 self._polygons[x['object']['file']] = \
                     geometry.Polygon(x['object']['polygon'])
+
+
+    def files(self, what = 'file'):
+        """Generator for files
+
+        """
+        for x in self._rtree.intersection(self._rtree.bounds,
+                                          objects = 'raw'):
+            if what in x:
+                yield x[what]
+            else:
+                yield None
