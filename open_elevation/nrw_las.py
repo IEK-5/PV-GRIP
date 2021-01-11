@@ -233,7 +233,9 @@ class NRWData:
     def update_index(self, index):
         for _, data in tqdm(self._known_files.items(),
                             desc = "Building %s index" % self.path):
-            index.insert(data = data)
+            new_data = data
+            new_data.update({'las_meta': self.path})
+            index.insert(data = new_data)
         return index
 
 
