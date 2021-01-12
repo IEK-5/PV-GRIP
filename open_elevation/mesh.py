@@ -27,7 +27,8 @@ def _mesh_metric(box, step):
     lat = [t2ll.transform(box_mt[0], i)[1] for i in lat]
     return {'mesh': (lon,lat),
             'raster_box': box_mt,
-            'step': step}
+            'step': step,
+            'epsg': 3857}
 
 
 def _mesh_wgs84(box, step):
@@ -35,7 +36,7 @@ def _mesh_wgs84(box, step):
 
     :box: box location in WGS84 ('epsg:4326')
 
-    :step: a step to make in meters (in 'epsg:3857')
+    :step: a step to make in degrees (in 'epsg:4326')
 
     """
     lon = np.arange(box[1], box[3], step)
@@ -43,7 +44,8 @@ def _mesh_wgs84(box, step):
 
     return {'mesh': (lon,lat),
             'raster_box': box,
-            'step': step}
+            'step': step,
+            'epsg': 4326}
 
 
 def mesh(box, step, which = 'metric'):
