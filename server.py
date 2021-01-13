@@ -9,6 +9,8 @@ import bottle
 from bottle import route, run, request, response, hook
 
 from celery.result import AsyncResult
+from celery.exceptions import TimeoutError
+from celery_once import AlreadyQueued
 
 import open_elevation.gdal_interfaces as gdal
 import open_elevation.utils as utils
@@ -192,33 +194,45 @@ def _parse_args(data, defaults):
     return res
 
 
-def _get_raster(args):
+def _get_fn_results(jobid, timeout = 1):
     try:
-        fn = tasks.start_sample_from_box\
-            (gdal = interface, **args)
+        job = AsyncResult(jobid, app = tasks.app.CELERY_APP)
+        fn = job.wait(timeout = timeout)
+
         with open(fn,'rb') as f:
             return f.read()
-    except utils.TASK_RUNNING:
+    except TimeoutError:
+        return {'results': {'message': 'task is running',
+                            'jobid': jobid}}
+    except Exception as e:
+        return {'results':
+                {'error': type(e).__name__ + ": " + str(e),
+                 'jobid': jobid}}
+
+
+def _get_raster(args):
+    try:
+        job = tasks.sample_raster\
+            (gdal = interface, **args).delay()
+        jobid = job.id
+    except AlreadyQueued:
         return {'results': {'message': 'task is running'}}
     except Exception as e:
-        return {'results': {
-            'error':
-            """
-            Task failed!
-            Task: get_raster
-            Arguments: %s
-            Error: %s
-            """ % (str(args),
-                   type(e).__name__ + ": " + str(e))
-        }}
+        return {'results':
+                {'error': type(e).__name__ + ": " + str(e),
+                 'what': '_get_raster',
+                 'args': args}}
 
+
+    return _get_fn_results(jobid)
 
 
 def _raster_defaults():
     return {'box': [50.865,7.119,50.867,7.121],
             'data_re': r'.*',
             'step': float(1),
-            'mesh_type': 'metric'}
+            'mesh_type': 'metric',
+            'output_type': 'pickle'}
 
 
 @route('/api/v1/raster', method=['GET'])

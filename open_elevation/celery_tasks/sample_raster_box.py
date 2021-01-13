@@ -9,6 +9,7 @@ import numpy as np
 from celery_once import QueueOnce, AlreadyQueued
 
 import open_elevation.celery_tasks.app as app
+import open_elevation.celery_tasks.save_geotiff as save_geotiff
 import open_elevation.utils as utils
 import open_elevation.mesh as mesh
 import open_elevation.gdal_interfaces as gdal
@@ -37,16 +38,22 @@ def _remove_file(fn):
         pass
 
 
-def _get_args(box, data_re, mesh_type, step):
-    return ("_sample_from_box", tuple(box), data_re, mesh_type, step)
-
-
 @app.CELERY_APP.task(base=QueueOnce,
                      once = {'keys': ['box', 'data_re',
                                       'mesh_type','step']})
-def _sample_from_box(index_fn, box, data_re,
-                     mesh_type = 'metric', step = 1,
-                     max_points = 2e+7):
+def sample_from_box(index_fn, box, data_re,
+                    mesh_type = 'metric', step = 1,
+                    max_points = 2e+7):
+    ofn = app.RESULTS_CACHE.get\
+        (('sample_from_box', box, data_re,
+          mesh_type, step), check = False)
+    if app.RESULTS_CACHE.file_in(ofn):
+        _remove_file(index_fn)
+        return ofn
+
+    if not index_fn:
+        raise RuntimeError("Cached result vanished!")
+
     gdal_data = gdal.GDALTileInterface(tiles_folder = None,
                                        index_file = index_fn,
                                        use_only_index = True)
@@ -73,26 +80,31 @@ def _sample_from_box(index_fn, box, data_re,
                                 len(grid['mesh'][1]))
     res = np.transpose(res)[::-1,]
 
-    args_key = _get_args(box = box, data_re = data_re,
-                         mesh_type = mesh_type, step = step)
-    fn = app.RESULTS_CACHE.add(args_key)
-    with open(fn, 'wb') as f:
+    with open(ofn, 'wb') as f:
         pickle.dump({'raster': res, 'mesh': grid}, f)
-    return fn
+    app.RESULTS_CACHE.add_file(ofn)
+    return ofn
 
 
-def start_sample_from_box(gdal, box, data_re, mesh_type, step):
-    args_key = _get_args(box = box, data_re = data_re,
-                         mesh_type = mesh_type, step = step)
-    if args_key in app.RESULTS_CACHE:
-        return app.RESULTS_CACHE.get(args_key)
+def sample_raster(gdal, box, data_re,
+                  mesh_type, step, output_type):
+    if output_type not in ('geotiff', 'pickle'):
+        raise RuntimeError("Invalid 'output_type' argument!")
 
-    index_fn = gdal.subset(box = box, data_re = data_re)
-    try:
-        _sample_from_box.delay\
-            (index_fn = index_fn,
-             box = box, data_re = data_re,
-             mesh_type = mesh_type, step = step)
-    except AlreadyQueued:
-        _remove_file(index_fn)
-    raise utils.TASK_RUNNING()
+    ofn_pickle = app.RESULTS_CACHE.get\
+        (('sample_from_box', box, data_re,
+          mesh_type, step), check = False)
+    if app.RESULTS_CACHE.file_in(ofn_pickle):
+        index_fn = None
+    else:
+        index_fn = gdal.subset(box = box, data_re = data_re)
+
+    tasks = sample_from_box.signature\
+        ((), {'index_fn': index_fn, 'box': box,
+              'data_re': data_re, 'mesh_type': mesh_type,
+              'step': step})
+
+    if output_type == 'geotiff':
+        tasks |= save_geotiff.save_geotiff.signature()
+
+    return tasks
