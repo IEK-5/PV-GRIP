@@ -49,14 +49,23 @@ class ResultFiles_LRUCache(Files_LRUCache):
         return fn
 
 
+    def add_file(self, fn):
+        super().add(fn)
+        return fn
+
+
     def __contains__(self, key):
         return super().__contains__\
             (self._get_fn(key))
 
 
-    def get(self, key):
+    def file_in(self, fn):
+        return super().__contains__(fn)
+
+
+    def get(self, key, check = True):
         # this check will update LRU order
-        if not self.__contains__(key):
+        if check and not self.__contains__(key):
             return None
 
         return self._get_fn(key)
