@@ -118,10 +118,20 @@ available statistics
 
 It is possible to query a coordinate from a bounding box. For example,
 ```
-> curl localhost:8080/api/v1/raster\?box="\[50.7731,6.0793,50.7780,6.0882\]"\&data_re='.*_max' -o test.pickle
+> curl localhost:8080/api/v1/raster\?box="\[50.7731,6.0793,50.7780,6.0882\]"\&data_re='.*_max' -o output_fn
 ```
 the box argument is given either as a list (in POST query) or as a json string list (in GET query).
 
+See
+```
+> curl localhost:8080/api/v1/raster/help
+```
+to see default options.
+
+One of the options is `output_type`. Possible values are:
+ - `pickle` return a raster image as a numpy array in a pickle format
+ - `geotiff` GeoTIFF raster file
+ - `pnghillshade` a hillshade image in a png format
 
 ## List of more technical changes
 
