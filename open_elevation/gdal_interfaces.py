@@ -19,6 +19,9 @@ import open_elevation.polygon_index as polygon_index
 import open_elevation.nrw_las as nrw_las
 import open_elevation.utils as utils
 
+from open_elevation.results_lrucache \
+    import ResultFiles_LRUCache
+
 
 def _polygon_from_box(box):
     return [(box[1],box[0]),
@@ -346,12 +349,17 @@ class GDALTileInterface(object):
 
 
     def subset(self, box, data_re):
+        cache = ResultFiles_LRUCache\
+            (os.path.join(self.path, '_subset_cache'),
+             maxsize = 0.5)
+        key = ('gdal_interface_subset',box, data_re)
+        if key in cache:
+            return cache.get(key)
+
         index = self._index.intersect\
             (regex = data_re,
              polygon = _polygon_from_box(box))
-        fd = tempfile.NamedTemporaryFile\
-            (dir = self.path, delete = False)
-        fn = os.path.join(self.path,fd.name)
+        fn = cache.add(key)
         index.save(fn)
         return fn
 
