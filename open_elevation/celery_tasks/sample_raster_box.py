@@ -8,11 +8,18 @@ import numpy as np
 
 from celery_once import QueueOnce, AlreadyQueued
 
-import open_elevation.celery_tasks.app as app
-import open_elevation.celery_tasks.save_geotiff as save_geotiff
-import open_elevation.utils as utils
-import open_elevation.mesh as mesh
-import open_elevation.gdal_interfaces as gdal
+import open_elevation.celery_tasks.app \
+    as app
+import open_elevation.celery_tasks.save_geotiff \
+    as save_geotiff
+import open_elevation.celery_tasks.save_hillshade \
+    as save_hillshade
+import open_elevation.utils \
+    as utils
+import open_elevation.mesh \
+    as mesh
+import open_elevation.gdal_interfaces \
+    as gdal
 
 
 def _query_coordinate(lon, lat, gdal_data):
@@ -88,7 +95,7 @@ def sample_from_box(index_fn, box, data_re,
 
 def sample_raster(gdal, box, data_re,
                   mesh_type, step, output_type):
-    if output_type not in ('geotiff', 'pickle'):
+    if output_type not in ('geotiff', 'pickle', 'pnghillshade'):
         raise RuntimeError("Invalid 'output_type' argument!")
 
     ofn_pickle = app.RESULTS_CACHE.get\
@@ -104,7 +111,10 @@ def sample_raster(gdal, box, data_re,
               'data_re': data_re, 'mesh_type': mesh_type,
               'step': step})
 
-    if output_type == 'geotiff':
+    if output_type in ('geotiff', 'pnghillshade'):
         tasks |= save_geotiff.save_geotiff.signature()
+
+    if output_type == 'pnghillshade':
+        tasks |= save_hillshade.save_pnghillshade.signature()
 
     return tasks
