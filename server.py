@@ -251,6 +251,11 @@ def get_raster():
     return _get_raster(args)
 
 
+@route('/api/v1/raster/help', method=['GET'])
+def get_raster_help():
+    return {'results': _raster_defaults()}
+
+
 run(host='0.0.0.0', port=8080,
     server='gunicorn',
     workers=8, timeout=60)
