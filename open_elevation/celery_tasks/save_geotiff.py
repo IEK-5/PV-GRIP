@@ -10,6 +10,20 @@ from celery_once import QueueOnce
 import open_elevation.celery_tasks.app as app
 
 
+def save_gdal(ofn, array, geotransform, epsg):
+    nrows, ncols = array.shape
+    output_raster = gdal.GetDriverByName('GTiff')\
+                        .Create(ofn, ncols, nrows,
+                                1, gdal.GDT_Float32)
+    output_raster.SetGeoTransform(geotransform)
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(epsg)
+
+    output_raster.SetProjection(srs.ExportToWkt())
+    output_raster.GetRasterBand(1).WriteArray(array)
+    output_raster.FlushCache()
+
+
 def _save_geotiff(data, ofn):
     """Save data array to geotiff
 
@@ -27,17 +41,8 @@ def _save_geotiff(data, ofn):
     xres = (xmax - xmin)/float(ncols)
     yres = (ymax - ymin)/float(nrows)
     geotransform = (xmin, xres, 0, ymax, 0, -yres)
-
-    output_raster = gdal.GetDriverByName('GTiff')\
-                        .Create(ofn, ncols, nrows,
-                                1, gdal.GDT_Float32)
-    output_raster.SetGeoTransform(geotransform)
-    srs = osr.SpatialReference()
-    srs.ImportFromEPSG(data['mesh']['epsg'])
-
-    output_raster.SetProjection(srs.ExportToWkt())
-    output_raster.GetRasterBand(1).WriteArray(data['raster'])
-    output_raster.FlushCache()
+    save_gdal(ofn, data['raster'],
+              geotransform, data['mesh']['epsg'])
 
 
 @app.CELERY_APP.task(base=QueueOnce)
