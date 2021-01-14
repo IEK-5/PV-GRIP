@@ -5,6 +5,8 @@ logging.basicConfig(filename = 'data/server.log',
                     level = logging.DEBUG,
                     format = "[%(asctime)s] %(levelname)s: %(filename)s::%(funcName)s %(message)s")
 
+import datetime
+
 import bottle
 from bottle import route, run, request, response, hook
 
@@ -254,6 +256,54 @@ def get_raster():
 @route('/api/v1/raster/help', method=['GET'])
 def get_raster_help():
     return {'results': _raster_defaults()}
+
+
+def _shadow_defaults():
+    res = _raster_defaults()
+    res.update({
+        'output_type': 'png',
+        'what': 'shadow',
+        'timestr': "2020-07-01_06:00:00"
+    })
+    return res
+
+
+def _get_shadow(args):
+    try:
+        job = tasks.shadow\
+            (gdal = interface, **args).delay()
+        jobid = job.id
+    except AlreadyQueued:
+        return {'results': {'message': 'task is running'}}
+    except Exception as e:
+        return {'results':
+                {'error': type(e).__name__ + ": " + str(e),
+                 'what': '_get_raster',
+                 'args': args}}
+
+
+    return _get_fn_results(jobid)
+
+
+@route('/api/v1/shadow', method=['GET'])
+def get_shadow():
+    args = _parse_args(data = request.query,
+                       defaults = _shadow_defaults())
+
+    return _get_shadow(args)
+
+
+@route('/api/v1/shadow', method=['POST'])
+def get_shadow():
+    args = _parse_args(data = request.json,
+                       defaults = _shadow_defaults())
+
+    return _get_shadow(args)
+
+
+@route('/api/v1/shadow/help', method=['GET'])
+def get_shadow_help():
+    return {'results': _shadow_defaults()}
 
 
 run(host='0.0.0.0', port=8080,
