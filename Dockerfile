@@ -1,4 +1,4 @@
-FROM osgeo/gdal:ubuntu-full-latest
+FROM mundialis/grass-py3-pdal:stable-ubuntu
 
 RUN apt-get update -y
 RUN apt-get install -y \
