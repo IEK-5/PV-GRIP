@@ -97,7 +97,7 @@ def _compute_sun_incidence(wdir, ofn, solar_time, njobs = 4):
     return ofn
 
 
-@app.CELERY_APP.task(base=QueueOnce)
+@app.CELERY_APP.task(base=QueueOnce, once={'timeout': 60})
 def compute_shadow_map(ifn):
     ofn = app.RESULTS_CACHE\
              .get(('compute_shadow_map', ifn),
@@ -118,7 +118,7 @@ def compute_shadow_map(ifn):
     return ofn
 
 
-@app.CELERY_APP.task(base=QueueOnce)
+@app.CELERY_APP.task(base=QueueOnce, once={'timeout': 120})
 def compute_incidence(tif_fn, timestr):
     ofn = app.RESULTS_CACHE\
              .get(('compute_incidence', tif_fn, timestr),
@@ -158,7 +158,7 @@ def _save_binary_png(ifn, ofn):
         shutil.rmtree(wdir)
 
 
-@app.CELERY_APP.task(base=QueueOnce)
+@app.CELERY_APP.task(base=QueueOnce, once={'timeout': 10})
 def save_binary_png(tif_fn):
     ofn = app.RESULTS_CACHE\
              .get(('save_binary_png', tif_fn),

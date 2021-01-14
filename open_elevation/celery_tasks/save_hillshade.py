@@ -25,7 +25,7 @@ def _save_pnghillshade(ifn, ofn):
         shutil.rmtree(wdir)
 
 
-@app.CELERY_APP.task(base=QueueOnce)
+@app.CELERY_APP.task(base=QueueOnce, once={'timeout': 10})
 def save_pnghillshade(geotiff_fn):
     ofn = app.RESULTS_CACHE\
              .get(('save_pnghillshade',geotiff_fn),

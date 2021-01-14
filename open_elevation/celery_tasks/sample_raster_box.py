@@ -47,7 +47,8 @@ def _remove_file(fn):
 
 @app.CELERY_APP.task(base=QueueOnce,
                      once = {'keys': ['box', 'data_re',
-                                      'mesh_type','step']})
+                                      'mesh_type','step'],
+                             'timeout': 400})
 def sample_from_box(index_fn, box, data_re,
                     mesh_type = 'metric', step = 1,
                     max_points = 2e+7):

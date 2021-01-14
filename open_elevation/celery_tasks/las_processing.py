@@ -52,7 +52,7 @@ def _run_pdal(path):
                    cwd = path)
 
 
-@app.CELERY_APP.task(base=QueueOnce)
+@app.CELERY_APP.task(base=QueueOnce, once={'timeout': 300})
 def task_las_processing(url, spath, dpath, resolution, whats):
     wdir = tempfile.mkdtemp(dir=spath)
 
