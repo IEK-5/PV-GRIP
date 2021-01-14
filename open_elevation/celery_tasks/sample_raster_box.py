@@ -80,7 +80,6 @@ def sample_from_box(index_fn, box, data_re,
             res += [_query_coordinate(lon = lon, lat = lat,
                                       gdal_data = gdal_data)]
         except Exception as e:
-            logging.error("error: %s" % str(e))
             res += [-9999]
             continue
     res = np.array(res).reshape(len(grid['mesh'][0]),
