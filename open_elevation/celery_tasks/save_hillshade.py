@@ -27,7 +27,9 @@ def _save_pnghillshade(ifn, ofn):
 
 @app.CELERY_APP.task(base=QueueOnce)
 def save_pnghillshade(geotiff_fn):
-    ofn = app.RESULTS_CACHE.get((geotiff_fn), check=False)
+    ofn = app.RESULTS_CACHE\
+             .get(('save_pnghillshade',geotiff_fn),
+                  check=False)
     if app.RESULTS_CACHE.file_in(ofn):
         return ofn
 

@@ -42,7 +42,9 @@ def _save_geotiff(data, ofn):
 
 @app.CELERY_APP.task(base=QueueOnce)
 def save_geotiff(pickle_fn):
-    ofn = app.RESULTS_CACHE.get((pickle_fn), check=False)
+    ofn = app.RESULTS_CACHE\
+             .get(('save_geotiff', pickle_fn),
+                  check=False)
     if app.RESULTS_CACHE.file_in(ofn):
         return ofn
 
