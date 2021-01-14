@@ -82,6 +82,16 @@ class GDALInterface(object):
         }
 
 
+    def get_centre(self):
+        ulx, xres, _, uly, _, yres = self.geo_transform
+        cx = ulx + (self.src.RasterXSize/2 * xres)
+        cy = uly + (self.src.RasterYSize/2 * yres)
+        res = self._coordinate_transform_inv\
+                  .TransformPoint(cx, cy, 0)
+        return {'lon': res[0],
+                'lat': res[1]}
+
+
     def get_resolution(self):
         _, xres, _, _, _, yres = self.geo_transform
         return (abs(xres), abs(yres))
@@ -98,6 +108,9 @@ class GDALInterface(object):
             (self.src.GetProjection())
         spatial_reference_raster.SetAxisMappingStrategy\
             (osr.OAMS_TRADITIONAL_GIS_ORDER)
+
+        self.epsg = int(spatial_reference_raster\
+                        .GetAttrValue('AUTHORITY',1))
 
         spatial_reference = osr.SpatialReference()
         spatial_reference.ImportFromEPSG(4326) # WGS84
