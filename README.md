@@ -1,5 +1,6 @@
 # Extended Open-Elevation
 
+[![Find a bird!](http://img.youtube.com/vi/V_fp0V-ebKE/0.jpg)](http://www.youtube.com/watch?v=V_fp0V-ebKE)
 
 This is a fork of
 [https://open-elevation.com](https://open-elevation.com) updated and
@@ -132,6 +133,24 @@ One of the options is `output_type`. Possible values are:
  - `pickle` return a raster image as a numpy array in a pickle format
  - `geotiff` GeoTIFF raster file
  - `pnghillshade` a hillshade image in a png format
+
+### Shadows
+
+To obtain shadows say
+```
+> curl localhost:8080/api/v1/shadow\?box="\[50.6046,6.38,50.6098,6.3977\]"\&data_re='.*_max'\&timestr="2020-05-01_5:3:00"
+```
+time must be UTC.
+
+As usual
+```
+> curl localhost:8080/api/v1/shadow/help
+```
+gives some help.
+
+`output_type` can be either
+ - `png` (default)
+ - `geotiff` GeoTIFF raster file
 
 ## List of more technical changes
 
