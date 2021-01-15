@@ -5,7 +5,6 @@ cd $(git rev-parse --show-toplevel)
 rm -rf data/celery/pid
 mkdir -p data/celery/logs
 mkdir -p data/celery/pid
-mkdir -p data/memcached/
 mkdir -p data/redis
 cp redis/redis.conf data/redis/.
 
