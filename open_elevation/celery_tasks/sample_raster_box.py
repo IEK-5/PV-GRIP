@@ -39,7 +39,8 @@ def _query_coordinate(lon, lat, gdal_data):
 
 def _remove_file(fn):
     try:
-        os.remove(fn)
+        if fn:
+            os.remove(fn)
     except:
         logging.error("cannot remove file: %s" % fn)
         pass
