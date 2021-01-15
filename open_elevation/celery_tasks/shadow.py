@@ -91,8 +91,9 @@ def _compute_sun_incidence(wdir, ofn, solar_time, njobs = 4):
     subprocess.run([_GRASS, grass_path,
                     '--exec','r.out.gdal',
                     'input=incidence',
-                    'output=' + ofn],
+                    'output=incidence.tif'],
                    cwd = wdir)
+    os.rename(os.path.join(wdir, 'incidence.tif'), ofn)
 
     return ofn
 
@@ -153,7 +154,9 @@ def _save_binary_png(ifn, ofn):
         subprocess.run(['gdal_translate',
                         '-scale','0','1','0','255',
                         '-of','png',
-                        ifn,ofn])
+                        ifn,'mask.png'],
+                       cwd = wdir)
+        os.rename(os.path.join(wdir, 'mask.png'), ofn)
     finally:
         shutil.rmtree(wdir)
 
