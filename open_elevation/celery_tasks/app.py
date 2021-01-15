@@ -27,4 +27,4 @@ CELERY_APP.conf.ONCE = {
 
 _RESULTS_PATH = os.path.join(git_root(),'data','results_cache')
 RESULTS_CACHE = ResultFiles_LRUCache(path = _RESULTS_PATH,
-                                     maxsize = 2)
+                                     maxsize = 20)
