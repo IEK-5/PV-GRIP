@@ -6,6 +6,8 @@ import tempfile
 import itertools
 import numpy as np
 
+import celery
+
 import open_elevation.celery_tasks.app \
     as app
 import open_elevation.celery_tasks.save_geotiff \
@@ -18,6 +20,8 @@ import open_elevation.mesh \
     as mesh
 import open_elevation.gdal_interfaces \
     as gdal
+import open_elevation.polygon_index \
+    as polygon_index
 
 
 def _query_coordinate(lon, lat, gdal_data):
@@ -35,6 +39,34 @@ def _query_coordinate(lon, lat, gdal_data):
     return float(interface.lookup(lat, lon))
 
 
+@app.CELERY_APP.task()
+@app.one_instance(expire = 360)
+def _check_path_available(index_fn, path):
+    if os.path.exists(path):
+        return
+
+    gdal_data = gdal.GDALTileInterface(tiles_folder = None,
+                                       index_file = index_fn,
+                                       use_only_index = True)
+    interface = None
+    while not interface:
+        try:
+            interface = gdal_data.open_gdal_interface(path)
+        except utils.TASK_RUNNING:
+            time.sleep(5)
+            continue
+
+
+def check_all_data_available(index_fn):
+    index = polygon_index.Polygon_File_Index()
+    index.load(index_fn)
+    tasks = [_check_path_available.signature\
+             (args = (),
+              kwargs = {'index_fn': index_fn, 'path': x},
+              immutable = True)
+             for x in index.files()]
+    return celery.group(tasks)
+
 
 @app.CELERY_APP.task()
 @app.cache_fn_results(keys = ['box','data_re',
@@ -46,8 +78,6 @@ def sample_from_box(index_fn, box, data_re,
     gdal_data = gdal.GDALTileInterface(tiles_folder = None,
                                        index_file = index_fn,
                                        use_only_index = True)
-    utils.remove_file(index_fn)
-
     grid = mesh.mesh(box = box, step = step,
                      which = mesh_type)
 
@@ -84,11 +114,13 @@ def sample_raster(gdal, box, data_re,
         raise RuntimeError("Invalid 'output_type' argument!")
 
     index_fn = gdal.subset(box = box, data_re = data_re)
-
-    tasks = sample_from_box.signature\
-        ((), {'index_fn': index_fn, 'box': box,
-              'data_re': data_re, 'mesh_type': mesh_type,
-              'step': step})
+    tasks = celery.chain\
+        (check_all_data_available(index_fn),\
+         sample_from_box.signature\
+         (kwargs = {'index_fn': index_fn, 'box': box,
+                    'data_re': data_re, 'mesh_type': mesh_type,
+                    'step': step},
+          immutable = True))
 
     if output_type in ('geotiff', 'pnghillshade'):
         tasks |= save_geotiff.save_geotiff.signature()
