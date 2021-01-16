@@ -12,11 +12,9 @@ from bottle import route, run, request, response, hook
 
 from celery.result import AsyncResult
 from celery.exceptions import TimeoutError
-from celery_once import AlreadyQueued
 
 import open_elevation.gdal_interfaces as gdal
 import open_elevation.utils as utils
-import open_elevation.nrw_las as nrw_las
 import open_elevation.celery_tasks as tasks
 
 
@@ -196,37 +194,40 @@ def _parse_args(data, defaults):
     return res
 
 
-def _get_fn_results(jobid, timeout = 1):
+def _get_fn_results(job, timeout = 1):
     try:
-        job = AsyncResult(jobid, app = tasks.app.CELERY_APP)
-        fn = job.wait(timeout = timeout)
+        if 'SUCCESS' == job.state:
+            fn = job.result
+
+        if 'FAILURE' == job.state:
+            raise job.result
+
+        if 'PENDING' == job.state:
+            fn = job.wait(timeout = timeout)
 
         with open(fn,'rb') as f:
             return f.read()
+    except utils.TASK_RUNNING:
+        return {'results': {'message': 'task is running'}}
     except TimeoutError:
         return {'results': {'message': 'task is running',
-                            'jobid': jobid}}
+                            'jobid': job.id}}
     except Exception as e:
         return {'results':
-                {'error': type(e).__name__ + ": " + str(e),
-                 'jobid': jobid}}
+                {'error': type(e).__name__ + ": " + str(e)}}
 
 
 def _get_raster(args):
     try:
         job = tasks.sample_raster\
             (gdal = interface, **args).delay()
-        jobid = job.id
-    except AlreadyQueued:
-        return {'results': {'message': 'task is running'}}
     except Exception as e:
         return {'results':
                 {'error': type(e).__name__ + ": " + str(e),
                  'what': '_get_raster',
                  'args': args}}
 
-
-    return _get_fn_results(jobid)
+    return _get_fn_results(job)
 
 
 def _raster_defaults():
@@ -272,9 +273,6 @@ def _get_shadow(args):
     try:
         job = tasks.shadow\
             (gdal = interface, **args).delay()
-        jobid = job.id
-    except AlreadyQueued:
-        return {'results': {'message': 'task is running'}}
     except Exception as e:
         return {'results':
                 {'error': type(e).__name__ + ": " + str(e),
@@ -282,7 +280,7 @@ def _get_shadow(args):
                  'args': args}}
 
 
-    return _get_fn_results(jobid)
+    return _get_fn_results(job)
 
 
 @route('/api/v1/shadow', method=['GET'])

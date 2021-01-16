@@ -1,6 +1,9 @@
 import re
 import os
 import time
+import logging
+import tempfile
+import subprocess
 
 import open_elevation.celery_tasks.app as app
 
@@ -9,22 +12,11 @@ class TASK_RUNNING(Exception):
     pass
 
 
-def retry(max_attempts = 100, sleep_on_task = 30):
-    def wrapper_f(f):
-        def wrap(*args, **kwargs):
-            attempts = 0
-            while attempts < max_attempts:
-                try:
-                    return f(*args, **kwargs)
-                except TASK_RUNNING:
-                    time.sleep(sleep_on_task)
-                    pass
-                except:
-                    attempts += 1
-                    pass
-            return f(*args, **kwargs)
-        return wrap
-    return wrapper_f
+def git_root():
+    res = subprocess.run(["git","rev-parse","--show-toplevel"],
+                         stdout=subprocess.PIPE).\
+                         stdout.decode().split('\n')[0]
+    return res
 
 
 def if_in_celery():
@@ -40,3 +32,19 @@ def list_files(path, regex):
             os.walk(path) \
             for f in filenames \
             if r.match(os.path.join(dp, f))]
+
+
+def get_tempfile(path = os.path.join(git_root(),
+                                     'data','tempfiles')):
+    os.makedirs(path,exist_ok = True)
+    fd = tempfile.NamedTemporaryFile(dir = path, delete = False)
+    return os.path.join(path,fd.name)
+
+
+def remove_file(fn):
+    try:
+        if fn:
+            os.remove(fn)
+    except:
+        logging.error("cannot remove file: %s" % fn)
+        pass

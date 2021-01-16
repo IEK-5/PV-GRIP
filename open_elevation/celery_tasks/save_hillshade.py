@@ -3,7 +3,7 @@ import shutil
 import tempfile
 import subprocess
 
-from celery_once import QueueOnce
+import open_elevation.utils as utils
 import open_elevation.celery_tasks.app as app
 
 
@@ -25,14 +25,14 @@ def _save_pnghillshade(ifn, ofn):
         shutil.rmtree(wdir)
 
 
-@app.CELERY_APP.task(base=QueueOnce, once={'timeout': 10})
+@app.CELERY_APP.task()
+@app.cache_fn_results()
+@app.one_instance(expire = 10)
 def save_pnghillshade(geotiff_fn):
-    ofn = app.RESULTS_CACHE\
-             .get(('save_pnghillshade',geotiff_fn),
-                  check=False)
-    if app.RESULTS_CACHE.file_in(ofn):
-        return ofn
-
-    _save_pnghillshade(geotiff_fn, ofn)
-    app.RESULTS_CACHE.add_file(ofn)
+    ofn = utils.get_tempfile()
+    try:
+        _save_pnghillshade(geotiff_fn, ofn)
+    except Exception as e:
+        utils.remove_file(ofn)
+        raise e
     return ofn

@@ -2,7 +2,7 @@ import os
 import shutil
 
 from .files_lrucache_test import touch, list_files
-from .results_lrucache import ResultFiles_LRUCache, _hash
+from .results_lrucache import ResultFiles_LRUCache, float_hash
 
 
 def test_ResultFiles_LRUCache(N = 10):
@@ -30,4 +30,5 @@ def test_ResultFiles_LRUCache(N = 10):
 
 
 def test_hash():
-    assert '6a1920a4589859fec38f6b11174657d3' == _hash({1:2,2:([1,2,3],"a")})
+    assert '6a1920a4589859fec38f6b11174657d3' \
+        == float_hash({1:2,2:([1,2,3],"a")})
