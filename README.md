@@ -157,3 +157,9 @@ gives some help.
  - `rtree` index has been replaced with `open_elevation.polygon_index`
 
     this allows to index more complex shapes of regions
+
+## Caveats
+
+ - Be aware that all floating arguments are cached with 6 digit accuracy. Hence querying box `[50,6,51,7]` and `[50.0000001,6,51,7]` will yield the same results
+
+ - Some jobs require a tree of operations to be completed. Two queries producing: "message: task is running" does not imply that the second query will complete its job. It means that the second query hit a task dependency that is already being run for the first query. This might require running query more than 2 times.
