@@ -160,6 +160,18 @@ gives some help.
 
 ## Caveats
 
- - Be aware that all floating arguments are cached with 6 digit accuracy. Hence querying box `[50,6,51,7]` and `[50.0000001,6,51,7]` will yield the same results
+ - Be aware that all floating arguments are cached with 6 digit
+   accuracy. Hence querying box `[50,6,51,7]` and
+   `[50.0000001,6,51,7]` will yield the same results
 
- - Some jobs require a tree of operations to be completed. Two queries producing: "message: task is running" does not imply that the second query will complete its job. It means that the second query hit a task dependency that is already being run for the first query. This might require running query more than 2 times.
+ - Some jobs require a tree of operations to be completed. Two queries
+   producing: "message: task is running" does not imply that the
+   second query will complete its job. It means that the second query
+   hit a task dependency that is already being run for the first
+   query. This might require running query more than 2 times.
+
+ - Between getting results try to run queries, such that all data
+   (also intermediate data, like generated geotiff, etc) required for
+   those queries is less than 20GB.
+
+   This value can be extended in the settings of the RESULTS_CACHE.
