@@ -11,8 +11,6 @@ from datetime \
 from math \
     import pi, cos, sin
 
-from celery_once import QueueOnce
-
 import open_elevation.celery_tasks.app \
     as app
 

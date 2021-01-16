@@ -9,8 +9,6 @@ import itertools
 
 from tqdm import tqdm
 
-from celery_once import AlreadyQueued
-
 from open_elevation.celery_tasks.las_processing \
     import task_las_processing
 from open_elevation.files_lrucache \
@@ -237,15 +235,12 @@ class NRWData:
         if not utils.if_in_celery():
             run_task = task_las_processing.delay
 
-        try:
-            run_task\
-                (url = url,
-                 spath = self.path,
-                 dpath = path_fmt,
-                 resolution = self._meta['pdal_resolution'],
-                 whats = self._las_whats)
-        except AlreadyQueued:
-            raise utils.TASK_RUNNING()
+        run_task\
+            (url = url,
+             spath = self.path,
+             dpath = path_fmt,
+             resolution = self._meta['pdal_resolution'],
+             whats = self._las_whats)
 
 
     def get_path(self, path):
