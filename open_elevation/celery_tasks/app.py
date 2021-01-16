@@ -23,7 +23,7 @@ RESULTS_CACHE = ResultFiles_LRUCache(path = _RESULTS_PATH,
                                      maxsize = 20)
 TASKS_LOCK = diskcache.Cache\
     (directory = os.path.join(_RESULTS_PATH,"_tasks_lock"),
-     size_limit = 100*(1024**2))
+     size_limit = (1024**3))
 
 
 def one_instance(expire=60):
