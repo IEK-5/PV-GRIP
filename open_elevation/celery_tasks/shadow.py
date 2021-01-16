@@ -16,6 +16,8 @@ from celery_once import QueueOnce
 import open_elevation.celery_tasks.app \
     as app
 
+import open_elevation.utils as utils
+
 from open_elevation.celery_tasks.sample_raster_box \
     import sample_raster
 from open_elevation.celery_tasks.save_geotiff \
@@ -98,36 +100,35 @@ def _compute_sun_incidence(wdir, ofn, solar_time, njobs = 4):
     return ofn
 
 
-@app.CELERY_APP.task(base=QueueOnce, once={'timeout': 60})
+@app.CELERY_APP.task()
+@app.cache_fn_results()
+@app.one_instance(expire = 10)
 def compute_shadow_map(ifn):
-    ofn = app.RESULTS_CACHE\
-             .get(('compute_shadow_map', ifn),
-                  check = False)
-    if app.RESULTS_CACHE.file_in(ofn):
-        return ofn
-
     from open_elevation.gdal_interfaces \
         import GDALInterface
     incidence = GDALInterface(ifn)
     shadow = np.invert(np.isnan(incidence.points_array))
     shadow = shadow.astype(int)
-    save_gdal(ofn, shadow,
-              incidence.geo_transform,
-              incidence.epsg)
 
-    app.RESULTS_CACHE.add_file(ofn)
+    ofn = utils.get_tempfile()
+    try:
+        save_gdal(ofn, shadow,
+                  incidence.geo_transform,
+                  incidence.epsg)
+    except Exception as e:
+        utils.remove_file(ofn)
+        raise e
+
     return ofn
 
 
-@app.CELERY_APP.task(base=QueueOnce, once={'timeout': 120})
+@app.CELERY_APP.task()
+@app.cache_fn_results()
+@app.one_instance(expire = 60)
 def compute_incidence(tif_fn, timestr):
-    ofn = app.RESULTS_CACHE\
-             .get(('compute_incidence', tif_fn, timestr),
-                  check = False)
-    if app.RESULTS_CACHE.file_in(ofn):
-        return ofn
-
     wdir = tempfile.mkdtemp(dir='.')
+    ofn = utils.get_tempfile()
+
     try:
         from open_elevation.gdal_interfaces \
             import GDALInterface
@@ -139,8 +140,9 @@ def compute_incidence(tif_fn, timestr):
         _compute_sun_incidence(wdir = wdir,
                                ofn = ofn,
                                solar_time = time)
-
-        app.RESULTS_CACHE.add_file(ofn)
+    except Exception as e:
+        utils.remove_file(ofn)
+        raise e
     finally:
         shutil.rmtree(wdir)
 
@@ -161,16 +163,16 @@ def _save_binary_png(ifn, ofn):
         shutil.rmtree(wdir)
 
 
-@app.CELERY_APP.task(base=QueueOnce, once={'timeout': 10})
+@app.CELERY_APP.task()
+@app.cache_fn_results()
+@app.one_instance(expire = 10)
 def save_binary_png(tif_fn):
-    ofn = app.RESULTS_CACHE\
-             .get(('save_binary_png', tif_fn),
-                  check = False)
-    if app.RESULTS_CACHE.file_in(ofn):
-        return ofn
-
-    _save_binary_png(ifn = tif_fn, ofn = ofn)
-    app.RESULTS_CACHE.add_file(ofn)
+    ofn = utils.get_tempfile()
+    try:
+        _save_binary_png(ifn = tif_fn, ofn = ofn)
+    except Exception as e:
+        utils.remove_file(ofn)
+        raise e
     return ofn
 
 

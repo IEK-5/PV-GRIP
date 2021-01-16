@@ -5,17 +5,17 @@ import tempfile
 from open_elevation.files_lrucache import Files_LRUCache
 
 
-def _hash(key, digits = 6):
+def float_hash(key, digits = 6):
     h = hashlib.md5()
     if isinstance(key, (tuple, list)):
         for x in key:
-            h.update(_hash(x, digits).encode('utf-8'))
+            h.update(float_hash(x, digits).encode('utf-8'))
         return h.hexdigest()
 
     if isinstance(key, dict):
         for k,v in key.items():
-            h.update(_hash(k, digits).encode('utf-8'))
-            h.update(_hash(v, digits).encode('utf-8'))
+            h.update(float_hash(k, digits).encode('utf-8'))
+            h.update(float_hash(v, digits).encode('utf-8'))
         return h.hexdigest()
 
     if isinstance(key, float):
@@ -39,7 +39,7 @@ class ResultFiles_LRUCache(Files_LRUCache):
 
 
     def _get_fn(self, key):
-        hash_value = _hash(key, self._digits)
+        hash_value = float_hash(key, self._digits)
         return os.path.join(self.path, 'tmp_' + hash_value)
 
 

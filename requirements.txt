@@ -11,5 +11,4 @@ requests
 celery[redis]
 tqdm
 numpy
-celery_once
 pytest
