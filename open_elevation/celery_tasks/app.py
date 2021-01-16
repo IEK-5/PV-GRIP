@@ -43,7 +43,8 @@ def one_instance(expire=60):
     return wrapper
 
 
-def cache_fn_results(keys = None):
+def cache_fn_results(keys = None,
+                     link = False, ignore = lambda x: False):
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
@@ -60,7 +61,13 @@ def cache_fn_results(keys = None):
                 return ofn
 
             tfn = fun(*args, **kwargs)
-            os.replace(tfn, ofn)
+            if ignore(tfn):
+                return None
+
+            if link:
+                os.link(tfn, ofn)
+            else:
+                os.replace(tfn, ofn)
             RESULTS_CACHE.add_file(ofn)
             return ofn
         return wrap

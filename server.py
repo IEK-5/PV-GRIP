@@ -16,6 +16,7 @@ from celery.exceptions import TimeoutError
 import open_elevation.gdal_interfaces as gdal
 import open_elevation.utils as utils
 import open_elevation.celery_tasks as tasks
+import open_elevation.celery_tasks.app as app
 
 
 class InternalException(ValueError):
@@ -179,6 +180,17 @@ def get_datasets():
     return {'results': interface.get_directories()}
 
 
+def _serve(data):
+    if isinstance(data, dict):
+        return data
+
+    if os.path.exists(data):
+        with open(data,'rb') as f:
+            return f.read()
+
+    return data
+
+
 def _parse_args(data, defaults):
     res = {}
     for key, item in defaults.items():
@@ -194,7 +206,7 @@ def _parse_args(data, defaults):
     return res
 
 
-def _get_fn_results(job, timeout = 30):
+def _get_job_results(job, timeout = 30):
     try:
         if 'SUCCESS' == job.state:
             fn = job.result
@@ -205,8 +217,7 @@ def _get_fn_results(job, timeout = 30):
         if 'PENDING' == job.state:
             fn = job.wait(timeout = timeout)
 
-        with open(fn,'rb') as f:
-            return f.read()
+        return fn
     except utils.TASK_RUNNING:
         return {'results': {'message': 'task is running'}}
     except TimeoutError:
@@ -217,6 +228,8 @@ def _get_fn_results(job, timeout = 30):
                 {'error': type(e).__name__ + ": " + str(e)}}
 
 
+@app.cache_fn_results(link = True,
+                      ignore = lambda x: isinstance(x,dict))
 def _get_raster(args):
     try:
         job = tasks.sample_raster\
@@ -227,7 +240,7 @@ def _get_raster(args):
                  'what': '_get_raster',
                  'args': args}}
 
-    return _get_fn_results(job)
+    return _get_job_results(job)
 
 
 def _raster_defaults():
@@ -243,7 +256,7 @@ def get_raster():
     args = _parse_args(data = request.query,
                        defaults = _raster_defaults())
 
-    return _get_raster(args)
+    return _serve(_get_raster(args))
 
 
 @route('/api/v1/raster', method=['POST'])
@@ -251,7 +264,7 @@ def get_raster():
     args = _parse_args(data = request.json,
                        defaults = _raster_defaults())
 
-    return _get_raster(args)
+    return _serve(_get_raster(args))
 
 
 @route('/api/v1/raster/help', method=['GET'])
@@ -269,6 +282,8 @@ def _shadow_defaults():
     return res
 
 
+@app.cache_fn_results(link = True,
+                      ignore = lambda x: isinstance(x,dict))
 def _get_shadow(args):
     try:
         job = tasks.shadow\
@@ -280,7 +295,7 @@ def _get_shadow(args):
                  'args': args}}
 
 
-    return _get_fn_results(job)
+    return _get_job_results(job)
 
 
 @route('/api/v1/shadow', method=['GET'])
@@ -288,7 +303,7 @@ def get_shadow():
     args = _parse_args(data = request.query,
                        defaults = _shadow_defaults())
 
-    return _get_shadow(args)
+    return _serve(get_shadow(args))
 
 
 @route('/api/v1/shadow', method=['POST'])
@@ -296,7 +311,7 @@ def get_shadow():
     args = _parse_args(data = request.json,
                        defaults = _shadow_defaults())
 
-    return _get_shadow(args)
+    return _serve(_get_shadow(args))
 
 
 @route('/api/v1/shadow/help', method=['GET'])
