@@ -194,7 +194,7 @@ def _parse_args(data, defaults):
     return res
 
 
-def _get_fn_results(job, timeout = 1):
+def _get_fn_results(job, timeout = 30):
     try:
         if 'SUCCESS' == job.state:
             fn = job.result

@@ -1,6 +1,6 @@
 # Extended Open-Elevation
 
-[![Find a bird!](http://img.youtube.com/vi/V_fp0V-ebKE/0.jpg)](http://www.youtube.com/watch?v=V_fp0V-ebKE)
+[![Find a bird!](http://img.youtube.com/vi/GGpmm5at-a8/0.jpg)](http://www.youtube.com/watch?v=GGpmm5at-a8)
 
 This is a fork of
 [https://open-elevation.com](https://open-elevation.com) updated and
@@ -175,3 +175,11 @@ gives some help.
    those queries is less than 20GB.
 
    This value can be extended in the settings of the RESULTS_CACHE.
+
+ - The default timeout for the server to wait for the request is 30
+   seconds. If this timeout is reach, it looks that server is
+   processing something.
+
+   In fact, under a heavy load it might take more than 30 seconds.
+
+   Solution: do not load server too much.
