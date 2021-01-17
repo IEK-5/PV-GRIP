@@ -14,7 +14,7 @@ def _save_pnghillshade(ifn, ofn):
     :ofn: output file
 
     """
-    wdir = utils.get_tempdir()
+    wdir = tempfile.mkdtemp(dir = '.')
 
     try:
         subprocess.run(['gdaldem','hillshade',

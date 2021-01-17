@@ -124,7 +124,7 @@ def compute_shadow_map(ifn):
 @app.cache_fn_results()
 @app.one_instance(expire = 60*5)
 def compute_incidence(tif_fn, timestr):
-    wdir = utils.get_tempdir()
+    wdir = tempfile.mkdtemp(dir='.')
     ofn = utils.get_tempfile()
 
     try:
@@ -148,7 +148,7 @@ def compute_incidence(tif_fn, timestr):
 
 
 def _save_binary_png(ifn, ofn):
-    wdir = utils.get_tempdir()
+    wdir = tempfile.mkdtemp(dir = '.')
 
     try:
         subprocess.run(['gdal_translate',

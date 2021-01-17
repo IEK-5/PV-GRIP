@@ -7,7 +7,7 @@ import tempfile
 import subprocess
 
 import open_elevation.celery_tasks.app as app
-import open_elevation.utils as utils
+
 
 def _touch(fname, times=None):
     with open(fname, 'a'):
@@ -53,7 +53,7 @@ def _run_pdal(path):
 @app.CELERY_APP.task()
 @app.one_instance(expire = 60*10)
 def task_las_processing(url, spath, dpath, resolution, whats):
-    wdir = utils.get_tempdir()
+    wdir = tempfile.mkdtemp(dir=spath)
 
     try:
         if os.path.exists(dpath + ".failed"):

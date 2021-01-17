@@ -41,12 +41,6 @@ def get_tempfile(path = os.path.join(git_root(),
     return os.path.join(path,fd.name)
 
 
-def get_tempdir(path = os.path.join(git_root(),
-                                    'data','tempfiles')):
-    os.makedirs(path,exist_ok = True)
-    return tempfile.mkdtemp(dir = path)
-
-
 def remove_file(fn):
     try:
         if fn:
