@@ -62,7 +62,7 @@ def cache_fn_results(keys = None,
 
             tfn = fun(*args, **kwargs)
             if ignore(tfn):
-                return None
+                return tfn
 
             if link:
                 os.link(tfn, ofn)
