@@ -28,7 +28,7 @@ class Files_LRUCache:
             (directory = path + '_deque')
         self._sizes = diskcache.Cache\
             (directory = path + '_cache',
-             size_limit = 100*(1024**2))
+             size_limit = (1024**3))
         self._lock = diskcache.RLock(self._sizes, '_lock')
 
         with self._lock:
