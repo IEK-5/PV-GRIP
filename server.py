@@ -199,7 +199,8 @@ def _parse_args(data, defaults):
         else:
             new = data[key]
             if type(item) != type(new) \
-               and isinstance(new, str):
+               and isinstance(new, str) \
+               and isinstance(item, (list, dict)):
                 new = json.loads(new)
             res[key] = type(item)(new)
 
