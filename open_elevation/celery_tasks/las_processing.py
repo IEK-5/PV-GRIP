@@ -51,7 +51,7 @@ def _run_pdal(path):
 
 
 @app.CELERY_APP.task()
-@app.one_instance(expire = 200)
+@app.one_instance(expire = 60*10)
 def task_las_processing(url, spath, dpath, resolution, whats):
     wdir = utils.get_tempdir()
 

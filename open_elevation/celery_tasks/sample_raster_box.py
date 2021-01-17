@@ -40,7 +40,7 @@ def _query_coordinate(lon, lat, gdal_data):
 
 
 @app.CELERY_APP.task()
-@app.one_instance(expire = 360)
+@app.one_instance(expire = 60*5)
 def _check_path_available(index_fn, path):
     if os.path.exists(path):
         return
@@ -71,7 +71,7 @@ def check_all_data_available(index_fn):
 @app.CELERY_APP.task()
 @app.cache_fn_results(keys = ['box','data_re',
                               'mesh_type','step'])
-@app.one_instance(expire = 200)
+@app.one_instance(expire = 60*10)
 def sample_from_box(index_fn, box, data_re,
                     mesh_type = 'metric', step = 1,
                     max_points = 2e+7):
