@@ -303,7 +303,7 @@ def get_shadow():
     args = _parse_args(data = request.query,
                        defaults = _shadow_defaults())
 
-    return _serve(get_shadow(args))
+    return _serve(_get_shadow(args))
 
 
 @route('/api/v1/shadow', method=['POST'])
