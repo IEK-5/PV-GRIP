@@ -152,6 +152,9 @@ gives some help.
  - `png` (default)
  - `geotiff` GeoTIFF raster file
 
+To compile a shadow video use `scripts/shadow_movie/query_data.sh`
+script. It also allow to stress test the server.
+
 ## List of more technical changes
 
  - `rtree` index has been replaced with `open_elevation.polygon_index`
