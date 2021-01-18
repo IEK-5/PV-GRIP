@@ -73,13 +73,17 @@ def check_all_data_available(index_fn):
     return celery.group(tasks)
 
 
+def _compute_mesh(box, step, mesh_type):
+    return mesh.mesh(box = box, step = step,
+                     which = mesh_type)
+
+
 @app.CELERY_APP.task()
 @app.cache_fn_results(keys = ['box','data_re',
                               'mesh_type','step'])
 @app.one_instance(expire = 60*10)
 def sample_from_box(index_fn, box, data_re,
-                    mesh_type = 'metric', step = 1,
-                    max_points = 2e+7):
+                    mesh_type = 'metric', step = 1):
     logging.debug("""
     sample_from_box
     index_fn = %s
@@ -87,19 +91,13 @@ def sample_from_box(index_fn, box, data_re,
     data_re = %s
     mesh_type = %s
     step = %s
-    max_points = %s
     """ % (index_fn, str(box), str(data_re),
-           str(mesh_type), str(step), str(max_points)))
+           str(mesh_type), str(step)))
     gdal_data = gdal.GDALTileInterface(tiles_folder = None,
                                        index_file = index_fn,
                                        use_only_index = True)
-    grid = mesh.mesh(box = box, step = step,
-                     which = mesh_type)
-
-    if len(grid['mesh'][0])*len(grid['mesh'][1]) \
-       > max_points:
-        raise RuntimeError\
-            ("either box or resolution is too high!")
+    grid = _compute_mesh(box = box, step = step,
+                         mesh_type = mesh_type)
 
     res = []
     for lon, lat in itertools.product(*grid['mesh']):
@@ -124,9 +122,18 @@ def sample_from_box(index_fn, box, data_re,
 
 
 def sample_raster(gdal, box, data_re,
-                  mesh_type, step, output_type):
+                  mesh_type, step, output_type,
+                  max_points = 2e+7):
     if output_type not in ('geotiff', 'pickle', 'pnghillshade'):
         raise RuntimeError("Invalid 'output_type' argument!")
+
+    grid = _compute_mesh(box = box, step = step,
+                         mesh_type = mesh_type)
+
+    if len(grid['mesh'][0])*len(grid['mesh'][1]) \
+       > max_points:
+        raise RuntimeError\
+            ("either box or resolution is too high!")
 
     index_fn = gdal.subset(box = box, data_re = data_re)
     tasks = celery.chain\
