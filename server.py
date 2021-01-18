@@ -193,6 +193,12 @@ def _serve(data):
 
 def _parse_args(data, defaults):
     res = {}
+
+    for key, _ in data.items():
+        if key not in defaults:
+            raise RuntimeError("Unknown argument: '%s'" % key)
+
+
     for key, item in defaults.items():
         if key not in data:
             res[key] = item
