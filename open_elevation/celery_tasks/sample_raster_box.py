@@ -14,6 +14,8 @@ import open_elevation.celery_tasks.save_geotiff \
     as save_geotiff
 import open_elevation.celery_tasks.save_hillshade \
     as save_hillshade
+import open_elevation.celery_tasks.las_processing \
+    as las_processing
 import open_elevation.utils \
     as utils
 import open_elevation.mesh \
@@ -39,37 +41,22 @@ def _query_coordinate(lon, lat, gdal_data):
     return float(interface.lookup(lat, lon))
 
 
-@app.CELERY_APP.task()
-@app.one_instance(expire = 60*5)
-def _check_path_available(index_fn, path):
-    logging.debug("""
-    _check_path_available
-    index_fn = %s
-    path     = %s
-    """ % (index_fn, path))
-    if os.path.exists(path):
-        return
-
-    gdal_data = gdal.GDALTileInterface(tiles_folder = None,
-                                       index_file = index_fn,
-                                       use_only_index = True)
-    interface = None
-    while not interface:
-        try:
-            interface = gdal_data.open_gdal_interface(path)
-        except utils.TASK_RUNNING:
-            time.sleep(5)
-            continue
-
 
 def check_all_data_available(index_fn):
     index = polygon_index.Polygon_File_Index()
     index.load(index_fn)
-    tasks = [_check_path_available.signature\
-             (args = (),
-              kwargs = {'index_fn': index_fn, 'path': x},
-              immutable = True)
-             for x in index.files()]
+
+    tasks = []
+    for x in index.iterate():
+        if os.path.exists(x['file']):
+            continue
+
+        if 'las_meta' in x:
+            tasks += [las_processing.process_laz\
+                      (url = x['url'],
+                       ofn = x['file'],
+                       resolution = x['pdal_resolution'],
+                       what = x['stat'])]
     return celery.group(tasks)
 
 
@@ -121,7 +108,7 @@ def sample_from_box(index_fn, box, data_re,
     return ofn
 
 
-def sample_raster(gdal, box, data_re,
+def sample_raster(gdal, box, data_re, stat,
                   mesh_type, step, output_type,
                   max_points = 2e+7):
     if output_type not in ('geotiff', 'pickle', 'pnghillshade'):
@@ -135,7 +122,9 @@ def sample_raster(gdal, box, data_re,
         raise RuntimeError\
             ("either box or resolution is too high!")
 
-    index_fn = gdal.subset(box = box, data_re = data_re)
+    index_fn = gdal.subset(box = box,
+                           data_re = data_re,
+                           stat = stat)
     tasks = celery.chain\
         (check_all_data_available(index_fn),\
          sample_from_box.signature\

@@ -154,3 +154,12 @@ class Polygon_File_Index:
                 yield x[what]
             else:
                 yield None
+
+
+    def iterate(self):
+        if not self._rtree.get_size():
+            yield from ()
+
+        for x in self._rtree.intersection(self._rtree.bounds,
+                                          objects = 'raw'):
+            yield x

@@ -30,7 +30,9 @@ class InternalException(ValueError):
 Initialize a global interface. This can grow quite large, because it has a cache.
 """
 interface = gdal.GDALTileInterface('data/current','data/index.json',9)
-logging.info(interface.print_used_las_space())
+logging.info("Amount of RESULTS_CACHE: %.2f" \
+             % (app.RESULTS_CACHE.size()/(1024**3),))
+
 
 def get_elevation(lat, lng, data_re):
     """
@@ -253,6 +255,7 @@ def _get_raster(args):
 def _raster_defaults():
     return {'box': [50.865,7.119,50.867,7.121],
             'data_re': r'.*',
+            'stat': 'max',
             'step': float(1),
             'mesh_type': 'metric',
             'output_type': 'pickle'}

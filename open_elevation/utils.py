@@ -5,8 +5,6 @@ import logging
 import tempfile
 import subprocess
 
-import open_elevation.celery_tasks.app as app
-
 
 class TASK_RUNNING(Exception):
     pass
@@ -20,6 +18,8 @@ def git_root():
 
 
 def if_in_celery():
+    import open_elevation.celery_tasks.app \
+        as app
     if not app.CELERY_APP.current_worker_task:
         return False
     return True

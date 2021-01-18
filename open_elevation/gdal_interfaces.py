@@ -31,6 +31,24 @@ def _polygon_from_box(box):
             (box[1],box[2])]
 
 
+def _subset_filter_how(x, data_re, stat):
+    data_re = re.compile(data_re)
+
+    if 'stat' not in x and \
+       not data_re.match(x['file']):
+        return False
+
+    if 'stat' in x and \
+       not data_re.match(x['las_meta']):
+        return False
+
+    if 'stat' in x and \
+       stat != x['stat']:
+        return False
+
+    return True
+
+
 def in_directory(fn, paths):
     fn = os.path.abspath(fn)
 
@@ -297,10 +315,6 @@ class GDALTileInterface(object):
 
     def open_gdal_interface(self, path):
         if path not in self._interfaces:
-            las_path = in_directory(path, self._las_dirs.keys())
-            if las_path:
-                path = self._las_dirs[las_path].get_path(path)
-
             with self._interfaces_lock:
                 self._interfaces[path] = GDALInterface(path)
 
@@ -362,11 +376,14 @@ class GDALTileInterface(object):
                 'resolution': coords['resolution']}
 
 
-    @app.cache_fn_results(keys = ['box','data_re'])
-    def subset(self, box, data_re):
+    @app.cache_fn_results(keys = ['box','data_re','stat'])
+    def subset(self, box, data_re, stat):
         index = self._index.intersect\
-            (regex = data_re,
-             polygon = _polygon_from_box(box))
+            (polygon = _polygon_from_box(box))
+        index = index.filter\
+            (how = lambda x:
+             _subset_filter_how(x, data_re, stat))
+
         ofn = utils.get_tempfile()
         try:
             index.save(ofn)

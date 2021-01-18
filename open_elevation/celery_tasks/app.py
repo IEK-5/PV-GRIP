@@ -21,7 +21,7 @@ CELERY_APP = celery.Celery(broker='redis://localhost:6379/0',
 
 _RESULTS_PATH = os.path.join(git_root(),'data','results_cache')
 RESULTS_CACHE = ResultFiles_LRUCache(path = _RESULTS_PATH,
-                                     maxsize = 20)
+                                     maxsize = 150)
 TASKS_LOCK = diskcache.Cache\
     (directory = os.path.join(_RESULTS_PATH,"_tasks_lock"),
      size_limit = (1024**3))
