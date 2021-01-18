@@ -42,6 +42,11 @@ def _query_coordinate(lon, lat, gdal_data):
 @app.CELERY_APP.task()
 @app.one_instance(expire = 60*5)
 def _check_path_available(index_fn, path):
+    logging.debug("""
+    _check_path_available
+    index_fn = %s
+    path     = %s
+    """ % (index_fn, path))
     if os.path.exists(path):
         return
 
@@ -75,6 +80,16 @@ def check_all_data_available(index_fn):
 def sample_from_box(index_fn, box, data_re,
                     mesh_type = 'metric', step = 1,
                     max_points = 2e+7):
+    logging.debug("""
+    sample_from_box
+    index_fn = %s
+    box = %s
+    data_re = %s
+    mesh_type = %s
+    step = %s
+    max_points = %s
+    """ % (index_fn, str(box), str(data_re),
+           str(mesh_type), str(step), str(max_points)))
     gdal_data = gdal.GDALTileInterface(tiles_folder = None,
                                        index_file = index_fn,
                                        use_only_index = True)

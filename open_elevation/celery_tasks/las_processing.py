@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import shutil
+import logging
 import requests
 import tempfile
 import subprocess
@@ -15,6 +16,12 @@ def _touch(fname, times=None):
 
 
 def _write_pdaljson(path, resolution, whats):
+    logging.debug("""
+    _write_pdaljson
+    path = %s
+    resolution = %s
+    whats = %s
+    """ % (path, str(resolution), str(whats)))
     data = {}
     data['pipeline'] = ['src.laz']
 
@@ -33,6 +40,11 @@ def _write_pdaljson(path, resolution, whats):
 
 
 def _download_laz(url, path):
+    logging.debug("""
+    _download_laz
+    url = %s
+    path = %s
+    """ % (url, path))
     r = requests.get(url, allow_redirects=True)
 
     if 200 != r.status_code:
@@ -46,6 +58,10 @@ def _download_laz(url, path):
 
 
 def _run_pdal(path):
+    logging.debug("""
+    _run_pdal
+    path = %s
+    """ % path)
     subprocess.run(['pdal','pipeline','pdal.json'],
                    cwd = path)
 
@@ -53,6 +69,14 @@ def _run_pdal(path):
 @app.CELERY_APP.task()
 @app.one_instance(expire = 60*10)
 def task_las_processing(url, spath, dpath, resolution, whats):
+    logging.debug("""
+    task_las_processing
+    url = %s
+    spath = %s
+    dpath = %s
+    resolution = %s
+    whats = %s
+    """ % (url, spath, dpath, str(resolution), str(whats)))
     wdir = tempfile.mkdtemp(dir=spath)
 
     try:

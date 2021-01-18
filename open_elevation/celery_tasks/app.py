@@ -1,6 +1,7 @@
 import os
 import sys
 import celery
+import logging
 import diskcache
 import subprocess
 
@@ -58,7 +59,18 @@ def cache_fn_results(keys = None,
             key = ("cache_results", fun.__name__, uniq)
             ofn = RESULTS_CACHE.get(key, check = False)
             if RESULTS_CACHE.file_in(ofn):
+                logging.debug("""
+                File is in cache!
+                key = %s
+                ofn = %s
+                """ % (str(key), ofn))
                 return ofn
+
+            logging.debug("""
+                File is NOT in cache!
+                key = %s
+                ofn = %s
+                """ % (str(key), ofn))
 
             tfn = fun(*args, **kwargs)
             if ignore(tfn):
