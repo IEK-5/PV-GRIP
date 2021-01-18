@@ -263,16 +263,24 @@ def _raster_defaults():
 
 @route('/api/v1/raster', method=['GET'])
 def get_raster():
-    args = _parse_args(data = request.query,
-                       defaults = _raster_defaults())
+    try:
+        args = _parse_args(data = request.query,
+                           defaults = _raster_defaults())
+    except Exception as e:
+        return {'results':
+                {'error': type(e).__name__ + ": " + str(e)}}
 
     return _serve(_get_raster(args))
 
 
 @route('/api/v1/raster', method=['POST'])
 def get_raster():
-    args = _parse_args(data = request.json,
-                       defaults = _raster_defaults())
+    try:
+        args = _parse_args(data = request.json,
+                           defaults = _raster_defaults())
+    except Exception as e:
+        return {'results':
+                {'error': type(e).__name__ + ": " + str(e)}}
 
     return _serve(_get_raster(args))
 
@@ -310,16 +318,24 @@ def _get_shadow(args):
 
 @route('/api/v1/shadow', method=['GET'])
 def get_shadow():
-    args = _parse_args(data = request.query,
-                       defaults = _shadow_defaults())
+    try:
+        args = _parse_args(data = request.query,
+                           defaults = _shadow_defaults())
+    except Exception as e:
+        return {'results':
+                {'error': type(e).__name__ + ": " + str(e)}}
 
     return _serve(_get_shadow(args))
 
 
 @route('/api/v1/shadow', method=['POST'])
 def get_shadow():
-    args = _parse_args(data = request.json,
-                       defaults = _shadow_defaults())
+    try:
+        args = _parse_args(data = request.json,
+                           defaults = _shadow_defaults())
+    except Exception as e:
+        return {'results':
+                {'error': type(e).__name__ + ": " + str(e)}}
 
     return _serve(_get_shadow(args))
 
