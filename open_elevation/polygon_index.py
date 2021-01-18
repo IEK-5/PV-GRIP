@@ -76,24 +76,21 @@ class Polygon_File_Index:
                 yield x
 
 
-    def intersect(self, polygon, regex=r'.*'):
+    def intersect(self, polygon):
         """Intersect index with a polygon
 
         :polygon: list of tuple coordinates
 
-        :regex: filter filenames by regex
-
         :return: smaller Polygon_File_Index
         """
         res = Polygon_File_Index()
-        regex = re.compile(regex)
         polygon = geometry.Polygon(polygon)
+
+        if not self._rtree.get_size():
+            return res
 
         for x in self._rtree.intersection(polygon.bounds,
                                           objects='raw'):
-            if not regex.match(x['file']):
-                continue
-
             schnitt = polygon.intersection\
                 (self._polygons[x['file']])
 
@@ -106,6 +103,24 @@ class Polygon_File_Index:
             res.insert(data)
 
         return res
+
+
+    def filter(self, how = lambda x: True):
+        res = Polygon_File_Index()
+
+        if not self._rtree.get_size():
+            return res
+
+        for x in self._rtree.intersection\
+            (self._rtree.bounds, objects='raw'):
+            if how(x):
+                res.insert(x)
+
+        return res
+
+
+    def size(self):
+        return self._rtree.get_size()
 
 
     def save(self, fn):
@@ -148,6 +163,9 @@ class Polygon_File_Index:
         """Generator for files
 
         """
+        if not self._rtree.get_size():
+            yield from ()
+
         for x in self._rtree.intersection(self._rtree.bounds,
                                           objects = 'raw'):
             if what in x:
