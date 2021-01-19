@@ -64,6 +64,7 @@ class Files_LRUCache:
     def _update_sizes(self, item):
         if not os.path.exists(item):
             if self._remove_from_sizes(item):
+                # here only if something was deleted from _sizes
                 self._deque.remove(item)
             return
 
@@ -150,7 +151,7 @@ class Files_LRUCache:
                 pass
 
             self._remove_from_sizes(item)
-            logging.info("""
+            logging.debug("""
             file is removed from cache: {}
             Files_LRUCache size: {:.5f} GB
             Files_LRUCache usage: {:.2%}
