@@ -122,7 +122,7 @@ def compute_shadow_map(ifn):
 
 @app.CELERY_APP.task()
 @app.cache_fn_results()
-@app.one_instance(expire = 60*5)
+@app.one_instance(expire = 60*10)
 def compute_incidence(tif_fn, timestr):
     wdir = tempfile.mkdtemp(dir='.')
     ofn = utils.get_tempfile()
