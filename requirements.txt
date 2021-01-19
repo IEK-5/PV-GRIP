@@ -12,3 +12,4 @@ celery[redis]
 tqdm
 numpy
 pytest
+scipy

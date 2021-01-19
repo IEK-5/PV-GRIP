@@ -6,6 +6,8 @@ import tempfile
 import itertools
 import numpy as np
 
+from scipy import ndimage as nd
+
 import celery
 
 import open_elevation.celery_tasks.app \
@@ -24,6 +26,20 @@ import open_elevation.gdal_interfaces \
     as gdal
 import open_elevation.polygon_index \
     as polygon_index
+
+
+def fill_missing(data, missing_value = -9999):
+    """Replace the value of missing 'data' cells (indicated by
+    'missing_value') by the value of the nearest cell
+
+    Taken from: https://stackoverflow.com/a/27745627
+
+    """
+    missing = data == missing_value
+    ind = nd.distance_transform_edt(missing,
+                                    return_distances=False,
+                                    return_indices=True)
+    return data[tuple(ind)]
 
 
 def check_all_data_available(index_fn):
@@ -84,6 +100,7 @@ def sample_from_box(index_fn, box,
     res = np.array(res).reshape(len(grid['mesh'][0]),
                                 len(grid['mesh'][1]))
     res = np.transpose(res)[::-1,]
+    res = fill_missing(res)
 
     ofn = utils.get_tempfile()
     try:
