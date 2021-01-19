@@ -1,5 +1,6 @@
 import os
 import json
+import traceback
 import logging
 logging.basicConfig(filename = 'data/server.log',
                     level = logging.DEBUG,
@@ -234,7 +235,8 @@ def _get_job_results(job, timeout = 30):
                             'jobid': job.id}}
     except Exception as e:
         return {'results':
-                {'error': type(e).__name__ + ": " + str(e)}}
+                {'error': type(e).__name__ + ": " + str(e),
+                 'traceback': traceback.format_exc()}}
 
 
 @app.cache_fn_results(link = True,
@@ -247,7 +249,8 @@ def _get_raster(args):
         return {'results':
                 {'error': type(e).__name__ + ": " + str(e),
                  'what': '_get_raster',
-                 'args': args}}
+                 'args': args,
+                 'traceback': traceback.format_exc()}}
 
     return _get_job_results(job)
 
@@ -268,7 +271,8 @@ def get_raster():
                            defaults = _raster_defaults())
     except Exception as e:
         return {'results':
-                {'error': type(e).__name__ + ": " + str(e)}}
+                {'error': type(e).__name__ + ": " + str(e),
+                 'traceback': traceback.format_exc()}}
 
     return _serve(_get_raster(args))
 
@@ -280,7 +284,8 @@ def get_raster():
                            defaults = _raster_defaults())
     except Exception as e:
         return {'results':
-                {'error': type(e).__name__ + ": " + str(e)}}
+                {'error': type(e).__name__ + ": " + str(e),
+                 'traceback': traceback.format_exc()}}
 
     return _serve(_get_raster(args))
 
@@ -310,7 +315,8 @@ def _get_shadow(args):
         return {'results':
                 {'error': type(e).__name__ + ": " + str(e),
                  'what': '_get_raster',
-                 'args': args}}
+                 'args': args,
+                 'traceback': traceback.format_exc()}}
 
 
     return _get_job_results(job)
