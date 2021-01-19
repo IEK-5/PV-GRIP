@@ -26,22 +26,6 @@ import open_elevation.polygon_index \
     as polygon_index
 
 
-def _query_coordinate(lon, lat, gdal_data):
-    nearest = list(gdal_data._index.nearest((lon,lat)))
-    data = gdal.choose_highest_resolution(nearest)
-
-    interface = None
-    while not interface:
-        try:
-            interface = gdal_data.open_gdal_interface\
-                (data['file'])
-        except utils.TASK_RUNNING:
-            time.sleep(5)
-            continue
-    return float(interface.lookup(lat, lon))
-
-
-
 def check_all_data_available(index_fn):
     index = polygon_index.Polygon_File_Index()
     index.load(index_fn)
@@ -66,34 +50,37 @@ def _compute_mesh(box, step, mesh_type):
 
 
 @app.CELERY_APP.task()
-@app.cache_fn_results(keys = ['box','data_re',
+@app.cache_fn_results(keys = ['index_fn', 'box',
                               'mesh_type','step'])
 @app.one_instance(expire = 60*10)
-def sample_from_box(index_fn, box, data_re,
+def sample_from_box(index_fn, box,
                     mesh_type = 'metric', step = 1):
     logging.debug("""
     sample_from_box
     index_fn = %s
     box = %s
-    data_re = %s
     mesh_type = %s
     step = %s
-    """ % (index_fn, str(box), str(data_re),
+    """ % (index_fn, str(box),
            str(mesh_type), str(step)))
-    gdal_data = gdal.GDALTileInterface(tiles_folder = None,
-                                       index_file = index_fn,
-                                       use_only_index = True)
+    index = polygon_index.Polygon_File_Index()
+    index.load(index_fn)
+
     grid = _compute_mesh(box = box, step = step,
                          mesh_type = mesh_type)
 
-    res = []
-    for lon, lat in itertools.product(*grid['mesh']):
-        try:
-            res += [_query_coordinate(lon = lon, lat = lat,
-                                      gdal_data = gdal_data)]
-        except Exception as e:
-            res += [-9999]
+    points = list(itertools.product(*grid['mesh']))
+
+    res = None
+    for fn in index.files():
+        interface = gdal.GDALInterface(fn)
+        x = np.array(interface.lookup(points))
+
+        if res is None:
+            res = x
             continue
+
+        res = np.array((res,x)).max(axis=0)
     res = np.array(res).reshape(len(grid['mesh'][0]),
                                 len(grid['mesh'][1]))
     res = np.transpose(res)[::-1,]
@@ -129,8 +116,7 @@ def sample_raster(gdal, box, data_re, stat,
         (check_all_data_available(index_fn),\
          sample_from_box.signature\
          (kwargs = {'index_fn': index_fn, 'box': box,
-                    'data_re': data_re, 'mesh_type': mesh_type,
-                    'step': step},
+                    'mesh_type': mesh_type, 'step': step},
           immutable = True))
 
     if output_type in ('geotiff', 'pnghillshade'):

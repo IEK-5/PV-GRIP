@@ -74,7 +74,7 @@ def choose_highest_resolution(nearest):
 
 # Originally based on https://stackoverflow.com/questions/13439357/extract-point-from-raster-in-gdal
 class GDALInterface(object):
-    SEA_LEVEL = 0
+    SEA_LEVEL = -9999
     def __init__(self, path):
         super(GDALInterface, self).__init__()
         self.path = path
@@ -161,39 +161,35 @@ class GDALInterface(object):
               .GetStatistics(True, True))
 
 
-    def _get_pixel(self, lat, lon):
-        # get coordinate of the raster
-        xgeo, ygeo, zgeo = self._coordinate_transform\
-                               .TransformPoint(lon, lat, 0)
-
-        # convert it to pixel/line on band
-        u = xgeo - self.geo_transform_inv[0]
-        v = ygeo - self.geo_transform_inv[3]
-        # FIXME this int() is probably bad idea, there should be half cell size thing needed
-        xpix = int(self.geo_transform_inv[1] * u + \
-                   self.geo_transform_inv[2] * v)
-        ylin = int(self.geo_transform_inv[4] * u + \
-                   self.geo_transform_inv[5] * v)
-
-        return ylin, xpix
+    def _get_pixels(self, points):
+        data = self._coordinate_transform\
+                   .TransformPoints(points)
+        data = [(u - self.geo_transform_inv[0],
+                 v - self.geo_transform_inv[3])
+                for u,v,_ in data]
+        data = [(int(self.geo_transform_inv[4] * u +\
+                     self.geo_transform_inv[5] * v),
+                 int(self.geo_transform_inv[1] * u + \
+                     self.geo_transform_inv[2] * v)) \
+                for u,v in data]
+        return data
 
 
-    def lookup(self, lat, lon):
-        try:
-            ylin, xpix = self._get_pixel(lat = lat, lon = lon)
+    def lookup(self, points):
+        points = self._get_pixels(points)
+        res = []
+        for y,x in points:
+            if 0 <= y < self.src.RasterYSize \
+               and 0 <= x < self.src.RasterXSize:
+                res += [self.points_array[y,x]]
+            else:
+                res += [self.SEA_LEVEL]
 
-            # look the value up
-            v = self.points_array[ylin, xpix]
+        return res
 
-            return v if v > -5000 else self.SEA_LEVEL
-        except Exception as e:
-            logging.error("""
-            cannot lookup coordinate!
-            lon = %f
-            lat = %f
-            error: %s
-            """ % (lon, lat, str(e)))
-            return self.SEA_LEVEL
+
+    def lookup_one(self, lat, lon):
+        return self.lookup([lon, lat])[0]
 
 
     def close(self):
