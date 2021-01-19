@@ -11,7 +11,6 @@ import datetime
 import bottle
 from bottle import route, run, request, response, hook
 
-from celery.result import AsyncResult
 from celery.exceptions import TimeoutError
 
 import open_elevation.gdal_interfaces as gdal
@@ -20,178 +19,16 @@ import open_elevation.celery_tasks as tasks
 import open_elevation.celery_tasks.app as app
 
 
-class InternalException(ValueError):
-    """
-    Utility exception class to handle errors internally and return error codes to the client
-    """
-    pass
-
-
-"""
-Initialize a global interface. This can grow quite large, because it has a cache.
-"""
-interface = gdal.GDALTileInterface('data/current','data/index.json',9)
+interface = gdal.GDALTileInterface\
+    ('data/current','data/index.json',1)
 logging.info("Amount of RESULTS_CACHE: %.2f" \
              % (app.RESULTS_CACHE.size()/(1024**3),))
 
 
-def get_elevation(lat, lng, data_re):
-    """
-    Get the elevation at point (lat,lng) using the currently opened interface
-    :param lat:
-    :param lng:
-    :return:
-    """
-    try:
-        res = interface.lookup(lat = lat,
-                               lon = lng,
-                               data_re = data_re)
-        elevation = res['elevation']
-        resolution = res['resolution']
-    except utils.TASK_RUNNING:
-        return {
-            'message': 'task is running'
-        }
-    except Exception as e:
-        return {
-            'latitude': lat,
-            'longitude': lng,
-            'error':
-            """
-            Cannot process request!
-                Coordinate: (%s, %s)
-                     Error: %s
-            """ % (lat, lng,
-                   type(e).__name__ + ": " + str(e))
-        }
-
-    return {
-        'latitude': lat,
-        'longitude': lng,
-        'elevation': elevation,
-        'resolution': resolution
-    }
-
-
-@hook('after_request')
-def enable_cors():
-    """
-    Enable CORS support.
-    :return:
-    """
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'PUT, GET, POST, DELETE, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
-
-
-def lat_lng_from_location(location_with_comma):
-    """
-    Parse the latitude and longitude of a location in the format "xx.xxx,yy.yyy" (which we accept as a query string)
-    :param location_with_comma:
-    :return:
-    """
-    try:
-        lat, lng = [float(i) for i in location_with_comma.split(',')]
-        return lat, lng
-    except:
-        raise InternalException(json.dumps({'error': 'Bad parameter format "%s".' % location_with_comma}))
-
-
-def query_to_locations():
-    """
-    Grab a list of locations from the query and turn them into [(lat,lng),(lat,lng),...]
-    :return:
-    """
-    locations = request.query.locations
-    if not locations:
-        raise InternalException(json.dumps({'error': '"Locations" is required.'}))
-
-    data_re = request.query.data_re
-
-    return {'locations': [lat_lng_from_location(l) \
-                          for l in locations.split('|')],
-            'data_re': data_re}
-
-
-def body_to_locations():
-    """
-    Grab a list of locations from the body and turn them into [(lat,lng),(lat,lng),...]
-    :return:
-    """
-    try:
-        locations = request.json.get('locations', None)
-        data_re = request.json.get('data_re', None)
-    except Exception:
-        raise InternalException(json.dumps({'error': 'Invalid JSON.'}))
-
-    if not locations:
-        raise InternalException(json.dumps({'error': '"Locations" is required in the body.'}))
-
-    latlng = []
-    for l in locations:
-        try:
-            latlng += [ (l['latitude'],l['longitude']) ]
-        except KeyError:
-            raise InternalException(json.dumps({'error': '"%s" is not in a valid format.' % l}))
-
-    return {'locations': latlng, 'data_re': data_re}
-
-
-def do_lookup(get_locations_func):
-    """
-    Generic method which gets the locations in [(lat,lng),(lat,lng),...] format by calling get_locations_func
-    and returns an answer ready to go to the client.
-    :return:
-    """
-    try:
-        inp = get_locations_func()
-        return {'results': [get_elevation(lat, lng, data_re = inp['data_re']) \
-                            for (lat, lng) in inp['locations']]}
-    except InternalException as e:
-        response.status = 400
-        response.content_type = 'application/json'
-        return e.args[0]
-
-# Base Endpoint
-URL_ENDPOINT = '/api/v1/lookup'
-
-# For CORS
-@route(URL_ENDPOINT, method=['OPTIONS'])
-def cors_handler():
-    return {}
-
-@route(URL_ENDPOINT, method=['GET'])
-def get_lookup():
-    """
-    GET method. Uses query_to_locations.
-    :return:
-    """
-    return do_lookup(query_to_locations)
-
-
-@route(URL_ENDPOINT, method=['POST'])
-def post_lookup():
-    """
-    GET method. Uses body_to_locations.
-    :return:
-    """
-    return do_lookup(body_to_locations)
-
-
-@route('/api/v1/datasets', method=['GET'])
-def get_datasets():
-    return {'results': interface.get_directories()}
-
-
-def _serve(data):
-    if isinstance(data, dict):
-        return data
-
-    if isinstance(data, str) and os.path.exists(data):
-        with open(data,'rb') as f:
-            return f.read()
-
-    return data
+def _return_exception(e):
+    return {'results':
+            {'error': type(e).__name__ + ": " + str(e),
+             'traceback': traceback.format_exc()}}
 
 
 def _parse_args(data, defaults):
@@ -203,6 +40,7 @@ def _parse_args(data, defaults):
 
 
     for key, item in defaults.items():
+        item = item[0]
         if key not in data:
             res[key] = item
         else:
@@ -214,6 +52,17 @@ def _parse_args(data, defaults):
             res[key] = type(item)(new)
 
     return res
+
+
+def _serve(data):
+    if isinstance(data, dict):
+        return data
+
+    if isinstance(data, str) and os.path.exists(data):
+        with open(data,'rb') as f:
+            return f.read()
+
+    return data
 
 
 def _get_job_results(job, timeout = 30):
@@ -231,124 +80,160 @@ def _get_job_results(job, timeout = 30):
     except utils.TASK_RUNNING:
         return {'results': {'message': 'task is running'}}
     except TimeoutError:
-        return {'results': {'message': 'task is running',
-                            'jobid': job.id}}
+        return {'results': {'message': 'task is running'}}
     except Exception as e:
-        return {'results':
-                {'error': type(e).__name__ + ": " + str(e),
-                 'traceback': traceback.format_exc()}}
+        return _return_exception(e)
 
 
-@app.cache_fn_results(link = True,
-                      ignore = lambda x: isinstance(x,dict))
-def _get_raster(args):
-    try:
-        job = tasks.sample_raster\
-            (gdal = interface, **args).delay()
-    except Exception as e:
-        return {'results':
-                {'error': type(e).__name__ + ": " + str(e),
-                 'what': '_get_raster',
-                 'args': args,
-                 'traceback': traceback.format_exc()}}
-
-    return _get_job_results(job)
+def _lookup_defaults():
+    return {'location': \
+            ([50.87,6.12],
+             '[latitude, longitude] of the desired location'),
+            'data_re': \
+            (r'.*',
+             'regular expression matching the dataset'),
+            'stat': \
+            ('max',
+             'statistic to compute for LAS files ("max","min","mean","idw","count","stdev")')}
 
 
 def _raster_defaults():
-    return {'box': [50.865,7.119,50.867,7.121],
-            'data_re': r'.*',
-            'stat': 'max',
-            'step': float(1),
-            'mesh_type': 'metric',
-            'output_type': 'pickle'}
-
-
-@route('/api/v1/raster', method=['GET'])
-def get_raster():
-    try:
-        args = _parse_args(data = request.query,
-                           defaults = _raster_defaults())
-    except Exception as e:
-        return {'results':
-                {'error': type(e).__name__ + ": " + str(e),
-                 'traceback': traceback.format_exc()}}
-
-    return _serve(_get_raster(args))
-
-
-@route('/api/v1/raster', method=['POST'])
-def get_raster():
-    try:
-        args = _parse_args(data = request.json,
-                           defaults = _raster_defaults())
-    except Exception as e:
-        return {'results':
-                {'error': type(e).__name__ + ": " + str(e),
-                 'traceback': traceback.format_exc()}}
-
-    return _serve(_get_raster(args))
-
-
-@route('/api/v1/raster/help', method=['GET'])
-def get_raster_help():
-    return {'results': _raster_defaults()}
+    res = _lookup_defaults()
+    del res['location']
+    res.update({'box': \
+                ([50.865,7.119,50.867,7.121],
+                 'bounding box of desired locations, [lat_min, lon_min, lat_max, lon_max]'),
+                'step': \
+                (float(1),
+                 'resolution of the sampling mesh in meters'),
+                'mesh_type': \
+                ('metric',
+                 'type of mesh_type ("metric","wgs84")'),
+                'output_type': \
+                ('pickle',
+                 'type of output ("pickle","geotiff","pnghillshade")')})
+    return res
 
 
 def _shadow_defaults():
     res = _raster_defaults()
     res.update({
-        'output_type': 'png',
-        'what': 'shadow',
-        'timestr': "2020-07-01_06:00:00"
-    })
+        'output_type': \
+        ('png',
+         'type of output ("png","geotiff")'),
+        'what': \
+        ('shadow',
+         'what to compute: either incidence map (always geotiff) or binary shadow map'),
+        'timestr': \
+        ("2020-07-01_06:00:00",
+         "UTC time of the shadow")})
     return res
+
+
+def _format_help(data):
+    res = []
+    for key, item in data.items():
+        res += ["""%15s=%s
+        %s
+        """ % ((key,) + item)]
+
+    return '\n'.join(res)
+
+
+@route('/api/help', method=['GET'])
+def get_help():
+    return {'results': """
+    Query geo-spatial data
+
+    /api/help            print help
+    /api/datasets        list available datasets
+    /api/raster          download a raster image of a region
+    /api/shadow          compute a shadow at a time of a region
+    /api/<what>/help     print help for <what>
+    """}
+
+
+@route('/api/datasets', method=['GET'])
+def get_datasets():
+    return {'results': interface.get_directories()}
 
 
 @app.cache_fn_results(link = True,
                       ignore = lambda x: isinstance(x,dict))
-def _get_shadow(args):
+def _raster(args):
     try:
-        job = tasks.shadow\
+        job = tasks.sample_raster\
             (gdal = interface, **args).delay()
     except Exception as e:
-        return {'results':
-                {'error': type(e).__name__ + ": " + str(e),
-                 'what': '_get_raster',
-                 'args': args,
-                 'traceback': traceback.format_exc()}}
-
+        return _return_exception(e)
 
     return _get_job_results(job)
 
 
-@route('/api/v1/shadow', method=['GET'])
+@app.cache_fn_results(link = True,
+                      ignore = lambda x: isinstance(x,dict))
+def _shadow(args):
+    try:
+        job = tasks.shadow\
+            (gdal = interface, **args).delay()
+    except Exception as e:
+        return _return_exception(e)
+
+    return _get_job_results(job)
+
+
+@route('/api/raster', method=['GET'])
+def get_raster():
+    try:
+        args = _parse_args(data = request.query,
+                           defaults = _raster_defaults())
+    except Exception as e:
+        return _return_exception(e)
+
+    return _serve(_raster(args))
+
+
+@route('/api/raster', method=['POST'])
+def post_raster():
+    try:
+        args = _parse_args(data = request.json,
+                           defaults = _raster_defaults())
+    except Exception as e:
+        return _return_exception(e)
+
+    return _serve(_raster(args))
+
+
+@route('/api/shadow', method=['GET'])
 def get_shadow():
     try:
         args = _parse_args(data = request.query,
                            defaults = _shadow_defaults())
     except Exception as e:
-        return {'results':
-                {'error': type(e).__name__ + ": " + str(e)}}
+        return _return_exception(e)
 
-    return _serve(_get_shadow(args))
+    return _serve(_shadow(args))
 
 
-@route('/api/v1/shadow', method=['POST'])
-def get_shadow():
+@route('/api/shadow', method=['POST'])
+def post_shadow():
     try:
         args = _parse_args(data = request.json,
                            defaults = _shadow_defaults())
     except Exception as e:
-        return {'results':
-                {'error': type(e).__name__ + ": " + str(e)}}
+        return _return_exception(e)
 
-    return _serve(_get_shadow(args))
+    return _serve(_shadow(args))
 
 
-@route('/api/v1/shadow/help', method=['GET'])
+@route('/api/raster/help', method=['GET'])
+def get_raster_help():
+    return {'results': _format_help(_raster_defaults())}
+
+
+@route('/api/shadow/help', method=['GET'])
 def get_shadow_help():
-    return {'results': _shadow_defaults()}
+    return {'results': _format_help(_shadow_defaults())}
 
 
 run(host='0.0.0.0', port=8080,

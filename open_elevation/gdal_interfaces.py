@@ -15,10 +15,10 @@ from lazy import lazy
 
 from tqdm import tqdm
 
-import open_elevation.polygon_index as polygon_index
-import open_elevation.nrw_las as nrw_las
 import open_elevation.utils as utils
+import open_elevation.nrw_las as nrw_las
 import open_elevation.celery_tasks.app as app
+import open_elevation.polygon_index as polygon_index
 
 from open_elevation.results_lrucache \
     import ResultFiles_LRUCache
@@ -301,14 +301,6 @@ class GDALTileInterface(object):
             self._las_dirs[dn] = nrw_las.NRWData(path = dn)
 
 
-    def print_used_las_space(self):
-        res = []
-        for path, las in self._las_dirs.items():
-            res += [("Size of cache in %s = %s GB)" %
-                     (path,las._cache.size()/(1024**3)))]
-        return '\n'.join(res)
-
-
     def open_gdal_interface(self, path):
         if path not in self._interfaces:
             with self._interfaces_lock:
@@ -355,21 +347,6 @@ class GDALTileInterface(object):
                         for fn in self._all_coords]))
         res += list(self._las_dirs.keys())
         return res
-
-
-    def lookup(self, lat, lon, data_re):
-        nearest = list(self._index.nearest((lon, lat)))
-
-        if data_re:
-            data_re = re.compile(data_re)
-            nearest = [x for x in nearest \
-                       if data_re.match(x['file'])]
-
-        coords = choose_highest_resolution(nearest)
-        gdal_interface = self.open_gdal_interface\
-            (coords['file'])
-        return {'elevation': float(gdal_interface.lookup(lat, lon)),
-                'resolution': coords['resolution']}
 
 
     @app.cache_fn_results(keys = ['box','data_re','stat'])
