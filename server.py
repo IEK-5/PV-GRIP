@@ -187,7 +187,7 @@ def _serve(data):
     if isinstance(data, dict):
         return data
 
-    if os.path.exists(data):
+    if isinstance(data, str) and os.path.exists(data):
         with open(data,'rb') as f:
             return f.read()
 
