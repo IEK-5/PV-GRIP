@@ -154,3 +154,11 @@ script. It also allow to stress test the server.
    those queries is less than 150GB.
 
    This value can be extended in the settings of the RESULTS_CACHE.
+
+ - The value of a pixel of a raster image is selected as a maximum of
+   all available data for this point. In case data is still missing in
+   all datasets, the data is taken as a nearest neighbour from the
+   generated raster image.
+
+   Hence for more accurate shadows it is important to specify correct
+   `data_re` argument.
