@@ -7,20 +7,6 @@ cd $(git rev-parse --show-toplevel)
 export src_dir="data/current"
 export chunk_size=3000
 
-function convert_to_wgs84 {
-    file="$1"
-
-    if gdalinfo "${file}" | grep -q -F 'ELLIPSOID["WGS 84"'
-    then
-        return
-    fi
-
-    "Converting to WGS 84 coordinates"
-    gdalwarp "${file}" "${file}_converted.tif" -t_srs "+proj=longlat +ellps=WGS84"
-    mv "${file}_converted.tif" "${file}"
-}
-export -f convert_to_wgs84
-
 function split_tiles {
     file="$1"
 
@@ -49,7 +35,6 @@ function preprocess {
         return
     fi
 
-    convert_to_wgs84 "${file}"
     split_tiles "${file}"
 }
 export -f preprocess

@@ -39,8 +39,8 @@ Say
 ```
 scripts/preprocess.sh
 ```
-to preprocess data. That command converts all files to the WGS84
-coordinate system, and splits files on smaller chunks.
+to preprocess data. That command converts splits files on smaller
+chunks (maximum is 3000x3000 pixels).
 
 Some parts of the scripts depends on the version of GDAL being used
 (and also requires GDAL installed on the host machine). Hence, it is
