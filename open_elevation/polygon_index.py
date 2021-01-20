@@ -51,6 +51,10 @@ class Polygon_File_Index:
         """
         self._check_data(data)
 
+        if data['file'] not in self._polygons:
+            self.insert(data)
+            return True
+
         pl = self._polygons[data['file']]
         if pl.almost_equals(geometry.Polygon(data['polygon'])):
             return False
