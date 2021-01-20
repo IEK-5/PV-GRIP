@@ -4,6 +4,14 @@ import json
 from rtree import index
 from shapely import geometry
 
+import hashlib
+
+
+def _hash(string):
+    h = hashlib.md5()
+    h.update(string.encode('utf-8'))
+    return int(h.hexdigest(), 16)
+
 
 class Polygon_File_Index:
 
@@ -54,7 +62,7 @@ class Polygon_File_Index:
 
         pl = geometry.Polygon(data['polygon'])
         self._polygons[data['file']] = pl
-        self._rtree.insert(hash(data['file']),
+        self._rtree.insert(_hash(data['file']),
                            pl.bounds,
                            obj = self._set_data(data))
 
@@ -75,7 +83,7 @@ class Polygon_File_Index:
         if pl.almost_equals(geometry.Polygon(data['polygon'])):
             return False
 
-        self._rtree.delete(hash(data['file']), pl.bounds)
+        self._rtree.delete(_hash(data['file']), pl.bounds)
         del self._polygons[data['file']]
         self.insert(data)
         return True
