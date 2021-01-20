@@ -17,6 +17,7 @@ import open_elevation.gdal_interfaces as gdal
 import open_elevation.utils as utils
 import open_elevation.celery_tasks as tasks
 import open_elevation.celery_tasks.app as app
+import open_elevation.celery_status as celery_status
 
 
 interface = gdal.GDALTileInterface\
@@ -149,6 +150,7 @@ def get_help():
     /api/datasets        list available datasets
     /api/raster          download a raster image of a region
     /api/shadow          compute a shadow at a time of a region
+    /api/status          print current active and scheduled jobs
     /api/<what>/help     print help for <what>
     """}
 
@@ -156,6 +158,11 @@ def get_help():
 @route('/api/datasets', method=['GET'])
 def get_datasets():
     return {'results': interface.get_directories()}
+
+
+@route('/api/status', method=['GET'])
+def get_datasets():
+    return {'results': celery_status.status()}
 
 
 @app.cache_fn_results(link = True,
