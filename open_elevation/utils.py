@@ -41,6 +41,12 @@ def get_tempfile(path = os.path.join(git_root(),
     return os.path.join(path,fd.name)
 
 
+def get_tempdir(path = os.path.join(git_root(),
+                                    'data','tempfiles')):
+    os.makedirs(path,exist_ok = True)
+    return tempfile.mkdtemp(dir = path)
+
+
 def remove_file(fn):
     try:
         if fn:
@@ -48,3 +54,26 @@ def remove_file(fn):
     except:
         logging.error("cannot remove file: %s" % fn)
         pass
+
+
+def run_command(what, cwd, ignore_exitcode = False):
+    res = subprocess.run(what,
+                         cwd = cwd,
+                         stderr = subprocess.PIPE,
+                         stdout = subprocess.PIPE)
+
+    if ignore_exitcode:
+        return
+
+    if not res.returncode:
+        return
+
+    raise RuntimeError("""
+    command has non-zero exit code
+    command = %s
+    returns = %d
+    stdout  = %s
+    stderr  = %s
+    """ % (' '.join(what), res.returncode,
+           res.stdout.decode(),
+           res.stderr.decode()))

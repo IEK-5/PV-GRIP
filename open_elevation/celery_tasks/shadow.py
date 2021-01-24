@@ -2,7 +2,6 @@ import os
 import shutil
 import logging
 import tempfile
-import subprocess
 
 import numpy as np
 
@@ -64,35 +63,40 @@ def solar_time(timestr, lon):
 
 
 def _create_temp_grassdata(wdir, geotiff_fn):
-    grass_path = os.path.join(wdir,'PERMANENT')
+    grass_path = os.path.join(wdir,'grass','PERMANENT')
 
-    subprocess.run([_GRASS,'-c',geotiff_fn,'-e',wdir],
-                   cwd = wdir)
-    subprocess.run([_GRASS, grass_path,
-                    '--exec','r.external',
-                    'input=' + geotiff_fn,
-                    'output=elevation'],
-                   cwd = wdir)
+    utils.run_command\
+        (what = [_GRASS,'-c',geotiff_fn,'-e',
+                 os.path.join(wdir,'grass')],
+         cwd = wdir)
+    utils.run_command\
+        (what = [_GRASS, grass_path,
+                 '--exec','r.external',
+                 'input=' + geotiff_fn,
+                 'output=elevation'],
+         cwd = wdir)
 
     return wdir
 
 
 def _compute_sun_incidence(wdir, ofn, solar_time, njobs = 4):
-    grass_path = os.path.join(wdir,'PERMANENT')
+    grass_path = os.path.join(wdir,'grass','PERMANENT')
 
-    subprocess.run([_GRASS, grass_path,
-                    '--exec','r.sun',
-                    'elevation=elevation',
-                    'incidout=incidence',
-                    'day=' + str(solar_time['day']),
-                    'time=' + ('%.5f' % solar_time['hour']),
-                    'nprocs=' + str(njobs)],
-                   cwd = wdir)
-    subprocess.run([_GRASS, grass_path,
-                    '--exec','r.out.gdal',
-                    'input=incidence',
-                    'output=incidence.tif'],
-                   cwd = wdir)
+    utils.run_command\
+        (what = [_GRASS, grass_path,
+                 '--exec','r.sun',
+                 'elevation=elevation',
+                 'incidout=incidence',
+                 'day=' + str(solar_time['day']),
+                 'time=' + ('%.5f' % solar_time['hour']),
+                 'nprocs=' + str(njobs)],
+         cwd = wdir)
+    utils.run_command\
+        (what = [_GRASS, grass_path,
+                 '--exec','r.out.gdal',
+                 'input=incidence',
+                 'output=incidence.tif'],
+         cwd = wdir)
     os.rename(os.path.join(wdir, 'incidence.tif'), ofn)
 
     return ofn
@@ -124,7 +128,7 @@ def compute_shadow_map(ifn):
 @app.cache_fn_results()
 @app.one_instance(expire = 60*10)
 def compute_incidence(tif_fn, timestr):
-    wdir = tempfile.mkdtemp(dir='.')
+    wdir = utils.get_tempdir()
     ofn = utils.get_tempfile()
 
     try:
@@ -148,14 +152,15 @@ def compute_incidence(tif_fn, timestr):
 
 
 def _save_binary_png(ifn, ofn):
-    wdir = tempfile.mkdtemp(dir = '.')
+    wdir = utils.get_tempdir()
 
     try:
-        subprocess.run(['gdal_translate',
-                        '-scale','0','1','0','255',
-                        '-of','png',
-                        ifn,'mask.png'],
-                       cwd = wdir)
+        utils.run_command\
+            (what = ['gdal_translate',
+                     '-scale','0','1','0','255',
+                     '-of','png',
+                     ifn,'mask.png'],
+             cwd = wdir)
         os.rename(os.path.join(wdir, 'mask.png'), ofn)
     finally:
         shutil.rmtree(wdir)

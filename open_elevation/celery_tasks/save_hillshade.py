@@ -1,7 +1,6 @@
 import os
 import shutil
 import tempfile
-import subprocess
 
 import open_elevation.utils as utils
 import open_elevation.celery_tasks.app as app
@@ -14,12 +13,13 @@ def _save_pnghillshade(ifn, ofn):
     :ofn: output file
 
     """
-    wdir = tempfile.mkdtemp(dir = '.')
+    wdir = utils.get_tempdir()
 
     try:
-        subprocess.run(['gdaldem','hillshade',
-                        '-of','png',ifn, 'hillshade.png'],
-                       cwd = wdir)
+        utils.run_command\
+            (what = ['gdaldem','hillshade',
+                     '-of','png',ifn, 'hillshade.png'],
+             cwd = wdir)
         os.rename(os.path.join(wdir, 'hillshade.png'), ofn)
     finally:
         shutil.rmtree(wdir)

@@ -5,7 +5,6 @@ import shutil
 import logging
 import requests
 import tempfile
-import subprocess
 
 import open_elevation.celery_tasks.app as app
 import open_elevation.utils as utils
@@ -73,10 +72,11 @@ def run_pdal(path, ofn):
         logging.debug("File is in cache!")
         return ofn
 
-    wdir = tempfile.mkdtemp(dir = '.')
+    wdir = utils.get_tempdir()
     try:
-        subprocess.run(['pdal','pipeline',path],
-                       cwd = wdir)
+        utils.run_command\
+            (what = ['pdal','pipeline',path],
+             cwd = wdir)
 
         app.RESULTS_CACHE.add_file(ofn)
     finally:
