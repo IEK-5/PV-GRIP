@@ -90,7 +90,8 @@ def get_mesh(csv_file, chunksize):
         
 
 
-def get_roi(csv_file ,chunksize=10**6, lambda_=None, n_segments_lat=None, n_segments_lon=None, segments_lat_distance=0.05, segments_lon_distance=0.05, lambda_d = 4) -> [((float,float),(float,float))]:
+
+def get_roi_csv(csv_file ,chunksize=10**6, lambda_=None, n_segments_lat=None, n_segments_lon=None, segments_lat_distance=0.05, segments_lon_distance=0.05, lambda_d = 4) -> [((float,float),(float,float))]:
     """Given a chunksize and .csv file containing geo-points, 
         this function creates a set of rectangles that contain
         the geo-points and a region around them defined by lambda_.\n

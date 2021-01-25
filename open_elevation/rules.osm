@@ -1,0 +1,11 @@
+
+<osm>
+
+   <way>
+      <tag k='building' v=''/>
+      <tag k='_action_' v='draw:color=black;bcolor=black'/>
+   </way>
+   
+  
+</osm>
+
