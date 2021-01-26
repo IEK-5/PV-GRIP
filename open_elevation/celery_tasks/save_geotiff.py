@@ -10,16 +10,18 @@ import open_elevation.celery_tasks.app as app
 
 
 def save_gdal(ofn, array, geotransform, epsg):
-    nrows, ncols = array.shape
+    nrows, ncols, nchannels = array.shape
     output_raster = gdal.GetDriverByName('GTiff')\
                         .Create(ofn, ncols, nrows,
-                                1, gdal.GDT_Float32)
+                                nchannels, gdal.GDT_Float32)
     output_raster.SetGeoTransform(geotransform)
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(epsg)
 
     output_raster.SetProjection(srs.ExportToWkt())
-    output_raster.GetRasterBand(1).WriteArray(array)
+    for channel in range(nchannels):
+        output_raster.GetRasterBand(channel+1)\
+                     .WriteArray(array[:,:,channel])
     output_raster.FlushCache()
 
 
@@ -36,7 +38,7 @@ def _save_geotiff(data, ofn):
     array = data['raster']
 
     xmin, ymin, xmax, ymax = data['mesh']['raster_box']
-    nrows, ncols = array.shape
+    nrows, ncols, nchannels = array.shape
     xres = (xmax - xmin)/float(ncols)
     yres = (ymax - ymin)/float(nrows)
     geotransform = (xmin, xres, 0, ymax, 0, -yres)
@@ -55,4 +57,5 @@ def save_geotiff(pickle_fn):
         _save_geotiff(data, ofn)
     except Exception as e:
         utils.remove_file(ofn)
+        raise e
     return ofn

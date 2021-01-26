@@ -152,8 +152,14 @@ class GDALInterface(object):
 
     @lazy
     def points_array(self):
-        b = self.src.GetRasterBand(1)
-        return b.ReadAsArray()
+        res = self.src.ReadAsArray()
+        if 3 == len(res.shape):
+            return np.transpose(res, axes = (1,2,0))
+
+        if 2 == len(res.shape):
+            res = np.expand_dims(res, axis = 2)
+
+        return res
 
 
     def print_statistics(self):
@@ -178,12 +184,13 @@ class GDALInterface(object):
     def lookup(self, points):
         points = self._get_pixels(points)
         res = []
+        logging.debug("self.points_array.shape = %s" % str(self.points_array.shape))
         for y,x in points:
             if 0 <= y < self.src.RasterYSize \
                and 0 <= x < self.src.RasterXSize:
                 res += [self.points_array[y,x]]
             else:
-                res += [self.SEA_LEVEL]
+                res += [self.SEA_LEVEL*np.ones((self.src.RasterCount,))]
 
         return res
 

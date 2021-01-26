@@ -98,9 +98,11 @@ def sample_from_box(index_fn, box,
 
         res = np.array((res,x)).max(axis=0)
     res = np.array(res).reshape(len(grid['mesh'][0]),
-                                len(grid['mesh'][1]))
-    res = np.transpose(res)[::-1,]
+                                len(grid['mesh'][1]),
+                                res.shape[1])
     res = fill_missing(res)
+    res = np.transpose(np.flip(res, axis = 1),
+                       axes=(1,0,2))
 
     ofn = utils.get_tempfile()
     try:
