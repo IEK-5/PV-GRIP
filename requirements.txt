@@ -13,3 +13,4 @@ tqdm
 numpy
 pytest
 scipy
+opencv-python

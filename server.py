@@ -112,7 +112,8 @@ def _raster_defaults():
                  'type of mesh_type ("metric","wgs84")'),
                 'output_type': \
                 ('pickle',
-                 'type of output ("pickle","geotiff","pnghillshade")')})
+                 'type of output ("pickle","geotiff","pnghillshade","png").' +\
+                 '"png" does not normalise data')})
     return res
 
 

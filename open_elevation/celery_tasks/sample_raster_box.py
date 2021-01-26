@@ -14,6 +14,8 @@ import open_elevation.celery_tasks.app \
     as app
 import open_elevation.celery_tasks.save_geotiff \
     as save_geotiff
+import open_elevation.celery_tasks.save_png \
+    as save_png
 import open_elevation.celery_tasks.save_hillshade \
     as save_hillshade
 import open_elevation.celery_tasks.las_processing \
@@ -117,7 +119,8 @@ def sample_from_box(index_fn, box,
 def sample_raster(gdal, box, data_re, stat,
                   mesh_type, step, output_type,
                   max_points = 2e+7):
-    if output_type not in ('geotiff', 'pickle', 'pnghillshade'):
+    if output_type not in ('geotiff', 'pickle',
+                           'pnghillshade','png'):
         raise RuntimeError("Invalid 'output_type' argument!")
 
     grid = _compute_mesh(box = box, step = step,
@@ -137,6 +140,10 @@ def sample_raster(gdal, box, data_re, stat,
          (kwargs = {'index_fn': index_fn, 'box': box,
                     'mesh_type': mesh_type, 'step': step},
           immutable = True))
+
+    if output_type in ('png'):
+        tasks |= save_png.save_png.signature()
+        return tasks
 
     if output_type in ('geotiff', 'pnghillshade'):
         tasks |= save_geotiff.save_geotiff.signature()
