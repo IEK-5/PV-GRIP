@@ -23,9 +23,9 @@ class NRWData:
     def __init__(self, path, update_index = 1):
         """
 
-        :path: where las_meta.json file is located.
+        :path: where remote_meta.json file is located.
 
-        las_meta.json should contain fields: 'root_url' (format string), 'step' the integer is multiplied to get coordinate value, 'resolution' resolution to use in sampling the lidar data, 'epsg' coordinate system, 'box_step' size of each rectangle data, 'fn_meta' path to the meta csv file, 'meta_entry_regex' regex how to match coordinates
+        remote_meta.json should contain fields: 'root_url' (format string), 'step' the integer is multiplied to get coordinate value, 'resolution' resolution to use in sampling the lidar data, 'epsg' coordinate system, 'box_step' size of each rectangle data, 'fn_meta' path to the meta csv file, 'meta_entry_regex' regex how to match coordinates
 
         the data is stored in the subdirectory 'cache'
 
@@ -34,9 +34,18 @@ class NRWData:
         """
         self.path = path
         self._update_index = update_index*24*60*60
-        self._las_whats = ('min', 'max', 'mean', 'idw', 'count', 'stdev')
 
         self._meta = self._read_meta()
+        self._if_compute_las = \
+            'yes' == self._meta['if_compute_las']
+
+        if self._if_compute_las:
+            self._las_whats = self._meta['las_stats']
+            self._pdal_resolution = \
+                self._meta['pdal_resolution']
+        else:
+            self._las_whats = ('',)
+            self._pdal_resolution = 0
 
         self._proj_from = pyproj\
             .Transformer.from_crs(self._meta['epsg'], 4326,
@@ -51,7 +60,7 @@ class NRWData:
 
     def _read_meta(self):
         with open(os.path.join\
-                  (self.path,'las_meta.json'),'r') as f:
+                  (self.path,'remote_meta.json'),'r') as f:
             return json.load(f)
 
 
@@ -132,9 +141,11 @@ class NRWData:
                     'url': self._meta['root_url'] \
                     % (lon, lat),
                     'stat': what,
-                    'las_meta': self.path,
+                    'remote_meta': self.path,
+                    'if_compute_las': \
+                    self._if_compute_las,
                     'pdal_resolution': \
-                    self._meta['pdal_resolution']})
+                    self._pdal_resolution})
                 yield data
 
 

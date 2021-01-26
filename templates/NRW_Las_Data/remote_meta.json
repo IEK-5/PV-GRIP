@@ -1,0 +1,12 @@
+{
+    "root_url": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/3dm_32_%s_%s_1_nw.laz",
+    "step": 1000,
+    "box_resolution": 1,
+    "epsg": 25832,
+    "box_step": 1,
+    "pdal_resolution": 0.3,
+    "meta_url": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/index.json",
+    "meta_entry_regex": "^3dm_32_(.*)_(.*)_1_nw.*$",
+    "las_stats": ["max","min","count","mean","idw","stdev"],
+    "if_compute_las": "yes"
+}

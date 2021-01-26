@@ -39,7 +39,7 @@ def _subset_filter_how(x, data_re, stat):
         return False
 
     if 'stat' in x and \
-       not data_re.match(x['las_meta']):
+       not data_re.match(x['remote_meta']):
         return False
 
     if 'stat' in x and \
@@ -184,7 +184,6 @@ class GDALInterface(object):
     def lookup(self, points):
         points = self._get_pixels(points)
         res = []
-        logging.debug("self.points_array.shape = %s" % str(self.points_array.shape))
         for y,x in points:
             if 0 <= y < self.src.RasterYSize \
                and 0 <= x < self.src.RasterXSize:
@@ -271,7 +270,7 @@ class GDALTileInterface(object):
         path = os.path.commonprefix\
             ([x for x in self._index.files()
               if x is not None] + \
-             [x for x in self._index.files(what = 'las_meta')
+             [x for x in self._index.files(what = 'remote_meta')
               if x is not None])
         self._find_las_dirs(path)
 
@@ -303,7 +302,7 @@ class GDALTileInterface(object):
     def _find_las_dirs(self, path):
         for fn in utils.list_files\
             (path = path,
-             regex = '.*/las_meta\.json$'):
+             regex = '.*/remote_meta\.json$'):
             dn = os.path.abspath(os.path.dirname(fn))
             self._las_dirs[dn] = nrw_las.NRWData(path = dn)
 

@@ -53,12 +53,13 @@ def check_all_data_available(index_fn):
         if os.path.exists(x['file']):
             continue
 
-        if 'las_meta' in x:
+        if 'remote_meta' in x:
             tasks += [las_processing.process_laz\
                       (url = x['url'],
                        ofn = x['file'],
                        resolution = x['pdal_resolution'],
-                       what = x['stat'])]
+                       what = x['stat'],
+                       if_compute_las = x['if_compute_las'])]
     return celery.group(tasks)
 
 

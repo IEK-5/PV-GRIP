@@ -79,18 +79,41 @@ def run_pdal(path, ofn):
              cwd = wdir)
 
         app.RESULTS_CACHE.add_file(ofn)
+        return ofn
     finally:
         shutil.rmtree(wdir)
 
 
-def process_laz(url, ofn, resolution, what):
+@app.CELERY_APP.task()
+@app.one_instance(expire = 5)
+def link_ofn(ifn, ofn):
+    logging.debug("""
+    link_ofn
+    ifn = %s
+    ofn = %s
+    """ % (ifn, ofn))
+    if app.RESULTS_CACHE.file_in(ofn):
+        logging.debug("File is in cache!")
+        return ofn
+
+    os.link(ifn, ofn)
+    app.RESULTS_CACHE.add_file(ofn)
+    return ofn
+
+
+def process_laz(url, ofn, resolution, what, if_compute_las):
     tasks = download_laz\
         .signature(kwargs = {'url': url})
-    tasks |= write_pdaljson\
-        .signature(kwargs = {'ofn': ofn,
-                             'resolution': resolution,
-                             'what': what})
-    tasks |= run_pdal\
-        .signature(kwargs = {'ofn': ofn})
+
+    if if_compute_las:
+        tasks |= write_pdaljson\
+            .signature(kwargs = {'ofn': ofn,
+                                 'resolution': resolution,
+                                 'what': what})
+        tasks |= run_pdal\
+            .signature(kwargs = {'ofn': ofn})
+    else:
+        tasks |= link_ofn\
+            .signature(kwargs = {'ofn': ofn})
 
     return tasks

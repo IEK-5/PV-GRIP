@@ -31,7 +31,7 @@ is selected.
 
 Data can be placed in several subdirectories. It can be either a
 directory with geotiff raster files (in arbitrary coordinate system)
-or a directory containing `las_meta.json` (see below).
+or a directory containing `remote_meta.json` (see below).
 
 All data should be placed in `data/current` directory.
 
@@ -73,18 +73,16 @@ In case task is running the following message is returned:
 {"message": "task is running"}
 ```
 
-### NRW Lidar data
+### NRW Lidar and Aerial data
 
-The server gives access to raw [Lidar
-scans](https://www.tim-online.nrw.de/tim-online2/) of the NRW regions.
+The server gives access to [geospatial
+datasets](https://www.opengeodata.nrw.de/produkte/geobasis/) provided
+by NRW.
 
-To do so a certain processing is required. Server downloads data from
-[the
-opengeodata](https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/)
-and converts point clouds to raster images.
+For the a special file `remote_meta.json` should be specified in the
+corresponding directory. See examples in `templates` directory.
 
-The behaviour of the LAS Data directories are defined by a special
-file called `las_meta.json`. For example, for the NRW data:
+For example, for the Lidar data:
 ```
 {
     "root_url": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/3dm_32_%s_%s_1_nw.laz",
@@ -94,7 +92,9 @@ file called `las_meta.json`. For example, for the NRW data:
     "box_step": 1,
     "pdal_resolution": 0.3,
     "meta_url": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/index.json",
-    "meta_entry_regex": "^3dm_32_(.*)_(.*)_1_nw.*$"
+    "meta_entry_regex": "^3dm_32_(.*)_(.*)_1_nw.*$",
+    "las_stats": ["max","min","count","mean","idw","stdev"],
+    "if_compute_las": "yes"
 }
 ```
 where `pdal_resolition` indicated that Lidar data is computed with a
@@ -105,6 +105,9 @@ From a cloud point several statistic can be computed: `min`, `max` and
 `count`. Those functions are taken for every region with a specified
 resolution. See more info on available statistics
 [here](https://pdal.io/stages/writers.gdal.html#writers-gdal).
+
+If `if_compute_las` is not `"yes"`, then `las_stats` and
+`pdal_resolution` arguments are ignored.
 
 ## Sample raster images
 

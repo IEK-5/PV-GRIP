@@ -1,0 +1,10 @@
+{
+    "root_url": "https://www.opengeodata.nrw.de/produkte/geobasis/lbi/dop/dop_jp2_f10/dop10rgbi_32_%s_%s_1_nw.jp2",
+    "step": 1000,
+    "box_resolution": 1,
+    "epsg": 25832,
+    "box_step": 1,
+    "meta_url": "https://www.opengeodata.nrw.de/produkte/geobasis/lbi/dop/dop_jp2_f10/index.json",
+    "meta_entry_regex": "^dop10rgbi_32_(.*)_(.*)_1_nw.*$",
+    "if_compute_las": "no"
+}
