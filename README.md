@@ -165,3 +165,9 @@ script. It also allow to stress test the server.
 
    Hence for more accurate shadows it is important to specify correct
    `data_re` argument.
+
+ - For any non-laz remote data one has to specify stat="". For
+   example, this applies for the aerial images:
+   ```
+   curl localhost:8081/api/raster\?box="\[50.6053,6.3835,50.6085,6.3922\]"\&step="1"\&data_re=".*_Aerial"\&output_type="png"\&stat="" -o test.png
+   ```
