@@ -350,12 +350,17 @@ class GDALTileInterface(object):
 
 
     @app.cache_fn_results(keys = ['box','data_re','stat'])
-    def subset(self, box, data_re, stat):
+    def subset(self, box, data_re, stat,
+               raise_on_empty = True):
         index = self._index.intersect\
             (polygon = _polygon_from_box(box))
         index = index.filter\
             (how = lambda x:
              _subset_filter_how(x, data_re, stat))
+
+        if raise_on_empty and 0 == index.size():
+            raise RuntimeError\
+                ("no data available for the selected location")
 
         ofn = utils.get_tempfile()
         try:
