@@ -13,16 +13,21 @@ import json
 import requests
 import xml.etree.ElementTree as etree
 
-import open_elevation.utils as utils
-import open_elevation.celery_tasks.app as app
+import utils as utils
+#import celery_tasks.app as app Unable to import due to import issues in app.py
+import celery
 
 OVERPASS_URL = "http://overpass-api.de/api/interpreter"
 LRUCache = Files_LRUCache(1)
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 10)
-def find_osm_data_online(data_path, bounding_box, tags=None):
+#@app.CELERY_APP.task()
+#@app.cache_fn_results()
+#@app.one_instance(expire = 10)
+app = celery.Celery('osm_tasks', broker='redis://localhost:6379/0')
+
+
+@app.task
+def find_osm_data_online(bounding_box, tags=None):
     box = (bounding_box[0][0],bounding_box[1][0],bounding_box[0][1],bounding_box[1][1])
 
     query_tags = ""
@@ -47,21 +52,25 @@ def find_osm_data_online(data_path, bounding_box, tags=None):
     """
 
     response = requests.get(OVERPASS_URL, params={'data':query})
-
-    file_name = f"{str(box).replace('(','').replace(')','')}.osm"
-    path_to_file = f'{data_path}/{file_name}'
-    with open(path_to_file,'w') as file:
+    
+    #Create a temp file, give key bounding box and tags and the 
+    
+    #get_tempfile() in utils.py
+    
+    tmp_f = utils.get_tempfile()
+    
+    #file_name = f"{str(box).replace('(','').replace(')','')}.osm"
+    #path_to_file = f'{data_path}/{file_name}'
+    with open(tmp_f,'w') as file:
         file.write(response.text)
         
-    return path_to_file, file_name
+    return tmp_f
         
     
 
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 10)
+
 def find_common_tags(number_of_tags: int):
     """Finds a list of size number_of_tags of the most frequent tags. 
     """
@@ -81,9 +90,8 @@ def find_common_tags(number_of_tags: int):
              
     return heapq.nlargest(number_of_tags, counter, key=counter.get)
     
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 10)
+#@app.CELERY_APP.task()
+#@app.one_instance(expire = 10)
 def add_to_database():
     try:
         subprocess.check_call(['osm2pgsql','--slim','-a', '-d', 'osm_database', '-H', 'localhost', '-P','8080','-U','osm_user', 'data.osm'])
@@ -93,15 +101,16 @@ def add_to_database():
 
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 10)
+#@app.CELERY_APP.task()
+#@app.cache_fn_results()
+#@app.one_instance(expire = 10)
 def create_map_for_csv(data_path ,data: str):
     
     bounding_boxes = get_roi_csv(data)
     os.makedirs(data_path, exist_ok = True)
     for box in bounding_boxes:
-
+        print(box)
+        break
         path_to_file, file_name = find_osm_data_online(data_path ,box) #It seems that only using speciffic tags prevents smrender from working correctly
         
         LRUCache.add(path_to_file)
@@ -110,7 +119,9 @@ def create_map_for_csv(data_path ,data: str):
            
 
 #The function is not yet finished
-def create_rules():
+@app.task
+def create_rules(tag):
+    
     
     root = etree.Element('osm')
 
@@ -123,7 +134,7 @@ def create_rules():
     tag_name = etree.Element('tag')
     type_.append(tag_name)
 
-    tag_name.set('k','buildings')
+    tag_name.set('k',tag)
     tag_name.set('v','')
 
     tag_action = etree.Element('tag')
@@ -132,24 +143,42 @@ def create_rules():
     tag_action.set('k','_action_')
     tag_action.set('v','draw:color=black;bcolor=black')
 
-    tree.write(open('rules.osm','wb'))        
+    tree.write(open('rules.osm','wb'))
+    
+    print('HEKELD')    
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 10)
+#@app.CELERY_APP.task()
+#@app.cache_fn_results()
+#@app.one_instance(expire = 10)
+@app.task
 def render_osm_data(box, input_xml, output_name):
   
     
     boundingBoxs = str(box[0][0])+':'+str(box[1][0])+':'+ str(box[0][1])+':'+str(box[1][1])
 
     try:
+        #You can use run_command instead which is implemented in utils.py
         renderer = subprocess.Popen(['smrender', '-i', input_xml, '-o', f'{output_name}.pdf','-P','A4', '-l', boundingBoxs, '-r', 'rules.osm'])
         renderer.wait()
     except:
         print(f"An error has occured!")
 
 
+def osm_render(box, tag = 'building'):
+    #celery chains
+    
+    tasks = celery.group(find_osm_data_online.signature(kwargs = {'bounding_box' : box, 'tags':tag}),
+                         create_rules.signature(kwargs={'tag' : tag}))
+    
+    tasks |= render_osm_data.signature(kwargs = {'box' : box,
+                                                 'tag' : tag})
+    
+    return tasks
 
-#create_map_for_data('./_osm_data','coordinates.csv')
+#create_map_for_csv('./_osm_data','coordinates.csv')
+
+#tasks = osm_render(((50.83912197832251, 50.88913587107049), (6.125850812597889, 6.17585775800697)),'building')
+create_rules.delay('building')
+
 
