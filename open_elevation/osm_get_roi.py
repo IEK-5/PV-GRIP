@@ -45,6 +45,7 @@ def point_to_quadrant(point: float,  min_: float, d: float):
         
 def binning(data_points, min_lat: float, distance_lat: float, min_lon:float, distance_lon:float, lambda_:float) -> Quadrant_Set:
     quadrants_to_take = set()
+    print(data_points)
     for point in data_points:
         upper_left = (point[0]+lambda_, point[1]-lambda_)
         upper_right = (point[0]+lambda_, point[1]+lambda_)
@@ -146,6 +147,7 @@ def get_roi_csv(csv_file ,chunksize=10**6, lambda_=None, n_segments_lat=None, n_
             break
         
         else:
+           
             quadrants_to_take = binning(data_points, min_lat, distance_lat, min_lon, distance_lon, lambda_)
             for i,j in quadrants_to_take:
                 quadrant_boundaries.add((quadrant_to_boundaries(i,min_lat,distance_lat),quadrant_to_boundaries(j,min_lon,distance_lon)))
