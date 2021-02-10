@@ -1,4 +1,4 @@
-# Extended Open-Elevation
+# PV-GRIP (PV-Geographic Raster Image Processor)
 
 [![Find a bird!](http://img.youtube.com/vi/GGpmm5at-a8/0.jpg)](http://www.youtube.com/watch?v=GGpmm5at-a8)
 
