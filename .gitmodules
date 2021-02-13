@@ -1,0 +1,3 @@
+[submodule "open_elevation/cassandra_io"]
+	path = open_elevation/cassandra_io
+	url = git@jugit.fz-juelich.de:pearl-project/cassandra_io.git

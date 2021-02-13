@@ -18,7 +18,7 @@ from tqdm import tqdm
 import open_elevation.utils as utils
 import open_elevation.nrw_las as nrw_las
 import open_elevation.celery_tasks.app as app
-import open_elevation.polygon_index as polygon_index
+import cassandra_io.polygon_index as polygon_index
 
 from open_elevation.results_lrucache \
     import ResultFiles_LRUCache

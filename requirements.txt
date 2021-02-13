@@ -1,5 +1,4 @@
 lazy
-GDAL
 bottle
 rtree
 gunicorn

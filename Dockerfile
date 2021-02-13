@@ -10,8 +10,7 @@ RUN mkdir /code
 ADD . /code/
 WORKDIR /code
 
-RUN pip3 install -r requirements.txt
-RUN pip3 install -e .
+RUN make init
 
 CMD scripts/start_server.sh
 

@@ -26,7 +26,7 @@ import open_elevation.mesh \
     as mesh
 import open_elevation.gdal_interfaces \
     as gdal
-import open_elevation.polygon_index \
+import cassandra_io.polygon_index \
     as polygon_index
 
 
