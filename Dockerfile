@@ -5,7 +5,8 @@ RUN apt-get install -y \
     python3-pip libspatialindex-dev \
     bc pdal \
     redis git \
-    iproute2
+    iproute2 \
+    librsvg2-dev libtool
 
 RUN mkdir /code
 ADD . /code/
