@@ -44,20 +44,33 @@ def one_instance(expire=60):
     return wrapper
 
 
+def _compute_ofn(keys, args, kwargs, fname):
+      if keys is not None:
+          uniq = (args,)
+          if kwargs:
+              uniq = {k:v for k,v in kwargs.items()
+                      if k in keys}
+      else:
+          uniq = (args, kwargs)
+      key = ("cache_results", fname, uniq)
+      return RESULTS_CACHE.get(key, check = False), key
+
+
 def cache_fn_results(keys = None,
-                     link = False, ignore = lambda x: False):
+                     link = False,
+                     ignore = lambda x: False,
+                     ofn_arg = None):
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
-            if keys is not None:
-                uniq = (args,)
-                if kwargs:
-                    uniq = {k:v for k,v in kwargs.items()
-                            if k in keys}
+            if not ofn_arg or ofn_arg not in kwargs:
+                ofn, key = _compute_ofn(keys = keys,
+                                   args = args,
+                                   kwargs = kwargs,
+                                   fname = fun.__name__)
             else:
-                uniq = (args, kwargs)
-            key = ("cache_results", fun.__name__, uniq)
-            ofn = RESULTS_CACHE.get(key, check = False)
+                ofn, key = kwargs[ofn_arg], 'NA'
+
             if RESULTS_CACHE.file_in(ofn):
                 logging.debug("""
                 File is in cache!

@@ -61,6 +61,7 @@ def write_pdaljson(laz_fn, ofn, resolution, what):
 
 
 @app.CELERY_APP.task()
+@app.cache_fn_results(ofn_arg = 'ofn')
 @app.one_instance(expire = 60*20)
 def run_pdal(path, ofn):
     logging.debug("""
@@ -68,10 +69,6 @@ def run_pdal(path, ofn):
     path = %s
     ofn = %s
     """ % (path, ofn))
-    if app.RESULTS_CACHE.file_in(ofn):
-        logging.debug("File is in cache!")
-        return ofn
-
     wdir = utils.get_tempdir()
     try:
         utils.run_command\
@@ -85,6 +82,7 @@ def run_pdal(path, ofn):
 
 
 @app.CELERY_APP.task()
+@app.cache_fn_results(ofn_arg = 'ofn')
 @app.one_instance(expire = 5)
 def link_ofn(ifn, ofn):
     logging.debug("""
@@ -92,12 +90,7 @@ def link_ofn(ifn, ofn):
     ifn = %s
     ofn = %s
     """ % (ifn, ofn))
-    if app.RESULTS_CACHE.file_in(ofn):
-        logging.debug("File is in cache!")
-        return ofn
-
     os.link(ifn, ofn)
-    app.RESULTS_CACHE.add_file(ofn)
     return ofn
 
 
