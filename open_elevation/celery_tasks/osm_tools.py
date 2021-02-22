@@ -1,4 +1,5 @@
 import pyrosm
+import logging
 import os
 import sys
 import shutil
@@ -15,9 +16,12 @@ import xml.etree.ElementTree as etree
 import celery
 import open_elevation.utils as utils
 import open_elevation.celery_tasks.app as app
+import geohash
+import itertools
 
 
-OVERPASS_URL = "http://overpass-api.de/api/interpreter"
+
+OVERPASS_URL = "http://overpass-api.de/api/interpreter?data="
 LRUCache = Files_LRUCache(1)
 
 @app.CELERY_APP.task()
@@ -30,7 +34,7 @@ def find_osm_data_online(bounding_box, tags=None):
     if tags:
         for tag in tags:
 
-            query_tags = query_tags + f"""node[{str(tag)}]{str(box)};
+            query_tags = query_tags + f"""node{str(box)};
                               way[{str(tag)}]{str(box)};
                               relation[{str(tag)}]{str(box)};"""
                               
@@ -46,11 +50,11 @@ def find_osm_data_online(bounding_box, tags=None):
     );
     out center;
     """
-
-    response = requests.get(OVERPASS_URL, params={'data':query})
+    
+    #We have to set referer. If this is not done we could be denied access to osm data. See: https://help.openstreetmap.org/questions/55828/overpass-returns-429-every-time-for-some-queries-but-not-for-others
+    response = requests.get(OVERPASS_URL, params={'data':query}, headers={'referer':'open-elevation'})
     
     tmp_f = utils.get_tempfile()
-
     with open(tmp_f,'w') as file:
         file.write(response.text)
         
@@ -109,7 +113,7 @@ def create_map_for_csv(data_path ,data: str):
 @app.cache_fn_results()
 @app.one_instance(expire = 10)
 def create_rules(tag):
-    
+    #Normaly tag could contain a list of tags.
     
     root = etree.Element('osm')
 
@@ -122,7 +126,7 @@ def create_rules(tag):
     tag_name = etree.Element('tag')
     type_.append(tag_name)
 
-    tag_name.set('k',tag)
+    tag_name.set('k',tag[0])
     tag_name.set('v','')
 
     tag_action = etree.Element('tag')
@@ -133,45 +137,105 @@ def create_rules(tag):
 
     tmp_f = utils.get_tempfile()
     tree.write(open(tmp_f,'wb'))
-   
+    
     return tmp_f
 
 
 @app.CELERY_APP.task()
 @app.cache_fn_results()
 @app.one_instance(expire = 10)
-def render_osm_data(box, input_xml, rules_file):
+def render_osm_data(data):
   
+    #The data attribute contains the following file paths:
+    #File path that describes the boundingbox in smrender syntax
+    #File path that contains all information about the region inside the bounding box (osm information)
+    #File path that contains the rules that are to be used with smrender
     
-    boundingBoxs = str(box[0][0])+':'+str(box[1][0])+':'+ str(box[0][1])+':'+str(box[1][1])
+    bbox = data[0]
 
     tmp_f = utils.get_tempfile()
-    tmp_d = utils.get_tempdir()
+    
     try:
-        #You can use run_command instead which is implemented in utils.py
-        file_path = os.path.join(tmp_d, 'map.pdf')
-        renderer = subprocess.Popen(['smrender', '-i', input_xml, '-o', file_path,'-P','A4', '-l', boundingBoxs, '-r', rules_file])
+        renderer = subprocess.Popen(['smrender', '-i', data[1], '-o', "/code/temp.png", bbox, '-r', data[2]])
         renderer.wait()
     except:
         print(f"An error has occured!")
         
-    finally:
-        os.rename(file_path, tmp_f)
-        shutil.rmtree(tmp_d)
+    os.rename("/code/temp.png",tmp_f)
+    try:
+        os.remove('/code/temp.png')
+    except:
+        pass
     
     return tmp_f
+    
+   
+ 
+@app.CELERY_APP.task()
+@app.one_instance(expire = 10)
+def return_box(box):
+    smrender_syntax = f"{str(box[0])}:{str(box[1])}:{str(box[2])}:{str(box[3])}"
+    return smrender_syntax
+
+def bbox2hash(bbox, hash_length):
+    """Split bounding box coordinates onto smaller boxes
+
+    :bbox: (lat_min, lon_min, lat_max, lon_max)
+
+    :hash_length: maximum of the geohash string
+
+    :return: list of hashes meshing the bbox
+    """
+    by = geohash.decode_exactly\
+        (geohash.encode\
+         (*bbox[:2])[:hash_length])[2:]
+    res = (geohash.encode(*x)[:hash_length] \
+           for x in itertools.product\
+           (np.arange(bbox[0],bbox[2] + by[0],by[0]),
+            np.arange(bbox[1],bbox[3] + by[1],by[1])))
+    return list(set(res))
+
+
+def get_bbox_list(box, hash_length):
+    tmp_f = utils.get_tempfile()
+    with open(tmp_f, 'w') as file:
+        file.write(str([str(box), str(hash_length)]))
+    hashes = bbox2hash(box, hash_length)
+    f = [geohash.bbox(i) for i in hashes]
+    y = [((x['s'],x['n']),(x['w'],x['e'])) for x in f]
+    return y
+
+
+@app.CELERY_APP.task()
+@app.cache_fn_results()
+@app.one_instance(expire = 10)
+def merge_osm(osm_files):
+    tmp_f = utils.get_tempfile()
+    try:
+        merger = subprocess.Popen(['osmconvert', *osm_files, '-o=/code/temp.osm'])
+        merger.wait()
+    except:
+        print(f"An error has occured!")
         
+    os.rename('/code/temp.osm',tmp_f)
+    try:
+        os.remove('/code/temp.osm')
+    except:
+        pass
+    return tmp_f
 
-
-
-def osm_render(box, tag = 'building'):
+def osm_render(box, tag = ['building']):
     
-    tasks = celery.group(find_osm_data_online.signature(kwargs = {'bounding_box' : box, 'tags':tag}),
-                         create_rules.signature(kwargs={'tag' : tag}))
     
-    tasks |= render_osm_data.signature(kwargs = {'box' : box})
+    bbox = get_bbox_list(box = box, hash_length = 5)
+    
+    tasks = celery.group(find_osm_data_online.signature(kwargs={'tags':tag, 'bounding_box':item}) for item in bbox)
+
+    tasks |= celery.group(return_box.si(box), merge_osm.signature(), create_rules.si(tag))
+    
+    tasks |= render_osm_data.signature()
     
     return tasks
 
-#tasks = osm_render(((50.83912197832251, 50.88913587107049), (6.125850812597889, 6.17585775800697)),'building')
+#tasks = osm_render((50.77343,6.08492, 50.77670,6.09045),['building'])
 

@@ -17,3 +17,4 @@ pandas
 pyrosm
 esy.osm.pbf
 requests
+python-geohash
