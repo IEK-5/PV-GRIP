@@ -1,4 +1,3 @@
-import os
 import json
 import traceback
 import logging
@@ -6,24 +5,14 @@ logging.basicConfig(filename = 'data/server.log',
                     level = logging.DEBUG,
                     format = "[%(asctime)s] %(levelname)s: %(filename)s::%(funcName)s %(message)s")
 
-import datetime
-
-import bottle
 from bottle import route, run, request, response, hook
 
 from celery.exceptions import TimeoutError
 
-import open_elevation.gdal_interfaces as gdal
 import open_elevation.utils as utils
 import open_elevation.celery_tasks as tasks
 import open_elevation.celery_tasks.app as app
 import open_elevation.celery_status as celery_status
-
-
-interface = gdal.GDALTileInterface\
-    ('data/current','data/index.json',1)
-logging.info("Amount of RESULTS_CACHE: %.2f" \
-             % (app.RESULTS_CACHE.size()/(1024**3),))
 
 
 def _return_exception(e):
@@ -59,8 +48,8 @@ def _serve(data):
     if isinstance(data, dict):
         return data
 
-    if isinstance(data, str) and os.path.exists(data):
-        with open(data,'rb') as f:
+    if isinstance(data, app.Cassandra_Path):
+        with open(data.get_locally(),'rb') as f:
             return f.read()
 
     return data
@@ -158,7 +147,7 @@ def get_help():
 
 @route('/api/datasets', method=['GET'])
 def get_datasets():
-    return {'results': interface.get_directories()}
+    return {'results': app.SPATIAL_DATA.get_datasets()}
 
 
 @route('/api/status', method=['GET'])
@@ -170,8 +159,7 @@ def get_datasets():
                       ignore = lambda x: isinstance(x,dict))
 def _raster(args):
     try:
-        job = tasks.sample_raster\
-            (gdal = interface, **args).delay()
+        job = tasks.sample_raster(**args).delay()
     except Exception as e:
         return _return_exception(e)
 
@@ -182,8 +170,7 @@ def _raster(args):
                       ignore = lambda x: isinstance(x,dict))
 def _shadow(args):
     try:
-        job = tasks.shadow\
-            (gdal = interface, **args).delay()
+        job = tasks.shadow(**args).delay()
     except Exception as e:
         return _return_exception(e)
 

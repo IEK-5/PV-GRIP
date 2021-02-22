@@ -13,9 +13,11 @@ from open_elevation.utils \
 from open_elevation.results_lrucache \
     import ResultFiles_LRUCache, float_hash
 
+from open_elevation.spatial_data \
+    import Spatial_Data
+
 from cassandra_io.files \
     import Cassandra_Files
-
 
 
 CELERY_APP = celery.Celery(broker='redis://localhost:6379/0',
@@ -37,6 +39,8 @@ CASSANDRA_STORAGE = Cassandra_Files\
      chunk_size = _CASSANDRA_STORAGE_CHUNKSIZE,
      replication = _CASSANDRA_REPLICATION,
      replication_args = _CASSANDRA_REPLICATION_ARGS)
+
+SPATIAL_DATA = Spatial_Data()
 
 TASKS_LOCK = diskcache.Cache\
     (directory = os.path.join(_RESULTS_PATH,"_tasks_lock"),

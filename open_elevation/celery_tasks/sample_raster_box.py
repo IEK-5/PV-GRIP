@@ -1,8 +1,6 @@
 import os
-import time
 import pickle
 import logging
-import tempfile
 import itertools
 import numpy as np
 
@@ -26,8 +24,6 @@ import open_elevation.mesh \
     as mesh
 import open_elevation.gdal_interfaces \
     as gdal
-import cassandra_io.polygon_index \
-    as polygon_index
 
 
 def fill_missing(data, missing_value = -9999):
@@ -44,13 +40,12 @@ def fill_missing(data, missing_value = -9999):
     return data[tuple(ind)]
 
 
-def check_all_data_available(index_fn):
-    index = polygon_index.Polygon_File_Index()
-    index.load(index_fn)
+def check_all_data_available(*args, **kwargs):
+    index = app.SPATIAL_DATA.subset(*args, **kwargs)
 
     tasks = []
     for x in index.iterate():
-        if os.path.exists(x['file']):
+        if Cassandra_Path(x['file']).in_cassandra():
             continue
 
         if 'remote_meta' in x:
@@ -60,6 +55,10 @@ def check_all_data_available(index_fn):
                        resolution = x['pdal_resolution'],
                        what = x['stat'],
                        if_compute_las = x['if_compute_las'])]
+            continue
+
+        raise RuntimeError('%s file is not available'\
+                           % x['file'])
     return celery.group(tasks)
 
 
@@ -69,21 +68,22 @@ def _compute_mesh(box, step, mesh_type):
 
 
 @app.CELERY_APP.task()
-@app.cache_fn_results(keys = ['index_fn', 'box',
-                              'mesh_type','step'])
+@app.cache_fn_results()
 @app.one_instance(expire = 60*10)
-def sample_from_box(index_fn, box,
+def sample_from_box(box, data_re, stat,
                     mesh_type = 'metric', step = 1):
     logging.debug("""
     sample_from_box
-    index_fn = %s
     box = %s
+    data_re = %s
+    stat = %s
     mesh_type = %s
     step = %s
-    """ % (index_fn, str(box),
+    """ % (str(box), str(data_re), str(stat),
            str(mesh_type), str(step)))
-    index = polygon_index.Polygon_File_Index()
-    index.load(index_fn)
+    index = app.SPATIAL_DATA.subset(box = box,
+                                    data_re = data_re,
+                                    stat = stat)
 
     grid = _compute_mesh(box = box, step = step,
                          mesh_type = mesh_type)
@@ -121,7 +121,7 @@ def sample_from_box(index_fn, box,
     return ofn
 
 
-def sample_raster(gdal, box, data_re, stat,
+def sample_raster(box, data_re, stat,
                   mesh_type, step, output_type,
                   max_points = 2e+7):
     if output_type not in ('geotiff', 'pickle',
@@ -130,20 +130,21 @@ def sample_raster(gdal, box, data_re, stat,
 
     grid = _compute_mesh(box = box, step = step,
                          mesh_type = mesh_type)
-
     if len(grid['mesh'][0])*len(grid['mesh'][1]) \
        > max_points:
         raise RuntimeError\
             ("either box or resolution is too high!")
 
-    index_fn = gdal.subset(box = box,
-                           data_re = data_re,
-                           stat = stat)
     tasks = celery.chain\
-        (check_all_data_available(index_fn),\
+        (check_all_data_available(box = box,
+                                  data_re = data_re,
+                                  stat = stat),\
          sample_from_box.signature\
-         (kwargs = {'index_fn': index_fn, 'box': box,
-                    'mesh_type': mesh_type, 'step': step},
+         (kwargs = {'box': box,
+                    'data_re': data_re,
+                    'stat': stat,
+                    'mesh_type': mesh_type,
+                    'step': step},
           immutable = True))
 
     if output_type in ('png'):

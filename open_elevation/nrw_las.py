@@ -1,18 +1,9 @@
 import re
 import os
-import csv
 import time
 import json
 import pyproj
 import requests
-import itertools
-
-from tqdm import tqdm
-
-import open_elevation.celery_tasks.app \
-    as app
-
-import open_elevation.utils as utils
 
 
 class NRWData:
@@ -51,12 +42,6 @@ class NRWData:
             .Transformer.from_crs(self._meta['epsg'], 4326,
                                   always_xy=True)
 
-        self._files = dict()
-        for data in tqdm(self._search_meta(),
-                         desc = "Reading %s index" % \
-                         self.path):
-            self._files[data['file']] = data
-
 
     def _read_meta(self):
         with open(os.path.join\
@@ -71,6 +56,7 @@ class NRWData:
         resolution = self._meta['box_resolution']
 
         key = ("nrw_las", self.path, lat, lon, what)
+        import open_elevation.celery_tasks.app as app
         res['file'] = app.RESULTS_CACHE.get(key, check = False)
 
         p0 = self._proj_from.transform\
@@ -123,7 +109,7 @@ class NRWData:
             return self._download_index(fn)
 
 
-    def _search_meta(self):
+    def search_meta(self):
         regex = re.compile(self._meta['meta_entry_regex'])
         index = self._load_index()['datasets'][0]['files']
 
@@ -147,11 +133,3 @@ class NRWData:
                     'pdal_resolution': \
                     self._pdal_resolution})
                 yield data
-
-
-    def update_index(self, index):
-        for _, data in tqdm(self._files.items(),
-                            desc = "Building %s index" % \
-                            self.path):
-            index.insert(data = data)
-        return index
