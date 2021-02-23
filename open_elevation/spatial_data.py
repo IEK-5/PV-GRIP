@@ -85,7 +85,8 @@ class Spatial_Data:
 
     def _upload_raster_data(self, path, las_dirs):
 
-        for fn in tqdm(list_files(path, regex = '.*'),
+        for fn in tqdm(list_files(os.path.realpath(path),
+                                  regex = '.*'),
                        desc = "Processing Geo files in %s"\
                        % path):
             try:
