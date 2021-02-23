@@ -16,4 +16,4 @@ celery -A open_elevation.celery_tasks \
        --pidfile='data/celery/pid/%n.pid' \
        --logfile='data/celery/logs/%n%I.log'
 
-python3 server.py
+python3 open_elevation/server.py
