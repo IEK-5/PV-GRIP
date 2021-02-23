@@ -121,12 +121,12 @@ def sample_from_box(box, data_re, stat,
     return ofn
 
 
-def sample_raster(box, data_re, stat,
-                  mesh_type, step, output_type,
-                  max_points = 2e+7):
-    if output_type not in ('geotiff', 'pickle',
-                           'pnghillshade','png'):
-        raise RuntimeError("Invalid 'output_type' argument!")
+def _check_box_not_too_big(box, step, mesh_type,
+                           limit = 0.1, max_points = 2e+7):
+    if abs(box[2] - box[0]) > limit \
+       or abs(box[3] - box[1]) > limit:
+        raise RuntimeError\
+            ("step in box should not be larger than %.2f" % limit)
 
     grid = _compute_mesh(box = box, step = step,
                          mesh_type = mesh_type)
@@ -134,6 +134,16 @@ def sample_raster(box, data_re, stat,
        > max_points:
         raise RuntimeError\
             ("either box or resolution is too high!")
+
+
+def sample_raster(box, data_re, stat,
+                  mesh_type, step, output_type):
+    if output_type not in ('geotiff', 'pickle',
+                           'pnghillshade','png'):
+        raise RuntimeError("Invalid 'output_type' argument!")
+
+    _check_box_not_too_big(box = box, step = step,
+                           mesh_type = mesh_type)
 
     tasks = celery.chain\
         (check_all_data_available(box = box,
