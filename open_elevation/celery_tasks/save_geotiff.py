@@ -5,8 +5,14 @@ from osgeo import gdal
 from osgeo import gdal_array
 from osgeo import osr
 
-import open_elevation.utils as utils
-import open_elevation.celery_tasks.app as app
+from open_elevation.celery_tasks \
+    import CELERY_APP
+from open_elevation.cache_fn_results \
+    import cache_fn_results
+from open_elevation.celery_one_instance \
+    import one_instance
+from open_elevation.utils \
+    import get_tempfile, remove_file
 
 
 def save_gdal(ofn, array, geotransform, epsg):
@@ -46,16 +52,16 @@ def _save_geotiff(data, ofn):
               geotransform, data['mesh']['epsg'])
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 10)
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire = 10)
 def save_geotiff(pickle_fn):
     with open(pickle_fn, 'rb') as f:
         data = pickle.load(f)
-    ofn = utils.get_tempfile()
+    ofn = get_tempfile()
     try:
         _save_geotiff(data, ofn)
     except Exception as e:
-        utils.remove_file(ofn)
+        remove_file(ofn)
         raise e
     return ofn

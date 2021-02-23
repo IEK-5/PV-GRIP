@@ -5,6 +5,9 @@ import json
 import pyproj
 import requests
 
+from open_elevation.float_hash \
+    import float_hash_fn
+
 
 class NRWData:
     """Get and process NRW data
@@ -56,8 +59,7 @@ class NRWData:
         resolution = self._meta['box_resolution']
 
         key = ("nrw_las", self.path, lat, lon, what)
-        import open_elevation.celery_tasks.app as app
-        res['file'] = app.RESULTS_CACHE.get(key, check = False)
+        res['file'] = float_hash_fn(key)
 
         p0 = self._proj_from.transform\
             (lon*step,lat*step)

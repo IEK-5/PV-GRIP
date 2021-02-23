@@ -8,7 +8,7 @@ from open_elevation.utils\
 
 from open_elevation.nrw_las \
     import NRWData
-from open_elevation.gdal_interfaces \
+from open_elevation.gdalinterface \
     import GDALInterface
 
 from open_elevation.cassandra_datasets \
@@ -61,9 +61,8 @@ class Spatial_Data:
 
     """
 
-    def __init__(self):
-        import open_elevation.celery_tasks.app as app
-        self.cfs = app.CASSANDRA_STORAGE
+    def __init__(self, cfs):
+        self.cfs = cfs
         self.index = Cassandra_Spatial_Index\
             (cluster_ips = self.cfs._cluster_ips)
         self.datasets = Datasets\

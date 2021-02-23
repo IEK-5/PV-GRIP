@@ -1,7 +1,6 @@
 import os
 import shutil
 import logging
-import tempfile
 
 import numpy as np
 
@@ -10,22 +9,21 @@ from datetime \
 from math \
     import pi, cos, sin
 
-import open_elevation.celery_tasks.app \
-    as app
-
-import open_elevation.utils as utils
-
+from open_elevation.celery_tasks \
+    import CELERY_APP
+from open_elevation.globals \
+    import GRASS
+from open_elevation.cache_fn_results \
+    import cache_fn_results
+from open_elevation.celery_one_instance \
+    import one_instance
+from open_elevation.utils \
+    import get_tempfile, remove_file, \
+    run_command, get_tempdir
 from open_elevation.celery_tasks.sample_raster_box \
     import sample_raster
 from open_elevation.celery_tasks.save_geotiff \
     import save_gdal
-
-# grass78 -c test.tiff -e /home/jackson/test_grass
-# grass78 /home/jackson/test_grass/PERMANENT --exec r.external input=test.tiff output=elevation
-# grass78 /home/jackson/test_grass/PERMANENT --exec r.sun elevation=elevation incidout=sunmask2.tif day=1 time=12  --overwrite
-# grass78 /home/jackson/test_grass/PERMANENT --exec r.out.png input=sunmask2.tif output=sunmask.png --overwrite
-
-_GRASS="grass78"
 
 
 def solar_time(timestr, lon):
@@ -65,12 +63,12 @@ def solar_time(timestr, lon):
 def _create_temp_grassdata(wdir, geotiff_fn):
     grass_path = os.path.join(wdir,'grass','PERMANENT')
 
-    utils.run_command\
-        (what = [_GRASS,'-c',geotiff_fn,'-e',
+    run_command\
+        (what = [GRASS,'-c',geotiff_fn,'-e',
                  os.path.join(wdir,'grass')],
          cwd = wdir)
-    utils.run_command\
-        (what = [_GRASS, grass_path,
+    run_command\
+        (what = [GRASS, grass_path,
                  '--exec','r.external',
                  'input=' + geotiff_fn,
                  'output=elevation'],
@@ -82,8 +80,8 @@ def _create_temp_grassdata(wdir, geotiff_fn):
 def _compute_sun_incidence(wdir, ofn, solar_time, njobs = 4):
     grass_path = os.path.join(wdir,'grass','PERMANENT')
 
-    utils.run_command\
-        (what = [_GRASS, grass_path,
+    run_command\
+        (what = [GRASS, grass_path,
                  '--exec','r.sun',
                  'elevation=elevation',
                  'incidout=incidence',
@@ -91,8 +89,8 @@ def _compute_sun_incidence(wdir, ofn, solar_time, njobs = 4):
                  'time=' + ('%.5f' % solar_time['hour']),
                  'nprocs=' + str(njobs)],
          cwd = wdir)
-    utils.run_command\
-        (what = [_GRASS, grass_path,
+    run_command\
+        (what = [GRASS, grass_path,
                  '--exec','r.out.gdal',
                  'input=incidence',
                  'output=incidence.tif'],
@@ -102,37 +100,37 @@ def _compute_sun_incidence(wdir, ofn, solar_time, njobs = 4):
     return ofn
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 10)
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire = 10)
 def compute_shadow_map(ifn):
-    from open_elevation.gdal_interfaces \
+    from open_elevation.gdalinterface \
         import GDALInterface
     incidence = GDALInterface(ifn)
     shadow = np.invert(np.isnan(incidence.points_array))
     shadow = shadow.astype(int)
 
-    ofn = utils.get_tempfile()
+    ofn = get_tempfile()
     try:
         save_gdal(ofn, shadow,
                   incidence.geo_transform,
                   incidence.epsg)
     except Exception as e:
-        utils.remove_file(ofn)
+        remove_file(ofn)
         raise e
 
     return ofn
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 60*10)
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire = 60*10)
 def compute_incidence(tif_fn, timestr):
-    wdir = utils.get_tempdir()
-    ofn = utils.get_tempfile()
+    wdir = get_tempdir()
+    ofn = get_tempfile()
 
     try:
-        from open_elevation.gdal_interfaces \
+        from open_elevation.gdalinterface \
             import GDALInterface
         time = solar_time(timestr = timestr,
                           lon = GDALInterface(tif_fn)\
@@ -143,7 +141,7 @@ def compute_incidence(tif_fn, timestr):
                                ofn = ofn,
                                solar_time = time)
     except Exception as e:
-        utils.remove_file(ofn)
+        remove_file(ofn)
         raise e
     finally:
         shutil.rmtree(wdir)
@@ -152,10 +150,10 @@ def compute_incidence(tif_fn, timestr):
 
 
 def _save_binary_png(ifn, ofn):
-    wdir = utils.get_tempdir()
+    wdir = get_tempdir()
 
     try:
-        utils.run_command\
+        run_command\
             (what = ['gdal_translate',
                      '-scale','0','1','0','255',
                      '-of','png',
@@ -166,15 +164,15 @@ def _save_binary_png(ifn, ofn):
         shutil.rmtree(wdir)
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 10)
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire = 10)
 def save_binary_png(tif_fn):
-    ofn = utils.get_tempfile()
+    ofn = get_tempfile()
     try:
         _save_binary_png(ifn = tif_fn, ofn = ofn)
     except Exception as e:
-        utils.remove_file(ofn)
+        remove_file(ofn)
         raise e
     return ofn
 

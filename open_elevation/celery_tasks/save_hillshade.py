@@ -1,9 +1,15 @@
 import os
 import shutil
-import tempfile
 
-import open_elevation.utils as utils
-import open_elevation.celery_tasks.app as app
+from open_elevation.celery_tasks \
+    import CELERY_APP
+from open_elevation.cache_fn_results \
+    import cache_fn_results
+from open_elevation.celery_one_instance \
+    import one_instance
+from open_elevation.utils \
+    import get_tempfile, remove_file, \
+    run_command, get_tempdir
 
 
 def _save_pnghillshade(ifn, ofn):
@@ -13,10 +19,10 @@ def _save_pnghillshade(ifn, ofn):
     :ofn: output file
 
     """
-    wdir = utils.get_tempdir()
+    wdir = get_tempdir()
 
     try:
-        utils.run_command\
+        run_command\
             (what = ['gdaldem','hillshade',
                      '-of','png',ifn, 'hillshade.png'],
              cwd = wdir)
@@ -25,14 +31,14 @@ def _save_pnghillshade(ifn, ofn):
         shutil.rmtree(wdir)
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 10)
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire = 10)
 def save_pnghillshade(geotiff_fn):
-    ofn = utils.get_tempfile()
+    ofn = get_tempfile()
     try:
         _save_pnghillshade(geotiff_fn, ofn)
     except Exception as e:
-        utils.remove_file(ofn)
+        remove_file(ofn)
         raise e
     return ofn

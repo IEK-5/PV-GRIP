@@ -1,4 +1,4 @@
-from open_elevation.celery_tasks.app \
+from open_elevation.celery_tasks \
     import CELERY_APP
 
 

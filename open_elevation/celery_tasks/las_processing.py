@@ -6,13 +6,19 @@ import logging
 import requests
 import tempfile
 
-import open_elevation.celery_tasks.app as app
-import open_elevation.utils as utils
+from open_elevation.celery_tasks \
+    import CELERY_APP
+from open_elevation.cache_fn_results \
+    import cache_fn_results
+from open_elevation.celery_one_instance \
+    import one_instance
+from open_elevation.utils \
+    import get_tempfile, run_command, get_tempdir
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 60*5)
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire = 60*5)
 def download_laz(url):
     logging.debug("""
     download_laz
@@ -26,15 +32,15 @@ def download_laz(url):
         url: %s
         """ % url)
 
-    ofn = utils.get_tempfile()
+    ofn = get_tempfile()
     with open(ofn, 'wb') as f:
         f.write(r.content)
     return ofn
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire = 10)
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire = 10)
 def write_pdaljson(laz_fn, ofn, resolution, what):
     logging.debug("""
     write_pdaljson
@@ -54,36 +60,34 @@ def write_pdaljson(laz_fn, ofn, resolution, what):
       'resolution': resolution,
       'type': 'writers.gdal'}]
 
-    ofn = utils.get_tempfile()
+    ofn = get_tempfile()
     with open(ofn, 'w') as f:
         json.dump(data, f)
     return ofn
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results(ofn_arg = 'ofn')
-@app.one_instance(expire = 60*20)
+@CELERY_APP.task()
+@cache_fn_results(ofn_arg = 'ofn')
+@one_instance(expire = 60*20)
 def run_pdal(path, ofn):
     logging.debug("""
     run_pdal
     path = %s
     ofn = %s
     """ % (path, ofn))
-    wdir = utils.get_tempdir()
+    wdir = get_tempdir()
     try:
-        utils.run_command\
+        run_command\
             (what = ['pdal','pipeline',path],
              cwd = wdir)
-
-        app.RESULTS_CACHE.add_file(ofn)
         return ofn
     finally:
         shutil.rmtree(wdir)
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results(ofn_arg = 'ofn')
-@app.one_instance(expire = 5)
+@CELERY_APP.task()
+@cache_fn_results(ofn_arg = 'ofn')
+@one_instance(expire = 5)
 def link_ofn(ifn, ofn):
     logging.debug("""
     link_ofn

@@ -18,9 +18,9 @@ def git_root():
 
 
 def if_in_celery():
-    import open_elevation.celery_tasks.app \
-        as app
-    if not app.CELERY_APP.current_worker_task:
+    from open_elevation.celery_tasks \
+        import CELERY_APP
+    if not CELERY_APP.current_worker_task:
         return False
     return True
 

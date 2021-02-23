@@ -5,14 +5,24 @@ logging.basicConfig(filename = 'data/server.log',
                     level = logging.DEBUG,
                     format = "[%(asctime)s] %(levelname)s: %(filename)s::%(funcName)s %(message)s")
 
-from bottle import route, run, request, response, hook
+from bottle import route, run, request
 
 from celery.exceptions import TimeoutError
 
-import open_elevation.utils as utils
 import open_elevation.celery_tasks as tasks
-import open_elevation.celery_tasks.app as app
 import open_elevation.celery_status as celery_status
+
+from open_elevation.globals \
+    import get_SPATIAL_DATA
+
+from open_elevation.utils \
+    import TASK_RUNNING
+
+from open_elevation.cache_fn_results \
+    import cache_fn_results
+
+from open_elevation.cassandra_path \
+    import Cassandra_Path
 
 
 def _return_exception(e):
@@ -48,7 +58,7 @@ def _serve(data):
     if isinstance(data, dict):
         return data
 
-    if isinstance(data, app.Cassandra_Path):
+    if isinstance(data, Cassandra_Path):
         with open(data.get_locally(),'rb') as f:
             return f.read()
 
@@ -67,7 +77,7 @@ def _get_job_results(job, timeout = 30):
             fn = job.wait(timeout = timeout)
 
         return fn
-    except utils.TASK_RUNNING:
+    except TASK_RUNNING:
         return {'results': {'message': 'task is running'}}
     except TimeoutError:
         return {'results': {'message': 'task is running'}}
@@ -147,7 +157,8 @@ def get_help():
 
 @route('/api/datasets', method=['GET'])
 def get_datasets():
-    return {'results': app.SPATIAL_DATA.get_datasets()}
+    SPATIAL_DATA = get_SPATIAL_DATA()
+    return {'results': SPATIAL_DATA.get_datasets()}
 
 
 @route('/api/status', method=['GET'])
@@ -155,8 +166,8 @@ def get_datasets():
     return {'results': celery_status.status()}
 
 
-@app.cache_fn_results(link = True,
-                      ignore = lambda x: isinstance(x,dict))
+@cache_fn_results(link = True,
+                  ignore = lambda x: isinstance(x,dict))
 def _raster(args):
     try:
         job = tasks.sample_raster(**args).delay()
@@ -166,8 +177,8 @@ def _raster(args):
     return _get_job_results(job)
 
 
-@app.cache_fn_results(link = True,
-                      ignore = lambda x: isinstance(x,dict))
+@cache_fn_results(link = True,
+                  ignore = lambda x: isinstance(x,dict))
 def _shadow(args):
     try:
         job = tasks.shadow(**args).delay()

@@ -3,12 +3,18 @@ import cv2
 import shutil
 import pickle
 
-import open_elevation.utils as utils
-import open_elevation.celery_tasks.app as app
+from open_elevation.celery_tasks \
+    import CELERY_APP
+from open_elevation.cache_fn_results \
+    import cache_fn_results
+from open_elevation.celery_one_instance \
+    import one_instance
+from open_elevation.utils \
+    import get_tempfile, remove_file, get_tempdir
 
 
 def _save_png(data, ofn):
-    wdir = utils.get_tempdir()
+    wdir = get_tempdir()
 
     try:
         tfn = os.path.join(wdir, 'image.png')
@@ -18,17 +24,17 @@ def _save_png(data, ofn):
         shutil.rmtree(wdir)
 
 
-@app.CELERY_APP.task()
-@app.cache_fn_results()
-@app.one_instance(expire=10)
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire=10)
 def save_png(pickle_fn):
     with open(pickle_fn, 'rb') as f:
         data = pickle.load(f)
 
-    ofn = utils.get_tempfile()
+    ofn = get_tempfile()
     try:
         _save_png(data = data, ofn = ofn)
     except Exception as e:
-        utils.remove_file(ofn)
+        remove_file(ofn)
         raise e
     return ofn

@@ -8,6 +8,8 @@ from lazy import lazy
 # Originally based on https://stackoverflow.com/questions/13439357/extract-point-from-raster-in-gdal
 class GDALInterface(object):
     SEA_LEVEL = -9999
+
+
     def __init__(self, path):
         super(GDALInterface, self).__init__()
         self.path = path
@@ -95,11 +97,6 @@ class GDALInterface(object):
         return res
 
 
-    def print_statistics(self):
-        print(self.src.GetRasterBand(1)\
-              .GetStatistics(True, True))
-
-
     def _get_pixels(self, points):
         data = self._coordinate_transform\
                    .TransformPoints(points)
@@ -134,8 +131,10 @@ class GDALInterface(object):
     def close(self):
         self.src = None
 
+
     def __enter__(self):
         return self
+
 
     def __exit__(self, type, value, traceback):
         self.close()
