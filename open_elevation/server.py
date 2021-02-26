@@ -1,3 +1,4 @@
+import os
 import json
 import traceback
 import logging
@@ -244,4 +245,5 @@ def get_shadow_help():
 
 run(host='0.0.0.0', port=8080,
     server='gunicorn',
-    workers=8, timeout=60)
+    workers=os.cpu_count(),
+    timeout=60)
