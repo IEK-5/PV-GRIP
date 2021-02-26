@@ -6,7 +6,8 @@ RUN apt-get install -y \
     bc pdal \
     redis git \
     iproute2 \
-    librsvg2-dev libtool
+    librsvg2-dev libtool \
+    osmctools
 
 RUN mkdir /code
 ADD . /code/
