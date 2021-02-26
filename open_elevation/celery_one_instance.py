@@ -12,22 +12,84 @@ from open_elevation.float_hash \
 from open_elevation.globals \
     import RESULTS_PATH
 
+from open_elevation.celery_tasks \
+    import REDIS_URL
+
+from redis.lock \
+    import Lock
+
+from redis \
+    import StrictRedis
+
+from urllib.parse \
+    import urlparse, parse_qsl
+
+
+def parse_url(url):
+    """
+    Parse the argument url and return a redis connection.
+    Three patterns of url are supported:
+        * redis://host:port[/db][?options]
+        * redis+socket:///path/to/redis.sock[?options]
+        * rediss://host:port[/db][?options]
+    A ValueError is raised if the URL is not recognized.
+
+    Taken from: https://github.com/cameronmaske/celery-once/blob/master/celery_once/backends/redis.py
+
+    """
+    parsed = urlparse(url)
+    kwargs = parse_qsl(parsed.query)
+
+    # TCP redis connection
+    if parsed.scheme in ['redis', 'rediss']:
+        details = {'host': parsed.hostname}
+        if parsed.port:
+            details['port'] = parsed.port
+        if parsed.password:
+            details['password'] = parsed.password
+        db = parsed.path.lstrip('/')
+        if db and db.isdigit():
+            details['db'] = db
+        if parsed.scheme == 'rediss':
+            details['ssl'] = True
+
+    # Unix socket redis connection
+    elif parsed.scheme == 'redis+socket':
+        details = {'unix_socket_path': parsed.path}
+    else:
+        raise ValueError('Unsupported protocol %s' % (parsed.scheme))
+
+    # Add kwargs to the details and convert them to the appropriate type, if needed
+    details.update(kwargs)
+    if 'socket_timeout' in details:
+        details['socket_timeout'] = float(details['socket_timeout'])
+    if 'db' in details:
+        details['db'] = int(details['db'])
+
+    return details
+
 
 def one_instance(expire=60):
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
-            TASKS_LOCK = diskcache.Cache\
-                (directory = os.path.join(RESULTS_PATH,"_tasks_lock"),
-                 size_limit = (1024**3))
+            REDIS = StrictRedis(**parse_url(REDIS_URL))
             key = float_hash(("one_instance_lock",
                               fun.__name__, args, kwargs))
-            lock = diskcache.Lock(TASKS_LOCK, key, expire = expire)
+            acquired = Lock\
+                (REDIS,
+                 key,
+                 timeout = expire,
+                 blocking = 1,
+                 blocking_timeout = False)\
+                 .acquire()
 
-            if lock.locked():
+            if not acquired:
                 raise TASK_RUNNING()
 
-            with lock:
+            try:
                 return fun(*args, **kwargs)
+            finally:
+                REDIS.delete(key)
         return wrap
     return wrapper
