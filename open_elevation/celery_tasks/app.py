@@ -1,6 +1,7 @@
 import celery
 
-REDIS_URL = 'redis://localhost:6379/0'
+from open_elevation.globals \
+    import REDIS_URL
 
 CELERY_APP = celery.Celery(broker=REDIS_URL,
                            backend=REDIS_URL,

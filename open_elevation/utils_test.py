@@ -14,4 +14,3 @@ def test_no_nested_celery():
     except TimeoutError as e:
         print("Is celery worker running?")
         raise e
-

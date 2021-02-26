@@ -12,6 +12,6 @@ WORKDIR /code
 
 RUN make init
 
-CMD scripts/start_server.sh
+CMD scripts/start.sh
 
 EXPOSE 8080

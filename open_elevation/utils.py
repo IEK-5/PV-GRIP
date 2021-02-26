@@ -4,6 +4,7 @@ import time
 import logging
 import tempfile
 import subprocess
+import configparser
 
 
 class TASK_RUNNING(Exception):
@@ -77,3 +78,9 @@ def run_command(what, cwd, ignore_exitcode = False):
     """ % (' '.join(what), res.returncode,
            res.stdout.decode(),
            res.stderr.decode()))
+
+
+def get_configs(fn):
+    config = configparser.ConfigParser()
+    config.read(fn)
+    return config
