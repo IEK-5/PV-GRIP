@@ -3,8 +3,8 @@ init:
 	git submodule foreach 'make'
 	mkdir -p temp
 
-	TMPDIR=./temp pip install -r requirements.txt
-	TMPDIR=./temp pip install -e .
+	TMPDIR=./temp pip3 install -r requirements.txt
+	TMPDIR=./temp pip3 install -e .
 	rmdir temp
 
 .PHONY: init
