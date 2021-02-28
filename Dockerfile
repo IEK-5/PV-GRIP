@@ -4,7 +4,8 @@ RUN apt-get update -y
 RUN apt-get install -y \
     python3-pip libspatialindex-dev \
     bc pdal \
-    redis git
+    redis git \
+    iproute2
 
 RUN mkdir /code
 ADD . /code/
@@ -15,3 +16,4 @@ RUN make init
 CMD scripts/start.sh
 
 EXPOSE 8080
+EXPOSE 6379
