@@ -1,11 +1,14 @@
+from open_elevation.globals \
+    import PVGRIP_CONFIGS
+
 from open_elevation.cassandra_datasets \
     import Datasets
 
 
-def test_files(ips = ['172.17.0.2']):
+def test_files(ip = PVGRIP_CONFIGS['cassandra']['ip']):
     try:
         datasets = Datasets(keyspace = 'test_datasets',
-                            cluster_ips = ips)
+                            cluster_ips = [ip])
 
         assert 0 == len(list(datasets.list()))
         datasets.add('one')
