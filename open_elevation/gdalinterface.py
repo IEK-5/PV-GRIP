@@ -1,7 +1,4 @@
 import numpy as np
-import osgeo.gdal as gdal
-import osgeo.osr as osr
-
 from lazy import lazy
 
 
@@ -53,11 +50,13 @@ class GDALInterface(object):
 
     def loadMetadata(self):
         # open the raster and its spatial reference
+        import osgeo.gdal as gdal
         self.src = gdal.Open(self.path)
 
         if self.src is None:
             raise Exception\
                 ('Could not load GDAL file "%s"' % self.path)
+        import osgeo.osr as osr
         spatial_reference_raster = osr.SpatialReference\
             (self.src.GetProjection())
         spatial_reference_raster.SetAxisMappingStrategy\
