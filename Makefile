@@ -1,5 +1,7 @@
-init:
+submodule:
 	git submodule update --init --recursive
+
+init: submodule
 	git submodule foreach 'make'
 	mkdir -p temp
 
