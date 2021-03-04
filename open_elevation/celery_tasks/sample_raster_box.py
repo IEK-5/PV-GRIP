@@ -131,8 +131,8 @@ def sample_from_box(box, data_re, stat,
     return ofn
 
 
-def _check_box_not_too_big(box, step, mesh_type,
-                           limit = 0.1, max_points = 2e+7):
+def check_box_not_too_big(box, step, mesh_type,
+                          limit = 0.1, max_points = 2e+7):
     if abs(box[2] - box[0]) > limit \
        or abs(box[3] - box[1]) > limit:
         raise RuntimeError\
@@ -145,6 +145,8 @@ def _check_box_not_too_big(box, step, mesh_type,
         raise RuntimeError\
             ("either box or resolution is too high!")
 
+    return len(grid['mesh'][0]), len(grid['mesh'][1])
+
 
 def sample_raster(box, data_re, stat,
                   mesh_type, step, output_type):
@@ -152,8 +154,8 @@ def sample_raster(box, data_re, stat,
                            'pnghillshade','png'):
         raise RuntimeError("Invalid 'output_type' argument!")
 
-    _check_box_not_too_big(box = box, step = step,
-                           mesh_type = mesh_type)
+    check_box_not_too_big(box = box, step = step,
+                          mesh_type = mesh_type)
 
     tasks = celery.chain\
         (check_all_data_available(box = box,

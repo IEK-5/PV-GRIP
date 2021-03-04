@@ -9,6 +9,8 @@ import celery
 
 from open_elevation.celery_tasks \
     import CELERY_APP
+from open_elevation.celery_tasks.sample_raster_box \
+    import check_box_not_too_big
 from open_elevation.cache_fn_results \
     import cache_fn_results
 from open_elevation.celery_one_instance \
@@ -106,9 +108,11 @@ def create_rules(tag):
 @CELERY_APP.task()
 @cache_fn_results()
 @one_instance(expire = 10)
-def render_osm_data(osm_fn, rules_fn, box):
+def render_osm_data(osm_fn, rules_fn, box, width):
     wdir = get_tempdir()
     ofn = get_tempfile()
+    # -P specifies dimensions in mm
+    # -d specifies density (points in inch)
     try:
         run_command\
             (what = \
@@ -117,6 +121,8 @@ def render_osm_data(osm_fn, rules_fn, box):
               '-o', 'output.png',
               f"{str(box[0])}:{str(box[1])}:{str(box[2])}:{str(box[3])}",
               '-r', rules_fn,
+              '-P','%.1fx0' % (width/5),
+              '-d','127'],
              cwd = wdir)
         os.rename(os.path.join(wdir,'output.png'), ofn)
     finally:
@@ -150,7 +156,12 @@ def _get_box_list(box, hash_length):
     return [(x['s'],x['w'],x['n'],x['e']) for x in f]
 
 
-def osm_render(box, tag = 'building', hash_length = 5):
+def osm_render(box, step, mesh_type,
+               tag = 'building', hash_length = 5):
+    width, _ = check_box_not_too_big\
+        (box = box, step = step,
+         mesh_type = mesh_type)
+
     box_list = _get_box_list(box = box,
                              hash_length = hash_length)
 
@@ -164,6 +175,6 @@ def osm_render(box, tag = 'building', hash_length = 5):
            create_rules.si(tag)])
 
     tasks |= render_osm_data.signature\
-        (kwargs={'box': box})
+        (kwargs={'box': box, 'width': width})
 
     return tasks
