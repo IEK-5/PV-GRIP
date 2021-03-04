@@ -150,20 +150,19 @@ def merge_osm(osm_files):
     return ofn
 
 
-def _get_box_list(box, hash_length):
+def _get_box_list(box):
+    hash_length = PVGRIP_CONFIGS['osm']['hash_length']
     f = (geohash.bbox(i) \
          for i in bbox2hash(box, hash_length))
     return [(x['s'],x['w'],x['n'],x['e']) for x in f]
 
 
-def osm_render(box, step, mesh_type,
-               tag = 'building', hash_length = 5):
+def osm_render(box, step, mesh_type, tag = 'building'):
     width, _ = check_box_not_too_big\
         (box = box, step = step,
          mesh_type = mesh_type)
 
-    box_list = _get_box_list(box = box,
-                             hash_length = hash_length)
+    box_list = _get_box_list(box = box)
 
     tasks = celery.group\
         (*[find_osm_data_online.signature\
