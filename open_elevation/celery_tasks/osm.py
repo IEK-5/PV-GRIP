@@ -25,6 +25,8 @@ from open_elevation.utils \
 from cassandra_io.utils \
     import bbox2hash
 
+import open_elevation.mesh as mesh
+
 
 def _form_query(bbox, tag):
     bbox = tuple(bbox)
@@ -150,6 +152,24 @@ def merge_osm(osm_files):
     return ofn
 
 
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire = 10)
+def readpng_asarray(png_fn, box, step, mesh_type):
+    grid = mesh.mesh(box = box, step = step,
+                     which = mesh_type)
+
+    ofn = get_tempfile()
+    try:
+        with open(ofn, 'wb') as f:
+            pickle.dump({'raster': cv2.imread(png_fn, 0),
+                         'mesh': grid}, f)
+    except Exception as e:
+        remove_file(ofn)
+        raise e
+    return ofn
+
+
 def _get_box_list(box):
     hash_length = PVGRIP_CONFIGS['osm']['hash_length']
     f = (geohash.bbox(i) \
@@ -175,5 +195,9 @@ def osm_render(box, step, mesh_type, tag = 'building'):
 
     tasks |= render_osm_data.signature\
         (kwargs={'box': box, 'width': width})
+
+    tasks |= readpng_asarray.signature\
+        (kwargs={'box': box, 'step': step,
+                 'mesh_type': mesh_type})
 
     return tasks
