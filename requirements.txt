@@ -14,7 +14,4 @@ pytest
 scipy
 opencv-python
 pandas
-pyrosm
-esy.osm.pbf
-requests
 python-geohash
