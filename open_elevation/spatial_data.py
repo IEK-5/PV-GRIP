@@ -95,8 +95,9 @@ class Spatial_Data:
 
                 data = self._get_index_data(fn)
 
-                self.cfs.upload(ifn = fn,
-                                cassandra_fn = fn)
+                if fn not in self.cfs:
+                    self.cfs.upload(ifn = fn,
+                                    cassandra_fn = fn)
                 self.index.insert(data = data)
                 self.datasets.add(os.path.dirname(fn))
             except Exception as e:
