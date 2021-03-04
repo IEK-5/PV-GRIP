@@ -94,7 +94,7 @@ def create_rules(tag):
     type_.append(tag_action)
 
     tag_action.set('k','_action_')
-    tag_action.set('v','draw:color=black;bcolor=black')
+    tag_action.set('v','draw:color=white;bcolor=white')
 
     ofn = get_tempfile()
     try:
@@ -124,7 +124,8 @@ def render_osm_data(osm_fn, rules_fn, box, width):
               f"{str(box[0])}:{str(box[1])}:{str(box[2])}:{str(box[3])}",
               '-r', rules_fn,
               '-P','%.1fx0' % (width/5),
-              '-d','127'],
+              '-d','127',
+              '-b','black'],
              cwd = wdir)
         os.rename(os.path.join(wdir,'output.png'), ofn)
     finally:
