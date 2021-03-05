@@ -15,7 +15,8 @@ from open_elevation.celery_one_instance \
 from open_elevation.solar_time \
     import solar_time
 from open_elevation.grass \
-    import upload_grass_data, download_grass_data
+    import upload_grass_data, download_grass_data, \
+    get_npartitions
 from open_elevation.utils \
     import get_tempfile, remove_file, \
     run_command, get_tempdir
@@ -40,7 +41,7 @@ def _compute_sun_incidence(wdir, solar_time,
                  'npartitions=%d' % int(npartitions)],
          cwd = wdir)
 
-    return ofn
+    return 'incidence'
 
 
 @CELERY_APP.task()
@@ -75,15 +76,17 @@ def compute_incidence(tif_fn, timestr):
     try:
         from open_elevation.gdalinterface \
             import GDALInterface
+        tif = GDALInterface(tif_fn)
         time = solar_time(timestr = timestr,
-                          lon = GDALInterface(tif_fn)\
-                          .get_centre()['lon'])
+                          lon = tif.get_centre()['lon'])
         upload_grass_data(wdir = wdir,
                           geotiff_fn = tif_fn,
                           grass_fn = 'elevation')
         _compute_sun_incidence(wdir = wdir,
                                solar_time = time,
-                               njobs = GRASS_NJOBS)
+                               njobs = GRASS_NJOBS,
+                               npartitions = get_npartitions\
+                               (tif.get_shape()))
         download_grass_data(wdir = wdir,
                             grass_fn = 'incidence',
                             geotiff_fn = ofn)

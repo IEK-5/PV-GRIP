@@ -43,6 +43,12 @@ class GDALInterface(object):
                 'lat': res[1]}
 
 
+    def get_shape(self):
+        return (self.src.RasterYSize,
+                self.src.RasterXSize,
+                self.src.RasterCount)
+
+
     def get_resolution(self):
         _, xres, _, _, _, yres = self.geo_transform
         return (abs(xres), abs(yres))
