@@ -77,7 +77,8 @@ def _create_temp_grassdata(wdir, geotiff_fn, grass_fn):
     return wdir
 
 
-def _compute_sun_incidence(wdir, ofn, solar_time, njobs = 4):
+def _compute_sun_incidence(wdir, ofn, solar_time,
+                           njobs = 4, npartitions = 4):
     grass_path = os.path.join(wdir,'grass','PERMANENT')
 
     run_command\
@@ -85,9 +86,10 @@ def _compute_sun_incidence(wdir, ofn, solar_time, njobs = 4):
                  '--exec','r.sun',
                  'elevation=elevation',
                  'incidout=incidence',
-                 'day=' + str(solar_time['day']),
-                 'time=' + ('%.5f' % solar_time['hour']),
-                 'nprocs=' + str(njobs)],
+                 'day=%d' % int(solar_time['day']),
+                 'time=%f' % float(solar_time['hour']),
+                 'nprocs=%d' % int(njobs),
+                 'npartitions=%d' % int(npartitions)],
          cwd = wdir)
     run_command\
         (what = [GRASS, grass_path,
