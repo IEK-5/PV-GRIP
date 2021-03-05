@@ -38,6 +38,7 @@ REDIS_URL = 'redis://' + \
 
 
 GRASS=PVGRIP_CONFIGS['grass']['executable']
+GRASS_NJOBS = int(PVGRIP_CONFIGS['grass']['njobs'])
 
 
 def get_RESULTS_CACHE():
