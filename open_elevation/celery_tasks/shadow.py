@@ -60,7 +60,7 @@ def solar_time(timestr, lon):
             'hour': s.hour + s.minute/60 + s.second/(60*60)}
 
 
-def _create_temp_grassdata(wdir, geotiff_fn):
+def _create_temp_grassdata(wdir, geotiff_fn, grass_fn):
     grass_path = os.path.join(wdir,'grass','PERMANENT')
 
     run_command\
@@ -71,7 +71,7 @@ def _create_temp_grassdata(wdir, geotiff_fn):
         (what = [GRASS, grass_path,
                  '--exec','r.external',
                  'input=' + geotiff_fn,
-                 'output=elevation'],
+                 'output=' + grass_fn],
          cwd = wdir)
 
     return wdir
@@ -136,7 +136,8 @@ def compute_incidence(tif_fn, timestr):
                           lon = GDALInterface(tif_fn)\
                           .get_centre()['lon'])
         _create_temp_grassdata(wdir = wdir,
-                               geotiff_fn = tif_fn)
+                               geotiff_fn = tif_fn,
+                               grass_fn = 'elevation')
         _compute_sun_incidence(wdir = wdir,
                                ofn = ofn,
                                solar_time = time)
