@@ -181,7 +181,7 @@ def get_datasets():
 
 
 @route('/api/status', method=['GET'])
-def get_datasets():
+def get_status():
     return {'results': celery_status.status()}
 
 
