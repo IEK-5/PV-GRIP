@@ -311,6 +311,14 @@ gives some help.
 To compile a shadow video use `scripts/shadow_movie/query_data.sh`
 script. It also allow to stress test the server.
 
+## Contributors
+
+    - Jenya Sovetkin
+    - João Ricardo Lourenço
+    - Nikola Balog
+    - ligi
+    - Chris Lukic
+
 ## Caveats
 
  - Be aware that all floating arguments are cached with 8 digit
