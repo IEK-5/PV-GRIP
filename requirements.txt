@@ -13,3 +13,5 @@ numpy
 pytest
 scipy
 opencv-python
+pandas
+python-geohash

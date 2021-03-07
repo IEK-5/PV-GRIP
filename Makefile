@@ -9,4 +9,7 @@ init: submodule
 	TMPDIR=./temp pip3 install -e .
 	rmdir temp
 
+	./scripts/install_smrender.sh
+
+
 .PHONY: init
