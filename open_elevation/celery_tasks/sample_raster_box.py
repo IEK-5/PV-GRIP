@@ -148,12 +148,26 @@ def check_box_not_too_big(box, step, mesh_type,
     return len(grid['mesh'][0]), len(grid['mesh'][1])
 
 
-def sample_raster(box, data_re, stat,
-                  mesh_type, step, output_type):
+def convert2output_type(tasks, output_type):
     if output_type not in ('geotiff', 'pickle',
                            'pnghillshade','png'):
         raise RuntimeError("Invalid 'output_type' argument!")
 
+    if output_type in ('png'):
+        tasks |= save_png.signature()
+        return tasks
+
+    if output_type in ('geotiff', 'pnghillshade'):
+        tasks |= save_geotiff.signature()
+
+    if output_type == 'pnghillshade':
+        tasks |= save_pnghillshade.signature()
+
+    return tasks
+
+
+def sample_raster(box, data_re, stat,
+                  mesh_type, step, output_type):
     check_box_not_too_big(box = box, step = step,
                           mesh_type = mesh_type)
 
@@ -169,14 +183,5 @@ def sample_raster(box, data_re, stat,
                     'step': step},
           immutable = True))
 
-    if output_type in ('png'):
-        tasks |= save_png.signature()
-        return tasks
-
-    if output_type in ('geotiff', 'pnghillshade'):
-        tasks |= save_geotiff.signature()
-
-    if output_type == 'pnghillshade':
-        tasks |= save_pnghillshade.signature()
-
-    return tasks
+    return convert2output_type(tasks,
+                               output_type = output_type)

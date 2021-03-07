@@ -132,6 +132,23 @@ def _shadow_defaults():
     return res
 
 
+def _osm_defaults():
+    res = _raster_defaults()
+    del res['stat']
+    del res['data_re']
+    res.update({
+        'tag': \
+        ('building',
+         """type of an OpenStreetMap tag to show
+
+         e.g. building, highway
+
+         See more info:
+         https://wiki.openstreetmap.org/wiki/Map_features""")
+    })
+    return res
+
+
 def _format_help(data):
     res = []
     for key, item in data.items():
@@ -151,6 +168,7 @@ def get_help():
     /api/datasets        list available datasets
     /api/raster          download a raster image of a region
     /api/shadow          compute a shadow at a time of a region
+    /api/osm             render binary images of rendered from OSM
     /api/status          print current active and scheduled jobs
     /api/<what>/help     print help for <what>
     """}
@@ -183,6 +201,17 @@ def _raster(args):
 def _shadow(args):
     try:
         job = tasks.shadow(**args).delay()
+    except Exception as e:
+        return _return_exception(e)
+
+    return _get_job_results(job)
+
+
+@cache_fn_results(link = True,
+                  ignore = lambda x: isinstance(x,dict))
+def _osm(args):
+    try:
+        job = tasks.osm_render(**args).delay()
     except Exception as e:
         return _return_exception(e)
 
@@ -233,6 +262,28 @@ def post_shadow():
     return _serve(_shadow(args))
 
 
+@route('/api/osm', method=['GET'])
+def get_osm():
+    try:
+        args = _parse_args(data = request.query,
+                           defaults = _osm_defaults())
+    except Exception as e:
+        return _return_exception(e)
+
+    return _serve(_osm(args))
+
+
+@route('/api/osm', method=['POST'])
+def post_osm():
+    try:
+        args = _parse_args(data = request.json,
+                           defaults = _osm_defaults())
+    except Exception as e:
+        return _return_exception(e)
+
+    return _serve(_osm(args))
+
+
 @route('/api/raster/help', method=['GET'])
 def get_raster_help():
     return {'results': _format_help(_raster_defaults())}
@@ -241,6 +292,11 @@ def get_raster_help():
 @route('/api/shadow/help', method=['GET'])
 def get_shadow_help():
     return {'results': _format_help(_shadow_defaults())}
+
+
+@route('/api/osm/help', method=['GET'])
+def get_osm_help():
+    return {'results': _format_help(_osm_defaults())}
 
 
 run(host='0.0.0.0', port=8080,

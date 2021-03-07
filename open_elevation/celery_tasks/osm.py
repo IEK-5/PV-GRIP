@@ -12,7 +12,7 @@ import celery
 from open_elevation.celery_tasks \
     import CELERY_APP
 from open_elevation.celery_tasks.sample_raster_box \
-    import check_box_not_too_big
+    import check_box_not_too_big, convert2output_type
 from open_elevation.cache_fn_results \
     import cache_fn_results
 from open_elevation.celery_one_instance \
@@ -178,7 +178,7 @@ def _get_box_list(box):
     return [(x['s'],x['w'],x['n'],x['e']) for x in f]
 
 
-def osm_render(box, step, mesh_type, tag = 'building'):
+def osm_render(box, step, mesh_type, tag, output_type):
     width, _ = check_box_not_too_big\
         (box = box, step = step,
          mesh_type = mesh_type)
@@ -202,4 +202,5 @@ def osm_render(box, step, mesh_type, tag = 'building'):
         (kwargs={'box': box, 'step': step,
                  'mesh_type': mesh_type})
 
-    return tasks
+    return convert2output_type(tasks,
+                               output_type = output_type)
