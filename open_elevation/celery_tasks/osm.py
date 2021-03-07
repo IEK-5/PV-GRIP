@@ -5,6 +5,7 @@ import pickle
 import geohash
 import requests
 
+import numpy as np
 import xml.etree.ElementTree as etree
 
 import celery
@@ -163,7 +164,9 @@ def readpng_asarray(png_fn, box, step, mesh_type):
     ofn = get_tempfile()
     try:
         with open(ofn, 'wb') as f:
-            pickle.dump({'raster': cv2.imread(png_fn, 0),
+            pickle.dump({'raster': \
+                         np.expand_dims(cv2.imread(png_fn, 0),
+                                        axis=2),
                          'mesh': grid}, f)
     except Exception as e:
         remove_file(ofn)
