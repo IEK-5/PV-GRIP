@@ -1,5 +1,7 @@
 import os
+import cv2
 import shutil
+import pickle
 import geohash
 import requests
 
@@ -72,9 +74,7 @@ def find_osm_data_online(bbox, tag):
     return ofn
 
 
-@CELERY_APP.task()
 @cache_fn_results()
-@one_instance(expire = 10)
 def create_rules(tag):
     root = etree.Element('osm')
 
@@ -172,7 +172,7 @@ def readpng_asarray(png_fn, box, step, mesh_type):
 
 
 def _get_box_list(box):
-    hash_length = PVGRIP_CONFIGS['osm']['hash_length']
+    hash_length = int(PVGRIP_CONFIGS['osm']['hash_length'])
     f = (geohash.bbox(i) \
          for i in bbox2hash(box, hash_length))
     return [(x['s'],x['w'],x['n'],x['e']) for x in f]
@@ -182,6 +182,7 @@ def osm_render(box, step, mesh_type, tag = 'building'):
     width, _ = check_box_not_too_big\
         (box = box, step = step,
          mesh_type = mesh_type)
+    rules_fn = create_rules(tag)
 
     box_list = _get_box_list(box = box)
 
@@ -190,12 +191,12 @@ def osm_render(box, step, mesh_type, tag = 'building'):
            (kwargs={'tag': tag, 'bbox':x}) \
            for x in box_list])
 
-    tasks |= celery.group\
-        (*[merge_osm.signature(),
-           create_rules.si(tag)])
+    tasks |= merge_osm.signature()
 
     tasks |= render_osm_data.signature\
-        (kwargs={'box': box, 'width': width})
+        (kwargs={'rules_fn': rules_fn,
+                 'box': box,
+                 'width': width})
 
     tasks |= readpng_asarray.signature\
         (kwargs={'box': box, 'step': step,
