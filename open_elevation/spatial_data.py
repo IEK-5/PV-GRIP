@@ -62,10 +62,18 @@ class Spatial_Data:
 
     """
 
-    def __init__(self, cfs):
+    def __init__(self, cfs, **kwargs):
+        """init
+
+        :cfs: Cassandra_Files storage
+
+        :kwargs: arguments used for Cassandra_Spatial_Index
+
+        """
         self.cfs = cfs
         self.index = Cassandra_Spatial_Index\
-            (cluster_ips = self.cfs._cluster_ips)
+            (cluster_ips = self.cfs._cluster_ips,
+             **kwargs)
         self.datasets = Datasets\
             (cluster_ips = self.cfs._cluster_ips)
 

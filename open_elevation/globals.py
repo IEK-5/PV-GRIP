@@ -31,6 +31,10 @@ _CASSANDRA_REPLICATION = \
     PVGRIP_CONFIGS['cassandra']['replication']
 _CASSANDRA_REPLICATION_ARGS = \
     json.loads(PVGRIP_CONFIGS['cassandra']['replication_args'])
+_CASSANDRA_SPATIAL_INDEX_HASH_MIN = \
+    int(PVGRIP_CONFIGS['cassandra']['spatial_index_hash_min'])
+_CASSANDRA_SPATIAL_INDEX_DEPTH = \
+    int(PVGRIP_CONFIGS['cassandra']['spatial_index_depth'])
 
 
 REDIS_URL = 'redis://' + \
@@ -58,4 +62,7 @@ def get_CASSANDRA_STORAGE():
 
 def get_SPATIAL_DATA():
     CASSANDRA_STORAGE = get_CASSANDRA_STORAGE()
-    return Spatial_Data(CASSANDRA_STORAGE)
+    return Spatial_Data\
+        (cfs = CASSANDRA_STORAGE,
+         hash_min = _CASSANDRA_SPATIAL_INDEX_HASH_MIN,
+         depth = _CASSANDRA_SPATIAL_INDEX_DEPTH)
