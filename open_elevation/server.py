@@ -149,6 +149,21 @@ def _osm_defaults():
     return res
 
 
+def _irradiance_defaults():
+    res = _shadow_defaults()
+    del res['what']
+    del res['output_type']
+    res.update({
+        'rsun_args': \
+        ({'aspect_value': 270,
+          'slope_value': 0},
+         """Arguments passed to r.sun.
+
+         Raster arguments are not currently supported""")
+    })
+    return res
+
+
 def _format_help(data):
     res = []
     for key, item in data.items():
@@ -169,6 +184,7 @@ def get_help():
     /api/raster          download a raster image of a region
     /api/shadow          compute a shadow at a time of a region
     /api/osm             render binary images of rendered from OSM
+    /api/irradiance      compute irradiance rasters
     /api/status          print current active and scheduled jobs
     /api/<what>/help     print help for <what>
     """}
@@ -212,6 +228,17 @@ def _shadow(args):
 def _osm(args):
     try:
         job = tasks.osm_render(**args).delay()
+    except Exception as e:
+        return _return_exception(e)
+
+    return _get_job_results(job)
+
+
+@cache_fn_results(link = True,
+                  ignore = lambda x: isinstance(x,dict))
+def _irradiance(args):
+    try:
+        job = tasks.irradiance(**args).delay()
     except Exception as e:
         return _return_exception(e)
 
@@ -284,6 +311,28 @@ def post_osm():
     return _serve(_osm(args))
 
 
+@route('/api/irradiance', method=['GET'])
+def get_irradiance():
+    try:
+        args = _parse_args(data = request.query,
+                           defaults = _irradiance_defaults())
+    except Exception as e:
+        return _return_exception(e)
+
+    return _serve(_irradiance(args))
+
+
+@route('/api/irradiance', method=['POST'])
+def post_irradiance():
+    try:
+        args = _parse_args(data = request.json,
+                           defaults = _irradiance_defaults())
+    except Exception as e:
+        return _return_exception(e)
+
+    return _serve(_irradiance(args))
+
+
 @route('/api/raster/help', method=['GET'])
 def get_raster_help():
     return {'results': _format_help(_raster_defaults())}
@@ -297,6 +346,11 @@ def get_shadow_help():
 @route('/api/osm/help', method=['GET'])
 def get_osm_help():
     return {'results': _format_help(_osm_defaults())}
+
+
+@route('/api/irradiance/help', method=['GET'])
+def get_irradiance_help():
+    return {'results': _format_help(_irradiance_defaults())}
 
 
 run(host='0.0.0.0', port=8080,

@@ -163,7 +163,7 @@ def rsun_irradiance(elevation_fn, timestr,
     return ofn
 
 
-def irradiance(timestr, **kwargs):
+def irradiance(timestr, rsun_args, **kwargs):
     """Start irradiance job
 
     :timestr: time string, format: %Y-%m-%d_%H:%M:%S
@@ -174,7 +174,9 @@ def irradiance(timestr, **kwargs):
     kwargs['output_type'] = 'geotiff'
     tasks = sample_raster(**kwargs)
 
-    tasks |= rsun_irradiance.signature\
-        ((),{'timestr': timestr})
+    args = {'timestr': timestr}
+    args.update(rsun_args)
+
+    tasks |= rsun_irradiance.signature((),args)
 
     return tasks
