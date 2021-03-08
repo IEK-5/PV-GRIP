@@ -143,8 +143,13 @@ def _osm_defaults():
 
          e.g. building, highway
 
-         See more info:
-         https://wiki.openstreetmap.org/wiki/Map_features""")
+         See more info on available tags in OSM:
+         https://wiki.openstreetmap.org/wiki/Map_features
+
+         tag can be in format: key=value
+
+         e.g. landuse=forest
+         """)
     })
     return res
 

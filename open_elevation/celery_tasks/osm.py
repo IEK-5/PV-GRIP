@@ -1,4 +1,5 @@
 import os
+import re
 import cv2
 import shutil
 import pickle
@@ -88,8 +89,15 @@ def create_rules(tag):
     tag_name = etree.Element('tag')
     type_.append(tag_name)
 
-    tag_name.set('k',tag)
-    tag_name.set('v','')
+    match = re.match(r'(.*)=(.*)', tag)
+    if match:
+        key, value = match.groups()
+    else:
+        key = tag
+        value = ''
+
+    tag_name.set('k',key)
+    tag_name.set('v',value)
 
     tag_action = etree.Element('tag')
     type_.append(tag_action)
