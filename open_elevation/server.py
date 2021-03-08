@@ -14,7 +14,7 @@ import open_elevation.celery_tasks as tasks
 import open_elevation.celery_status as celery_status
 
 from open_elevation.globals \
-    import get_SPATIAL_DATA
+    import get_SPATIAL_DATA, PVGRIP_CONFIGS
 
 from open_elevation.utils \
     import TASK_RUNNING
@@ -355,5 +355,5 @@ def get_irradiance_help():
 
 run(host='0.0.0.0', port=8080,
     server='gunicorn',
-    workers=os.cpu_count(),
+    workers=int(PVGRIP_CONFIGS['server']['server_workers']),
     timeout=60)
