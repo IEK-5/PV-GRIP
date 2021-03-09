@@ -23,7 +23,7 @@ from open_elevation.cache_fn_results \
     import cache_fn_results
 
 from open_elevation.cassandra_path \
-    import Cassandra_Path
+    import Cassandra_Path, is_cassandra_path
 
 
 def _return_exception(e):
@@ -59,8 +59,9 @@ def _serve(data):
     if isinstance(data, dict):
         return data
 
-    if isinstance(data, Cassandra_Path):
-        with open(data.get_locally(),'rb') as f:
+    if is_cassandra_path(data):
+        with open(Cassandra_Path(data).get_locally(),
+                  'rb') as f:
             return f.read()
 
     return data

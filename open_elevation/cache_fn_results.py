@@ -4,7 +4,7 @@ import logging
 from functools import wraps
 
 from open_elevation.cassandra_path \
-    import Cassandra_Path
+    import Cassandra_Path, is_cassandra_path
 from open_elevation.float_hash \
     import float_hash_fn
 
@@ -15,10 +15,12 @@ def _get_locally(*args, **kwargs):
     Note, only the first level of argument is walked. For example, if
     argument is a list of files, this list is not checked.
     """
-    args = [x.get_locally() if isinstance(x, Cassandra_Path) else x\
+    args = [Cassandra_Path(x).get_locally() \
+            if is_cassandra_path(x) else x\
             for x in args]
 
-    kwargs = {k:(v.get_locally() if isinstance(v, Cassandra_Path) else v) \
+    kwargs = {k:(Cassandra_Path(v).get_locally() \
+                 if is_cassandra_path(v) else v) \
               for k,v in kwargs.items()}
 
     return args, kwargs
@@ -39,7 +41,6 @@ def _compute_ofn(keys, args, kwargs, fname):
 def cache_fn_results(keys = None,
                      link = False,
                      ignore = lambda x: False,
-                     to_cassandra = True,
                      ofn_arg = None):
     """Cache results of a function that returns a file
 
@@ -47,8 +48,6 @@ def cache_fn_results(keys = None,
     for the cache item
 
     :link: if using a hardlink instead of moving file to local cache
-
-    :to_cassandra: if True then cache is searched in cassandra storage
 
     :ignore: a boolean function that is computed if result of a
     function should be ignored.
@@ -73,15 +72,13 @@ def cache_fn_results(keys = None,
 
             RESULTS_CACHE = get_RESULTS_CACHE()
 
-            ofn = Cassandra_Path(ofn)
-            if (to_cassandra and ofn.in_cassandra()) or \
-               (not to_cassandra and ofn in RESULTS_CACHE):
+            if Cassandra_Path(ofn).in_cassandra():
                 logging.debug("""
                 File is in cache!
                 key = %s
                 ofn = %s
-                """ % (str(key), ofn))
-                return ofn
+                """ % (str(key), str(ofn)))
+                return str(Cassandra_Path(ofn))
 
             logging.debug("""
                 File is NOT in cache!
@@ -94,14 +91,16 @@ def cache_fn_results(keys = None,
             if ignore(tfn):
                 return tfn
 
+            if is_cassandra_path(tfn):
+                tfn = Cassandra_Path(tfn).get_locally()
+
             CASSANDRA_STORAGE = get_CASSANDRA_STORAGE()
-            if to_cassandra:
-                CASSANDRA_STORAGE.upload(tfn, str(ofn))
+            CASSANDRA_STORAGE.upload(tfn, Cassandra_Path(ofn).get_path())
             if link:
                 os.link(tfn, ofn)
             else:
                 os.replace(tfn, ofn)
             RESULTS_CACHE.add(ofn)
-            return Cassandra_Path(ofn)
+            return str(Cassandra_Path(ofn))
         return wrap
     return wrapper
