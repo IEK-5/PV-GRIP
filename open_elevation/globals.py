@@ -64,5 +64,9 @@ def get_SPATIAL_DATA():
     CASSANDRA_STORAGE = get_CASSANDRA_STORAGE()
     return Spatial_Data\
         (cfs = CASSANDRA_STORAGE,
-         hash_min = _CASSANDRA_SPATIAL_INDEX_HASH_MIN,
-         depth = _CASSANDRA_SPATIAL_INDEX_DEPTH)
+         index_args = \
+         {'hash_min': _CASSANDRA_SPATIAL_INDEX_HASH_MIN,
+          'depth': _CASSANDRA_SPATIAL_INDEX_DEPTH},
+         base_args = \
+         {'replication': _CASSANDRA_REPLICATION,
+          'replication_args': _CASSANDRA_REPLICATION_ARGS})
