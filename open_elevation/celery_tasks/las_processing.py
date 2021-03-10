@@ -38,17 +38,7 @@ def download_laz(url):
     return ofn
 
 
-@CELERY_APP.task()
-@cache_fn_results()
-@one_instance(expire = 10)
-def write_pdaljson(laz_fn, ofn, resolution, what):
-    logging.debug("""
-    write_pdaljson
-    laz_fn = %s
-    ofn = %s
-    resolution = %s
-    what = %s
-    """ % (laz_fn, ofn, str(resolution), str(what)))
+def _write_pdaljson(laz_fn, ofn, resolution, what, json_ofn):
     data = {}
     data['pipeline'] = [{
         'type': 'readers.las',
@@ -60,25 +50,29 @@ def write_pdaljson(laz_fn, ofn, resolution, what):
       'resolution': resolution,
       'type': 'writers.gdal'}]
 
-    ofn = get_tempfile()
-    with open(ofn, 'w') as f:
+    with open(json_ofn, 'w') as f:
         json.dump(data, f)
-    return ofn
 
 
 @CELERY_APP.task()
 @cache_fn_results(ofn_arg = 'ofn')
 @one_instance(expire = 60*20)
-def run_pdal(path, ofn):
+def run_pdal(laz_fn, resolution, what, ofn):
     logging.debug("""
     run_pdal
-    path = %s
+    laz_fn = %s
+    resolution = %s
+    what = %s
     ofn = %s
-    """ % (path, ofn))
+    """ % (laz_fn, resolution, what, ofn))
     wdir = get_tempdir()
     try:
+        pdalfn = os.path.join(wdir,'run_pdal.json')
+        _write_pdaljson(laz_fn = laz_fn, ofn = ofn,
+                        resolution = resolution, what = what,
+                        json_ofn = pdalfn)
         run_command\
-            (what = ['pdal','pipeline',path],
+            (what = ['pdal','pipeline',pdalfn],
              cwd = wdir)
         return ofn
     finally:
@@ -103,12 +97,10 @@ def process_laz(url, ofn, resolution, what, if_compute_las):
         .signature(kwargs = {'url': url})
 
     if if_compute_las:
-        tasks |= write_pdaljson\
+        tasks |= run_pdal\
             .signature(kwargs = {'ofn': ofn,
                                  'resolution': resolution,
                                  'what': what})
-        tasks |= run_pdal\
-            .signature(kwargs = {'ofn': ofn})
     else:
         tasks |= link_ofn\
             .signature(kwargs = {'ofn': ofn})
