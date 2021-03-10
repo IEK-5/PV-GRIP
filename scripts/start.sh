@@ -59,6 +59,7 @@ function start_celery {
     celery -A open_elevation.celery_tasks \
            multi start tasks_worker \
            --concurrency=$(python3 scripts/get_config.py server celery_workers) \
+           --max-memory-per-child=$(python3 scripts/get_config.py server max_memory_worker) \
            -l INFO \
            --pidfile='data/celery/pid/%n.pid' \
            --logfile='data/celery/logs/%n%I.log'
