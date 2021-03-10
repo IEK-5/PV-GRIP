@@ -9,18 +9,30 @@ from open_elevation.float_hash \
     import float_hash_fn
 
 
+def _get_locally_item(x):
+    if isinstance(x, dict):
+        x = {k:_get_locally_item(v) for k,v in x.items()}
+
+    if isinstance(x, (list, tuple)) and \
+       len(x) and isinstance(x[0], str):
+        x = [_get_locally_item(v) for v in x]
+
+    if isinstance(x, str) and \
+       is_cassandra_path(x):
+        x = Cassandra_Path(x).get_locally()
+
+    return x
+
+
 def _get_locally(*args, **kwargs):
     """Make sure all remote files are available locally
 
     Note, only the first level of argument is walked. For example, if
     argument is a list of files, this list is not checked.
     """
-    args = [Cassandra_Path(x).get_locally() \
-            if is_cassandra_path(x) else x\
-            for x in args]
+    args = [_get_locally_item(x) for x in args]
 
-    kwargs = {k:(Cassandra_Path(v).get_locally() \
-                 if is_cassandra_path(v) else v) \
+    kwargs = {k:_get_locally_item(v) \
               for k,v in kwargs.items()}
 
     return args, kwargs
