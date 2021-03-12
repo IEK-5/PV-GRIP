@@ -52,4 +52,5 @@ class Cassandra_Path:
             return fn
 
         CASSANDRA_STORAGE.download(fn, fn)
-        return RESULTS_CACHE.add(fn)
+        RESULTS_CACHE.add(fn)
+        return fn
