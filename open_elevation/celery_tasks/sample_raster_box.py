@@ -102,6 +102,7 @@ def sample_from_box(box, data_re, stat,
 
     res = None
     for fn in index.files():
+        fn = Cassandra_Path(fn).get_locally()
         interface = GDALInterface(fn)
         x = np.array(interface.lookup(points))
 
