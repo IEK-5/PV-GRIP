@@ -85,8 +85,7 @@ def compute_incidence(tif_fn, timestr):
         _compute_sun_incidence(wdir = wdir,
                                solar_time = time,
                                njobs = GRASS_NJOBS,
-                               npartitions = get_npartitions\
-                               (tif.get_shape()))
+                               npartitions = 1)
         download_grass_data(wdir = wdir,
                             grass_fn = 'incidence',
                             geotiff_fn = ofn)
