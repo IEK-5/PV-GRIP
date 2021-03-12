@@ -54,24 +54,31 @@ function start_redis {
     redis-server data/redis/redis.conf
 }
 
+function _start_celery_string {
+    echo --concurrency=$(python3 scripts/get_config.py server celery_workers) \
+         --max-memory-per-child=$(python3 scripts/get_config.py server max_memory_worker) \
+         -l INFO \
+         --logfile='data/celery/logs/%n%I.log'
+}
+
+function start_celery_minion {
+    celery -A open_elevation.celery_tasks \
+           worker \
+           $(_start_celery_string)
+}
 
 function start_celery {
     celery -A open_elevation.celery_tasks \
            multi start tasks_worker \
-           --concurrency=$(python3 scripts/get_config.py server celery_workers) \
-           --max-memory-per-child=$(python3 scripts/get_config.py server max_memory_worker) \
-           -l INFO \
-           --pidfile='data/celery/pid/%n.pid' \
-           --logfile='data/celery/logs/%n%I.log'
+           $(_start_celery_string) \
+           --pidfile='data/celery/pid/%n.pid'
 }
 
 
 function stop_celery {
     celery -A open_elevation.celery_tasks \
            multi stop tasks_worker \
-           -l INFO \
-           --pidfile='data/celery/pid/%n.pid' \
-           --logfile='data/celery/logs/%n%I.log'
+           --pidfile='data/celery/pid/%n.pid'
 }
 
 
@@ -91,7 +98,7 @@ then
     start_celery
     start_server
 else
-    start_celery
+    start_celery_minion
 fi
 
 
