@@ -12,8 +12,7 @@ from open_elevation.cache_fn_results \
 from open_elevation.celery_one_instance \
     import one_instance
 from open_elevation.grass \
-    import upload_grass_data, download_grass_data, \
-    get_npartitions
+    import upload_grass_data, download_grass_data
 from open_elevation.solar_time \
     import solar_time
 from open_elevation.gdalinterface \

@@ -57,8 +57,3 @@ def download_grass_data(wdir, grass_fn, geotiff_fn):
     os.rename(os.path.join(wdir, 'output.tif'), geotiff_fn)
 
     return geotiff_fn
-
-
-def get_npartitions(shape):
-    res = prod(shape) / int(PVGRIP_CONFIGS['grass']['max_partition'])
-    return max(res, 1)

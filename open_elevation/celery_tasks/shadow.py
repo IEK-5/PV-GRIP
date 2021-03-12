@@ -15,8 +15,7 @@ from open_elevation.celery_one_instance \
 from open_elevation.solar_time \
     import solar_time
 from open_elevation.grass \
-    import upload_grass_data, download_grass_data, \
-    get_npartitions
+    import upload_grass_data, download_grass_data
 from open_elevation.utils \
     import get_tempfile, remove_file, \
     run_command, get_tempdir
