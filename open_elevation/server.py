@@ -362,4 +362,5 @@ def get_irradiance_help():
 run(host='0.0.0.0', port=8080,
     server='gunicorn',
     workers=int(PVGRIP_CONFIGS['server']['server_workers']),
-    timeout=60)
+    max_requests=int(PVGRIP_CONFIGS['server']['max_requests']),
+    timeout=int(PVGRIP_CONFIGS['server']['timeout']))
