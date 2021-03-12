@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 import diskcache
 
 from open_elevation.utils \
@@ -43,6 +44,15 @@ REDIS_URL = 'redis://' + \
 
 GRASS=PVGRIP_CONFIGS['grass']['executable']
 GRASS_NJOBS = int(PVGRIP_CONFIGS['grass']['njobs'])
+
+
+_LOGGING = {'INFO': logging.INFO,
+            'DEBUG': logging.DEBUG,
+            'WARNING': logging.WARNING,
+            'ERROR': logging.ERROR,
+            'CRITICAL': logging.CRITICAL}
+LOGGING_LEVEL = _LOGGING\
+    [PVGRIP_CONFIGS['server']['logging_level']]
 
 
 def get_RESULTS_CACHE():

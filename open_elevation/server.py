@@ -2,8 +2,12 @@ import os
 import json
 import traceback
 import logging
+
+from open_elevation.globals \
+    import LOGGING_LEVEL
+
 logging.basicConfig(filename = 'data/server.log',
-                    level = logging.DEBUG,
+                    level = LOGGING_LEVEL,
                     format = "[%(asctime)s] %(levelname)s: %(filename)s::%(funcName)s %(message)s")
 
 from bottle import route, run, request

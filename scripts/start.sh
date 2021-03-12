@@ -57,7 +57,7 @@ function start_redis {
 function _start_celery_string {
     echo --autoscale=$(python3 scripts/get_config.py server celery_workers),1 \
          --max-memory-per-child=$(python3 scripts/get_config.py server max_memory_worker) \
-         -l INFO \
+         -l $(python3 scripts/get_config.py server logging_level) \
          --logfile='data/celery/logs/%n%I.log'
 }
 
