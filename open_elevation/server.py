@@ -29,6 +29,9 @@ from open_elevation.cache_fn_results \
 from open_elevation.cassandra_path \
     import Cassandra_Path, is_cassandra_path
 
+from open_elevation.upload \
+    import upload
+
 
 def _return_exception(e):
     return {'results':
@@ -172,6 +175,18 @@ def _irradiance_defaults():
          Raster arguments are not currently supported""")
     })
     return res
+
+
+def _upload_defaults():
+    return {'data': \
+            ('NA',
+             """a local path for a file to upload
+
+             Must be specified as a form element.
+
+             For example, for a local file '/files/example.txt', say
+             curl -F file=@/files/example.txt <site>/api/upload
+             """)}
 
 
 def _format_help(data):
@@ -343,6 +358,16 @@ def post_irradiance():
     return _serve(_irradiance(args))
 
 
+@route('/api/upload', method=['POST'])
+def post_upload():
+    try:
+        data = request.files.data
+    except Exception as e:
+        return _return_exception(e)
+
+    return _serve(upload(data))
+
+
 @route('/api/raster/help', method=['GET'])
 def get_raster_help():
     return {'results': _format_help(_raster_defaults())}
@@ -361,6 +386,11 @@ def get_osm_help():
 @route('/api/irradiance/help', method=['GET'])
 def get_irradiance_help():
     return {'results': _format_help(_irradiance_defaults())}
+
+
+@route('/api/upload/help', method=['GET'])
+def get_upload_help():
+    return {'results': _format_help(_upload_defaults())}
 
 
 run(host='0.0.0.0', port=8080,
