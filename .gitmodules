@@ -1,3 +1,6 @@
 [submodule "open_elevation/cassandra_io"]
 	path = open_elevation/cassandra_io
 	url = git@github.com:esovetkin/cassandra_io.git
+[submodule "open_elevation/ssdp"]
+	path = open_elevation/ssdp
+	url = git@jugit.fz-juelich.de:b.pieters/ssdp.git
