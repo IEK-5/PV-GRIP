@@ -13,12 +13,15 @@ from open_elevation.utils \
     import get_tempfile, remove_file, get_tempdir
 
 
-def _save_png(data, ofn):
+def _save_png(data, ofn, normalize):
     wdir = get_tempdir()
 
     try:
         tfn = os.path.join(wdir, 'image.png')
-        cv2.imwrite(tfn, data['raster'])
+        arr = data['raster']
+        if normalize:
+            arr = 255*(arr - arr.min())/(arr.max() - arr.min())
+        cv2.imwrite(tfn, arr)
         os.rename(tfn, ofn)
     finally:
         shutil.rmtree(wdir)
@@ -27,13 +30,14 @@ def _save_png(data, ofn):
 @CELERY_APP.task()
 @cache_fn_results()
 @one_instance(expire=10)
-def save_png(pickle_fn):
+def save_png(pickle_fn, normalize = False):
     with open(pickle_fn, 'rb') as f:
         data = pickle.load(f)
 
     ofn = get_tempfile()
     try:
-        _save_png(data = data, ofn = ofn)
+        _save_png(data = data, ofn = ofn,
+                  normalize = normalize)
     except Exception as e:
         remove_file(ofn)
         raise e

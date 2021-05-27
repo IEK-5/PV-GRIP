@@ -151,11 +151,16 @@ def check_box_not_too_big(box, step, mesh_type,
 
 def convert2output_type(tasks, output_type):
     if output_type not in ('geotiff', 'pickle',
-                           'pnghillshade','png'):
+                           'pnghillshade','png',
+                           'pngnormalize'):
         raise RuntimeError("Invalid 'output_type' argument!")
 
     if output_type in ('png'):
         tasks |= save_png.signature()
+        return tasks
+
+    if output_type in ('pngnormalize'):
+        tasks |= save_png.signature(normalize = True)
         return tasks
 
     if output_type in ('geotiff', 'pnghillshade'):
