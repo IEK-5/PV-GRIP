@@ -125,6 +125,12 @@ def _raster_defaults():
     return res
 
 
+def _timestr_argument():
+    return {'timestr': \
+            ("2020-07-01_06:00:00",
+             "UTC time of the shadow")}
+
+
 def _shadow_defaults():
     res = _raster_defaults()
     res.update({
@@ -133,10 +139,8 @@ def _shadow_defaults():
          'type of output ("png","geotiff")'),
         'what': \
         ('shadow',
-         'what to compute: either incidence map (always geotiff) or binary shadow map'),
-        'timestr': \
-        ("2020-07-01_06:00:00",
-         "UTC time of the shadow")})
+         'what to compute: either incidence map (always geotiff) or binary shadow map')})
+    res.update(_timestr_argument())
     return res
 
 
@@ -189,6 +193,33 @@ def _upload_defaults():
              """)}
 
 
+def _ssdp_defaults():
+    res = _raster_defaults()
+    res.update({'ghi': \
+                (1000,
+                 "Global horizontal irradiance"),
+                'dhi': \
+                (100,
+                 "Diffused horizontal irradiance"),
+                'albedo':
+                (0.5,
+                 "albedo value between 0-1"),
+                'nsky':
+                (10,
+                 """The  number  of  zenith  discretizations.
+
+                 The  total number of sky patches equals
+                 Ntotal(N)=3N(N-1)+1,
+                 e.g. with Ntotal(7)=127
+
+                 Based on POA simulations without topography: 7 is
+                 good enough, 10 noticeably better. Beyond that it is
+                 3rd significant digit improvements.
+                 """)})
+    res.update(_timestr_argument())
+    return res
+
+
 def _format_help(data):
     res = []
     for key, item in data.items():
@@ -206,11 +237,17 @@ def get_help():
 
     /api/help            print help
     /api/datasets        list available datasets
+    /api/upload          upload a file to a storage
+
     /api/raster          download a raster image of a region
     /api/shadow          compute a shadow at a time of a region
     /api/osm             render binary images of rendered from OSM
     /api/irradiance      compute irradiance rasters
+
+    /api/ssdp            some interface to ssdp
+
     /api/status          print current active and scheduled jobs
+
     /api/<what>/help     print help for <what>
     """}
 
@@ -264,6 +301,17 @@ def _osm(args):
 def _irradiance(args):
     try:
         job = tasks.irradiance(**args).delay()
+    except Exception as e:
+        return _return_exception(e)
+
+    return _get_job_results(job)
+
+
+@cache_fn_results(link = True,
+                  ignore = lambda x: isinstance(x,dict))
+def _ssdp(args):
+    try:
+        job = tasks.ssdp_irradiance(**args).delay()
     except Exception as e:
         return _return_exception(e)
 
@@ -358,6 +406,28 @@ def post_irradiance():
     return _serve(_irradiance(args))
 
 
+@route('/api/ssdp', method=['GET'])
+def get_ssdp():
+    try:
+        args = _parse_args(data = request.query,
+                           defaults = _ssdp_defaults())
+    except Exception as e:
+        return _return_exception(e)
+
+    return _serve(_ssdp(args))
+
+
+@route('/api/ssdp', method=['POST'])
+def post_ssdp():
+    try:
+        args = _parse_args(data = request.json,
+                           defaults = _ssdp_defaults())
+    except Exception as e:
+        return _return_exception(e)
+
+    return _serve(_ssdp(args))
+
+
 @route('/api/upload', method=['POST'])
 def post_upload():
     try:
@@ -386,6 +456,11 @@ def get_osm_help():
 @route('/api/irradiance/help', method=['GET'])
 def get_irradiance_help():
     return {'results': _format_help(_irradiance_defaults())}
+
+
+@route('/api/ssdp/help', method=['GET'])
+def get_ssdp_help():
+    return {'results': _format_help(_ssdp_defaults())}
 
 
 @route('/api/upload/help', method=['GET'])

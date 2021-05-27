@@ -1,6 +1,7 @@
 import re
 import os
 import time
+import inspect
 import logging
 import tempfile
 import subprocess
@@ -84,3 +85,14 @@ def get_configs(fn):
     config = configparser.ConfigParser()
     config.read(fn)
     return config
+
+
+def call_matching(func, kwargs):
+    """Call function by passing arguments
+
+    """
+    args = inspect.getfullargspec(func).args
+    args = {k:v \
+            for k,v in kwargs.items() \
+            if k in args}
+    return func(**args)

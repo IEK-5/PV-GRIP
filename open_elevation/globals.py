@@ -46,6 +46,10 @@ GRASS=PVGRIP_CONFIGS['grass']['executable']
 GRASS_NJOBS = int(PVGRIP_CONFIGS['grass']['njobs'])
 
 
+SSDP=PVGRIP_CONFIGS['ssdp']['executable']
+SSDP_NJOBS = int(PVGRIP_CONFIGS['ssdp']['njobs'])
+
+
 _LOGGING = {'INFO': logging.INFO,
             'DEBUG': logging.DEBUG,
             'WARNING': logging.WARNING,
