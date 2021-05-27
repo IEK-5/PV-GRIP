@@ -4,6 +4,8 @@ import logging
 
 from tqdm import tqdm
 
+from shapely import geometry
+
 from open_elevation.utils\
     import list_files
 
@@ -33,10 +35,29 @@ def _in_directory(fn, paths):
 
 
 def _polygon_from_box(box):
-    return [(box[1],box[0]),
-            (box[3],box[0]),
-            (box[3],box[2]),
-            (box[1],box[2])]
+    return geometry.Polygon([(box[1],box[0]),
+                             (box[3],box[0]),
+                             (box[3],box[2]),
+                             (box[1],box[2])])
+
+
+def _polygon_from_route(route, box):
+    polygon = None
+
+    for x in route:
+        box = _polygon_from_box\
+            ((box[0] + x[0],
+              box[1] + x[1],
+              box[2] + x[0],
+              box[3] + x[1]))
+
+        if not polygon:
+            polygon = geometry.Polygon(box)
+            continue
+
+        polygon = polygon.union(geometry.Polygon(box))
+
+    return polygon
 
 
 def _subset_filter_how(x, data_re, stat):
@@ -160,9 +181,30 @@ class Spatial_Data:
 
 
     def subset(self, box, data_re, stat,
+               route = None,
                raise_on_empty = True):
-        pg = _polygon_from_box(box)
-        index = self.index.intersect(polygon = pg)
+        """Generate a subset index containing required data
+
+        :box: a box describing coordinates of a box, if route is not
+        None box gives positions of a box relative to each coordinate
+        in a route
+
+        :data_re: regular expression to match filenames
+
+        :stat: statistic to match (lidar data)
+
+        :route: a list of coordinates
+
+        :raise_on_empty: raise an exception if no data available
+
+        :return: Polygon_File_Index
+        """
+        if route:
+            pg = _polygon_from_route(route, box)
+        else:
+            pg = _polygon_from_box(box)
+
+        index = self.index.intersect(polygons = pg)
         index = index.filter\
             (how = lambda x:
              _subset_filter_how(x, data_re, stat))
