@@ -1,7 +1,8 @@
 import os
 import json
-import traceback
+import bottle
 import logging
+import traceback
 
 from open_elevation.globals \
     import LOGGING_LEVEL
@@ -9,8 +10,6 @@ from open_elevation.globals \
 logging.basicConfig(filename = 'data/server.log',
                     level = LOGGING_LEVEL,
                     format = "[%(asctime)s] %(levelname)s: %(filename)s::%(funcName)s %(message)s")
-
-from bottle import route, run, request
 
 from celery.exceptions import TimeoutError
 
@@ -92,6 +91,16 @@ def _get_job_results(job, timeout = 30):
         return {'results': {'message': 'task is running'}}
     except Exception as e:
         return _return_exception(e)
+
+
+def _format_help(data):
+    res = []
+    for key, item in data.items():
+        res += [("""%15s=%s
+        %s
+        """ % ((key,) + item)).lstrip()]
+
+    return '\n'.join(res)
 
 
 def _lookup_defaults():
@@ -220,256 +229,139 @@ def _ssdp_defaults():
     return res
 
 
-def _format_help(data):
-    res = []
-    for key, item in data.items():
-        res += ["""%15s=%s
-        %s
-        """ % ((key,) + item)]
+@cache_fn_results(link = True,
+                  ignore = lambda x: isinstance(x,dict))
+def _call_task(task, args):
+    try:
+        job = task(**args).delay()
+    except Exception as e:
+        return _return_exception(e)
 
-    return '\n'.join(res)
+    return _get_job_results(job)
 
 
-@route('/api/help', method=['GET'])
+def _call_method(args, defaults_func, run_func):
+    try:
+        args = _parse_args(data = args,
+                           defaults = defaults_func())
+    except Exception as e:
+        return _return_exception(e)
+
+    return _serve(_call_task(run_func, args))
+
+
+@bottle.route('/api/help', method=['GET'])
 def get_help():
     return {'results': """
     Query geo-spatial data
 
-    /api/help            print help
+    /api/help            print this page
+    /api/help/<what>     print help for <what>
+
     /api/datasets        list available datasets
+
     /api/upload          upload a file to a storage
 
-    /api/raster          download a raster image of a region
-    /api/shadow          compute a shadow at a time of a region
-    /api/osm             render binary images of rendered from OSM
-    /api/irradiance      compute irradiance rasters
+    /api/raster          get a raster image of a region
 
-    /api/ssdp            some interface to ssdp
+    /api/irradiance      compute irradiance raster map.
+
+        Several library bindings are available (default ssdp):
+        /api/irradiance/ssdp
+                         use the SSDP library to compute irradiance maps
+
+        /api/irradiance/grass
+                         use the GRASS library
+
+    /api/route           compute irradiance along a route
+
+    /api/shadow          compute binary map of a shadow at a time of a region
+
+    /api/osm             render binary images of rendered from OSM
 
     /api/status          print current active and scheduled jobs
 
-    /api/<what>/help     print help for <what>
     """}
 
 
-@route('/api/datasets', method=['GET'])
-def get_datasets():
-    SPATIAL_DATA = get_SPATIAL_DATA()
-    return {'results': SPATIAL_DATA.get_datasets()}
-
-
-@route('/api/status', method=['GET'])
-def get_status():
-    return {'results': celery_status.status()}
-
-
-@cache_fn_results(link = True,
-                  ignore = lambda x: isinstance(x,dict))
-def _raster(args):
-    try:
-        job = tasks.sample_raster(**args).delay()
-    except Exception as e:
-        return _return_exception(e)
-
-    return _get_job_results(job)
-
-
-@cache_fn_results(link = True,
-                  ignore = lambda x: isinstance(x,dict))
-def _shadow(args):
-    try:
-        job = tasks.shadow(**args).delay()
-    except Exception as e:
-        return _return_exception(e)
-
-    return _get_job_results(job)
-
-
-@cache_fn_results(link = True,
-                  ignore = lambda x: isinstance(x,dict))
-def _osm(args):
-    try:
-        job = tasks.osm_render(**args).delay()
-    except Exception as e:
-        return _return_exception(e)
-
-    return _get_job_results(job)
-
-
-@cache_fn_results(link = True,
-                  ignore = lambda x: isinstance(x,dict))
-def _irradiance(args):
-    try:
-        job = tasks.irradiance(**args).delay()
-    except Exception as e:
-        return _return_exception(e)
-
-    return _get_job_results(job)
-
-
-@cache_fn_results(link = True,
-                  ignore = lambda x: isinstance(x,dict))
-def _ssdp(args):
-    try:
-        job = tasks.ssdp_irradiance(**args).delay()
-    except Exception as e:
-        return _return_exception(e)
-
-    return _get_job_results(job)
-
-
-@route('/api/raster', method=['GET'])
-def get_raster():
-    try:
-        args = _parse_args(data = request.query,
-                           defaults = _raster_defaults())
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(_raster(args))
-
-
-@route('/api/raster', method=['POST'])
-def post_raster():
-    try:
-        args = _parse_args(data = request.json,
-                           defaults = _raster_defaults())
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(_raster(args))
-
-
-@route('/api/shadow', method=['GET'])
-def get_shadow():
-    try:
-        args = _parse_args(data = request.query,
-                           defaults = _shadow_defaults())
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(_shadow(args))
-
-
-@route('/api/shadow', method=['POST'])
-def post_shadow():
-    try:
-        args = _parse_args(data = request.json,
-                           defaults = _shadow_defaults())
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(_shadow(args))
-
-
-@route('/api/osm', method=['GET'])
-def get_osm():
-    try:
-        args = _parse_args(data = request.query,
-                           defaults = _osm_defaults())
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(_osm(args))
-
-
-@route('/api/osm', method=['POST'])
-def post_osm():
-    try:
-        args = _parse_args(data = request.json,
-                           defaults = _osm_defaults())
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(_osm(args))
-
-
-@route('/api/irradiance', method=['GET'])
-def get_irradiance():
-    try:
-        args = _parse_args(data = request.query,
-                           defaults = _irradiance_defaults())
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(_irradiance(args))
-
-
-@route('/api/irradiance', method=['POST'])
-def post_irradiance():
-    try:
-        args = _parse_args(data = request.json,
-                           defaults = _irradiance_defaults())
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(_irradiance(args))
-
-
-@route('/api/ssdp', method=['GET'])
-def get_ssdp():
-    try:
-        args = _parse_args(data = request.query,
-                           defaults = _ssdp_defaults())
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(_ssdp(args))
-
-
-@route('/api/ssdp', method=['POST'])
-def post_ssdp():
-    try:
-        args = _parse_args(data = request.json,
-                           defaults = _ssdp_defaults())
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(_ssdp(args))
-
-
-@route('/api/upload', method=['POST'])
-def post_upload():
-    try:
-        data = request.files.data
-    except Exception as e:
-        return _return_exception(e)
-
-    return _serve(upload(data))
-
-
-@route('/api/raster/help', method=['GET'])
-def get_raster_help():
-    return {'results': _format_help(_raster_defaults())}
-
-
-@route('/api/shadow/help', method=['GET'])
-def get_shadow_help():
-    return {'results': _format_help(_shadow_defaults())}
-
-
-@route('/api/osm/help', method=['GET'])
-def get_osm_help():
-    return {'results': _format_help(_osm_defaults())}
-
-
-@route('/api/irradiance/help', method=['GET'])
-def get_irradiance_help():
-    return {'results': _format_help(_irradiance_defaults())}
-
-
-@route('/api/ssdp/help', method=['GET'])
-def get_ssdp_help():
-    return {'results': _format_help(_ssdp_defaults())}
-
-
-@route('/api/upload/help', method=['GET'])
-def get_upload_help():
-    return {'results': _format_help(_upload_defaults())}
-
-
-run(host='0.0.0.0', port=8080,
-    server='gunicorn',
-    workers=int(PVGRIP_CONFIGS['server']['server_workers']),
-    max_requests=int(PVGRIP_CONFIGS['server']['max_requests']),
-    timeout=int(PVGRIP_CONFIGS['server']['timeout']))
+@bottle.route('/api/help/<what:path>', method=['GET'])
+def get_what_help(what):
+    if 'raster' == what:
+        res = _raster_defaults()
+    elif 'shadow' == what:
+        res = _shadow_defaults()
+    elif 'irradiance' == what:
+        res = _irradiance_defaults()
+    elif 'irradiance/ssdp' == what:
+        res = _ssdp_defaults()
+    elif 'irradiance/grass' == what:
+        res = _irradiance_defaults()
+    elif 'osm' == what:
+        res = _osm_defaults()
+    elif 'ssdp' == what:
+        res = _ssdp_defaults()
+    elif 'upload' == what:
+        res = _upload_defaults()
+    else:
+        return error404('no help for the %s available' % what)
+    return {'results': _format_help(res)}
+
+
+@bottle.route('/api/<method:path>', method=['GET','POST'])
+def do_method(method):
+    if 'GET' == bottle.request.method:
+        args = bottle.request.query
+    elif 'POST' == bottle.request.method:
+        args = bottle.request.json
+    else:
+        return error404('%s access method is not implemented' \
+                        % str(bottle.request.method))
+
+    if 'raster' == method:
+        defaults = _raster_defaults
+        run = tasks.sample_raster
+    elif 'shadow' == method:
+        defaults = _shadow_defaults
+        run = tasks.shadow
+    elif 'osm' == method:
+        defaults = _osm_defaults
+        run = tasks.osm_render
+    elif 'irradiance' == method:
+        defaults = _ssdp_defaults
+        run = tasks.ssdp_irradiance
+    elif 'irradiance/grass' == method:
+        defaults = _irradiance_defaults
+        run = tasks.irradiance
+    elif 'irradiance/ssdp' == method:
+        defaults = _ssdp_defaults
+        run = tasks.ssdp_irradiance
+    elif 'status' == method:
+        return {'results': celery_status.status()}
+    elif 'datasets' == method:
+        SPATIAL_DATA = get_SPATIAL_DATA()
+        return {'results': SPATIAL_DATA.get_datasets()}
+    elif 'upload' == method:
+        try:
+            data = bottle.request.files.data
+        except Exception as e:
+            return _return_exception(e)
+
+        return _serve(upload(data))
+    else:
+        return error404('method is not implemented')
+
+    return _call_method(args = args,
+                        defaults_func = defaults,
+                        run_func = run)
+
+
+@bottle.error(404)
+def error404(error):
+    return {'results': str(error)}
+
+
+bottle.run(host='0.0.0.0', port=8080,
+           server='gunicorn',
+           workers=int(PVGRIP_CONFIGS['server']['server_workers']),
+           max_requests=int(PVGRIP_CONFIGS['server']['max_requests']),
+           timeout=int(PVGRIP_CONFIGS['server']['timeout']))
