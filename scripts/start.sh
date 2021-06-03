@@ -4,23 +4,19 @@ cd $(git rev-parse --show-toplevel)
 
 
 function set_defaults {
-    what="master"
-    action="start"
+    what="webserver"
 }
 
 
 function print_help {
     echo "Usage: $0 [OPTIONS]"
     echo
-    echo "Start master/minion nodes"
+    echo "Start webserver/worker nodes"
     echo
     echo "  -h,--help         print this page"
     echo
-    echo "  --what            type of node to start (master or minion)"
+    echo "  --what            type of node to start (webserver, worker)"
     echo "                    Default: ${what}"
-    echo
-    echo "  --action          start/stop"
-    echo "                    Default: ${action}"
     echo
 }
 
@@ -45,44 +41,31 @@ function init_dirs {
     rm -rf data/celery/pid
     mkdir -p data/celery/logs
     mkdir -p data/celery/pid
-    mkdir -p data/redis
-    cp configs/redis.conf data/redis/.
 }
 
-
-function start_redis {
-    redis-server data/redis/redis.conf
-}
 
 function _start_celery_string {
-    echo --autoscale=$(python3 scripts/get_config.py server celery_workers),1 \
-         --max-memory-per-child=$(python3 scripts/get_config.py server max_memory_worker) \
-         -l $(python3 scripts/get_config.py server logging_level) \
+    echo --autoscale=$(python3 \
+                           scripts/get_config.py \
+                           server celery_workers),0 \
+         --max-memory-per-child=$(python3 \
+                                      scripts/get_config.py \
+                                      server \
+                                      max_memory_worker) \
+         -l $(python3 scripts/get_config.py \
+                      server logging_level) \
          --logfile='data/celery/logs/%n%I.log'
 }
 
-function start_celery_minion {
+
+function start_worker {
     celery -A open_elevation.celery_tasks \
            worker \
            $(_start_celery_string)
 }
 
-function start_celery {
-    celery -A open_elevation.celery_tasks \
-           multi start tasks_worker \
-           $(_start_celery_string) \
-           --pidfile='data/celery/pid/%n.pid'
-}
 
-
-function stop_celery {
-    celery -A open_elevation.celery_tasks \
-           multi stop tasks_worker \
-           --pidfile='data/celery/pid/%n.pid'
-}
-
-
-function start_server {
+function start_webserver {
     python3 open_elevation/server.py
 }
 
@@ -92,17 +75,13 @@ parse_args $@
 init_dirs
 
 
-if [ "master" == "${what}" ] && [ "start" == "${action}" ]
-then
-    start_redis
-    start_celery
-    start_server
-else
-    start_celery_minion
-fi
-
-
-if [ "stop" == "${action}" ]
-then
-    stop_celery
-fi
+case "${what}" in
+    worker)
+        start_worker
+        ;;
+    webserver)
+        start_webserver
+        ;;
+    *)
+        ;;
+esac

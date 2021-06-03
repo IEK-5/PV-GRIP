@@ -97,7 +97,7 @@ cd open_elevation/cassandra_io
 Before starting with worker/webserver nodes a docker image should be
 present. To build the docker image say
 ```
-scripts/build_docker.sh
+./pvgrip --what=build
 ```
 
 Alternatively, a docker image can be pulled from the docker image
@@ -124,20 +124,22 @@ The following line sets the interface where the webserver and message
 broker ports are binding:
 ```
 [server]
-interface = pvgrip0
+interface = pvgrip
 ```
 
 The following line
 ```
-scripts/run_docker.sh
+./pvgrip --what=webserver
 ```
-starts the webserver, the broker and the processing nodes.
-
-Say
+starts the webserver,
 ```
-scripts/run_docker.sh ./scripts/start.sh --what=minion
+./pvgrip --what=broker
 ```
-to start only the processing node.
+starts the broker, and
+```
+./pvgrip --what=worker
+```
+starts a processing node.
 
 ## Data
 
@@ -184,7 +186,8 @@ Some parts of the scripts depends on the version of GDAL being used
 (and also requires GDAL installed on the host machine). Hence, it is
 possible to run the scripts from inside the docker image
 ```
-scripts/run_docker.sh scripts/preprocess.sh
+#in docker image
+scripts/preprocess.sh
 ```
 
 Preprocess script create a backup of the data using the
