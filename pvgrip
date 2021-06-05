@@ -13,6 +13,10 @@ function set_defaults {
     mnt_configs="$(pwd)/configs"
     ifmntcode="no"
     name_prefix="pvgrip"
+    registry=$(python3 scripts/get_config.py \
+                       server docker_registry)
+    image_tag=$(python3 scripts/get_config.py \
+                       server image_tag)
 }
 
 
@@ -23,6 +27,21 @@ function print_help {
     echo
     echo "  -h,--help         print this page"
     echo
+    echo "  --what            action: start \"webserver\", \"worker\" or \"broker\";"
+    echo "                    or \"build\" image. Default: \"${what}\""
+    echo
+    echo "  --mnt-data        mount point of the data directory"
+    echo "                    Default: \"${mnt_data}\""
+    echo
+    echo "  --mnt-configs     mount point of the configs directory"
+    echo "                    Default: \"${mnt_configs}\""
+    echo
+    echo "  --registry        repository location. Use empty for locally built images"
+    echo "                    Default: \"${registry}\""
+    echo
+    echo "  --image-tag       image tag (version) to use."
+    echo "                    Default: \"${image_tag}\""
+    echo
     echo "  --name-prefix     prefix of the docker containers' names"
     echo "                    Default: \"${name_prefix}\""
     echo
@@ -32,17 +51,8 @@ function print_help {
     echo "  --network         network interface where to bind ports"
     echo "                    Empty for all. Default: \"${network_interface}\""
     echo
-    echo "  --what            action: start \"webserver\", \"worker\" or \"broker\";"
-    echo "                    or \"build\" image. Default: \"${what}\""
-    echo
     echo "  --ifrestart       enable restart on docker restart."
     echo "                    Default: \"${ifrestart}\""
-    echo
-    echo "  --mnt-data        mount point of the data directory"
-    echo "                    Default: \"${mnt_data}\""
-    echo
-    echo "  --mnt-configs     mount point of the configs directory"
-    echo "                    Default: \"${mnt_configs}\""
     echo
     echo "  --ifmntcode       if mount source code."
     echo "                    If yes, data and configs are used from the git root."
@@ -85,6 +95,15 @@ function parse_args {
                 ;;
             --name-prefix=*)
                 name_prefix="${i#*=}"
+                shift
+                ;;
+            --registry=*)
+                registry="${i#*=}"
+                [ ! -z "${registry}" ] && registry="${registry}/"
+                shift
+                ;;
+            --image-tag=*)
+                image_tag="${i#*=}"
                 shift
                 ;;
             -h|--help)
@@ -158,7 +177,7 @@ function start_webserver {
     $(start_preamble) \
         $(mount_volumes) \
         -p "$(get_ip "${network_interface}"):8080:8080" \
-        pvgrip \
+        "${registry}pvgrip:${image_tag}" \
         ./scripts/start.sh --what="${what}"
 }
 
@@ -166,7 +185,7 @@ function start_webserver {
 function start_worker {
     $(start_preamble) \
         $(mount_volumes) \
-        pvgrip \
+        "${registry}pvgrip:${image_tag}" \
         ./scripts/start.sh --what="${what}"
 }
 
