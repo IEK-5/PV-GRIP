@@ -2,6 +2,7 @@ import os
 import celery
 import pickle
 import shutil
+import logging
 import itertools
 
 import numpy as np
@@ -116,7 +117,9 @@ def compute_irradiance(ifn,
              nsky = nsky, ofn = ssdp_ofn,
              grid = grid)
 
-        print(call)
+        logging.debug("""ssdp call:
+        %s
+        """ % call)
         _call_ssdp(call)
         return array_1d_2pickle(ssdp_ofn, data, ofn)
     except Exception as e:
