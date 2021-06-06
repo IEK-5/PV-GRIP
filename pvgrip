@@ -6,7 +6,8 @@ cd $(git rev-parse --show-toplevel)
 function set_defaults {
     network_interface=$(python3 scripts/get_config.py \
                                 server interface)
-    docker_maxmemory=$(echo "$(grep MemTotal /proc/meminfo | awk '{print $2}')/1024/1024*0.9" | bc)"g"
+    docker_maxmemory=$(echo "scale=2; $(grep MemTotal /proc/meminfo | awk '{print $2}')/1024/1024*0.9" \
+                           | bc | awk '{printf "%f", $0}')"g"
     what="webserver"
     ifrestart="yes"
     mnt_data="$(pwd)/data"
@@ -99,7 +100,6 @@ function parse_args {
                 ;;
             --registry=*)
                 registry="${i#*=}"
-                [ ! -z "${registry}" ] && registry="${registry}/"
                 shift
                 ;;
             --image-tag=*)
@@ -209,10 +209,12 @@ parse_args $@
 case "${what}" in
     webserver)
         prune_byname "pvgrip-${what}" || exit 1
+        [ ! -z "${registry}" ] && registry="${registry}/"
         start_webserver
         ;;
     worker)
         prune_byname "pvgrip-${what}" || exit 1
+        [ ! -z "${registry}" ] && registry="${registry}/"
         start_worker
         ;;
     broker)
