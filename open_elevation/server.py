@@ -111,7 +111,10 @@ def _lookup_defaults():
              'regular expression matching the dataset'),
             'stat': \
             ('max',
-             'statistic to compute for LAS files ("max","min","mean","idw","count","stdev")')}
+             """
+             statistic to compute for LAS files
+
+             choice: ("max","min","mean","idw","count","stdev")""")}
 
 
 def _raster_defaults():
@@ -119,7 +122,10 @@ def _raster_defaults():
     del res['location']
     res.update({'box': \
                 ([50.865,7.119,50.867,7.121],
-                 'bounding box of desired locations, [lat_min, lon_min, lat_max, lon_max]'),
+                 """
+                 bounding box of desired locations
+
+                 format: [lat_min, lon_min, lat_max, lon_max]"""),
                 'step': \
                 (float(1),
                  'resolution of the sampling mesh in meters'),
@@ -128,8 +134,12 @@ def _raster_defaults():
                  'type of mesh_type ("metric","wgs84")'),
                 'output_type': \
                 ('pickle',
-                 'type of output ("pickle","geotiff","pnghillshade","png","pngnormalize").' +\
-                 '"png" does not normalise data')})
+                 """
+                 type of output
+
+                 choices: "pickle","geotiff","pnghillshade","png","pngnormalize"
+
+                 "png" does not normalise data""")})
     return res
 
 
@@ -147,7 +157,13 @@ def _shadow_defaults():
          'type of output ("png","geotiff")'),
         'what': \
         ('shadow',
-         'what to compute: either incidence map (always geotiff) or binary shadow map')})
+         """
+         what to compute
+
+         choices: "shadow", "incidence"
+
+         the incidence map always produces geotiff
+         shadow produces a binary shadow map""")})
     res.update(_timestr_argument())
     return res
 
@@ -274,6 +290,8 @@ def get_help():
 
     /api/route           compute irradiance along a route
 
+    /api/intergrate      integrate irradiance map over a period of time
+
     /api/shadow          compute binary map of a shadow at a time of a region
 
     /api/osm             render binary images of rendered from OSM
@@ -290,7 +308,7 @@ def get_what_help(what):
     elif 'shadow' == what:
         res = _shadow_defaults()
     elif 'irradiance' == what:
-        res = _irradiance_defaults()
+        res = _ssdp_defaults()
     elif 'irradiance/ssdp' == what:
         res = _ssdp_defaults()
     elif 'irradiance/grass' == what:
