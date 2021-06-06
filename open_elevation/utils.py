@@ -67,6 +67,15 @@ def run_command(what, cwd, ignore_exitcode = False):
     if ignore_exitcode:
         return
 
+    logging.debug("""
+    command = %s
+    returns = %d
+    stdout  = %s
+    stderr  = %s
+    """ % (' '.join(what), res.returncode,
+           res.stdout.decode(),
+           res.stderr.decode()))
+
     if not res.returncode:
         return
 
