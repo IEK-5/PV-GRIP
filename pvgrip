@@ -7,7 +7,7 @@ function set_defaults {
     network_interface=$(python3 scripts/get_config.py \
                                 server interface)
     docker_maxmemory=$(echo "scale=2; $(grep MemTotal /proc/meminfo | awk '{print $2}')/1024/1024*0.9" \
-                           | bc | awk '{printf "%f", $0}')"g"
+                           | bc | awk '{printf "%.2f", $0}')"g"
     what="webserver"
     ifrestart="yes"
     mnt_data="$(pwd)/data"
@@ -19,6 +19,7 @@ function set_defaults {
     image_tag=$(python3 scripts/get_config.py \
                         server image_tag)
     next_tag=$(./scripts/get_version.sh)
+    ifdry="no"
 }
 
 
@@ -28,6 +29,8 @@ function print_help {
     echo "Start webserver/worker/broker or build the image"
     echo
     echo "  -h,--help         print this page"
+    echo
+    echo "  -d,--dry          just echo command, do not execute"
     echo
     echo "  --what            action: start \"webserver\", \"worker\" or \"broker\";"
     echo "                    or \"build\", \"tag\" or \"push\" image."
@@ -106,7 +109,6 @@ function parse_args {
                 ;;
             --registry=*)
                 registry="${i#*=}"
-                [ ! -z "${registry}" ] && registry="${registry}/"
                 shift
                 ;;
             --image-tag=*)
@@ -116,6 +118,9 @@ function parse_args {
             --next-tag=*)
                 next_tag="${i#*=}"
                 shift
+                ;;
+            -d|--dry)
+                ifdry="yes"
                 ;;
             -h|--help)
                 print_help
@@ -157,6 +162,12 @@ function prune_byname {
               awk '{print $1}' | xargs)
     if [ ! -z "${ids}" ]
     then
+        if [ "yes" = "${ifdry}" ]
+        then
+            echo docker container rm "${ids}"
+            return 0
+        fi
+
         docker container rm "${ids}"
         [ "$?" -ne 0 ] && return 1
     fi
@@ -169,7 +180,7 @@ function start_preamble {
     res+=" --memory ${docker_maxmemory}"
     res+=" --name ${name_prefix}-${what}"
     res+=" $(get_restart)"
-    echo "${res}"
+    echo "echo ${res}"
 }
 
 
@@ -208,11 +219,6 @@ function start_broker {
 }
 
 
-function build {
-    docker build -t pvgrip .
-}
-
-
 set_defaults
 parse_args $@
 [ ! -z "${registry}" ] && registry="${registry}/"
@@ -220,25 +226,34 @@ parse_args $@
 case "${what}" in
     webserver)
         prune_byname "pvgrip-${what}" || exit 1
-        start_webserver
+        docommand=$(start_webserver)
         ;;
     worker)
         prune_byname "pvgrip-${what}" || exit 1
-        start_worker
+        docommand=$(start_worker)
         ;;
     broker)
         prune_byname "pvgrip-${what}" || exit 1
-        start_broker
+        docommand=$(start_broker)
         ;;
     build)
-        build
+        docommand=$(echo docker build -t pvgrip .)
         ;;
     tag)
-        docker tag pvgrip "${registry}pvgrip:${next_tag}"
+        docommand=$(echo docker tag pvgrip "${registry}pvgrip:${next_tag}")
         ;;
     push)
-        docker push "${registry}pvgrip:${next_tag}"
+        docommand=$(echo docker push "${registry}pvgrip:${next_tag}")
         ;;
     *)
         ;;
 esac
+
+
+if [ "yes" = "${ifdry}" ]
+then
+    echo ${docommand}
+    exit 0
+fi
+
+eval ${docommand}
