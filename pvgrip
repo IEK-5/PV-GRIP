@@ -17,7 +17,8 @@ function set_defaults {
     registry=$(python3 scripts/get_config.py \
                        server docker_registry)
     image_tag=$(python3 scripts/get_config.py \
-                       server image_tag)
+                        server image_tag)
+    next_tag=$(./scripts/get_version.sh)
 }
 
 
@@ -29,7 +30,8 @@ function print_help {
     echo "  -h,--help         print this page"
     echo
     echo "  --what            action: start \"webserver\", \"worker\" or \"broker\";"
-    echo "                    or \"build\" image. Default: \"${what}\""
+    echo "                    or \"build\", \"tag\" or \"push\" image."
+    echo "                    Default: \"${what}\""
     echo
     echo "  --mnt-data        mount point of the data directory"
     echo "                    Default: \"${mnt_data}\""
@@ -58,6 +60,10 @@ function print_help {
     echo "  --ifmntcode       if mount source code."
     echo "                    If yes, data and configs are used from the git root."
     echo "                    Default: \"${ifmntcode}\""
+    echo
+    echo "  --next-tag        the version to use in the next tag."
+    echo "                    Used only with --what=tag and --what=push commands."
+    echo "                    Default: \"${next_tag}\""
     echo
 }
 
@@ -105,6 +111,10 @@ function parse_args {
                 ;;
             --image-tag=*)
                 image_tag="${i#*=}"
+                shift
+                ;;
+            --next-tag=*)
+                next_tag="${i#*=}"
                 shift
                 ;;
             -h|--help)
@@ -205,17 +215,15 @@ function build {
 
 set_defaults
 parse_args $@
-
+[ ! -z "${registry}" ] && registry="${registry}/"
 
 case "${what}" in
     webserver)
         prune_byname "pvgrip-${what}" || exit 1
-        [ ! -z "${registry}" ] && registry="${registry}/"
         start_webserver
         ;;
     worker)
         prune_byname "pvgrip-${what}" || exit 1
-        [ ! -z "${registry}" ] && registry="${registry}/"
         start_worker
         ;;
     broker)
@@ -224,6 +232,12 @@ case "${what}" in
         ;;
     build)
         build
+        ;;
+    tag)
+        docker tag pvgrip "${registry}pvgrip:${next_tag}"
+        ;;
+    push)
+        docker push "${registry}pvgrip:${next_tag}"
         ;;
     *)
         ;;
