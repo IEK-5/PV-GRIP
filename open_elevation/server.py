@@ -14,7 +14,6 @@ logging.basicConfig(filename = 'data/server.log',
 from celery.exceptions import TimeoutError
 
 import open_elevation.celery_tasks as tasks
-import open_elevation.celery_status as celery_status
 
 from open_elevation.globals \
     import get_SPATIAL_DATA, PVGRIP_CONFIGS
@@ -336,7 +335,7 @@ def do_method(method):
         defaults = _ssdp_defaults
         run = tasks.ssdp_irradiance
     elif 'status' == method:
-        return {'results': celery_status.status()}
+        return {'results': tasks.status()}
     elif 'datasets' == method:
         SPATIAL_DATA = get_SPATIAL_DATA()
         return {'results': SPATIAL_DATA.get_datasets()}
