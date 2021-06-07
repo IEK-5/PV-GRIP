@@ -41,21 +41,15 @@ def _polygon_from_box(box):
                              (box[1],box[2])])
 
 
-def _polygon_from_route(route, box):
+def _polygon_from_list_rasters(rasters):
     polygon = None
 
-    for x in route:
-        box = _polygon_from_box\
-            ((box[0] + x[0],
-              box[1] + x[1],
-              box[2] + x[0],
-              box[3] + x[1]))
-
+    for x in rasters:
         if not polygon:
-            polygon = geometry.Polygon(box)
+            polygon = _polygon_from_box(x['box'])
             continue
 
-        polygon = polygon.union(geometry.Polygon(box))
+        polygon = polygon.union(_polygon_from_box(x['box']))
 
     return polygon
 
@@ -180,8 +174,8 @@ class Spatial_Data:
         self._upload_raster_data(path, las_dirs.keys())
 
 
-    def subset(self, box, data_re, stat,
-               route = None,
+    def subset(self, data_re, stat,
+               box=None, rasters = None,
                raise_on_empty = True):
         """Generate a subset index containing required data
 
@@ -193,14 +187,17 @@ class Spatial_Data:
 
         :stat: statistic to match (lidar data)
 
-        :route: a list of coordinates
+        :rasters: a list of dictionaries containing 'box' field. If
+        not None, 'box' argument is ignored, and a polygon is formed
+        using the provided list of boxes in the 'rasters' list
 
         :raise_on_empty: raise an exception if no data available
 
         :return: Polygon_File_Index
+
         """
-        if route:
-            pg = _polygon_from_route(route, box)
+        if rasters:
+            pg = _polygon_from_list_rasters(rasters)
         else:
             pg = _polygon_from_box(box)
 
