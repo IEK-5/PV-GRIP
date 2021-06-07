@@ -244,6 +244,43 @@ def _ssdp_defaults():
     return res
 
 
+def _route_defaults():
+    res = _ssdp_defaults()
+    res.update({'box': \
+                ([-0.0008,-0.0008,0.0008,0.0008],
+                 """
+                 bounding box steps around each location in degrees
+
+                 format: [east,south,west,north]
+
+                 """),
+                'box_delta': \
+                (3,
+                 """a constant that defines a maximum raster being sampled
+
+                 For example, if a 'box' is a rectangle with sizes
+                 a x b, then the maximum sized raster being sampled has
+                 dimensions: a*2*box_delta x b*2*box_delta.
+
+                 The constant is replaced with max(1,box_delta).
+
+                 """),
+                'tsvfn_uploaded': \
+                ('NA',
+                 """a pvgrip path resulted from /api/upload
+
+                 The tsv file must contain a header with at least
+                 'latitude' and 'longitude' columns.
+
+                 The following columns are optional: 'ghi', 'dhi',
+                 'timestr'. In case some of the columns are missing, a
+                 constant value for all locations is used.
+
+                 """)})
+    del res['output_type']
+    return res
+
+
 @cache_fn_results(link = True,
                   ignore = lambda x: isinstance(x,dict))
 def _call_task(task, args):
@@ -319,6 +356,8 @@ def get_what_help(what):
         res = _ssdp_defaults()
     elif 'upload' == what:
         res = _upload_defaults()
+    elif 'route' == what:
+        res = _route_defaults()
     else:
         return error404('no help for the %s available' % what)
     return {'results': _format_help(res)}
@@ -364,6 +403,14 @@ def do_method(method):
             return _return_exception(e)
 
         return _serve(upload(data))
+    elif 'route' == method:
+        if 'tsvfn_uploaded' == 'NA':
+            return _return_exception\
+                (RuntimeError\
+                 ('tsvfn_uploaded must be provided!'))
+
+        defaults = _route_defaults
+        run = tasks.ssdp_route
     else:
         return error404('method is not implemented')
 

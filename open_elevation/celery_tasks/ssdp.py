@@ -28,8 +28,12 @@ from open_elevation.utils \
     run_command, get_tempdir
 
 
-def _call_ssdp(what):
+def call_ssdp(what):
     wdir = get_tempdir()
+
+    logging.debug("""ssdp call:
+    %s
+    """ % what)
 
     try:
         ifn = os.path.join(wdir,'script.ssdp')
@@ -117,10 +121,7 @@ def compute_irradiance(ifn,
              nsky = nsky, ofn = ssdp_ofn,
              grid = grid)
 
-        logging.debug("""ssdp call:
-        %s
-        """ % call)
-        _call_ssdp(call)
+        call_ssdp(call)
         return array_1d_2pickle(ssdp_ofn, data, ofn)
     except Exception as e:
         remove_file(ofn)
@@ -130,14 +131,14 @@ def compute_irradiance(ifn,
         remove_file(ssdp_ofn)
 
 
-def _timestr2utc_time(timestr):
+def timestr2utc_time(timestr):
     tz = timezone("UTC")
     dt = datetime.strptime(timestr, '%Y-%m-%d_%H:%M:%S')
     dt = tz.localize(dt)
     return int(dt.timestamp())
 
 
-def _centre_of_box(box):
+def centre_of_box(box):
     return (box[1] + (box[3]-box[1])/2,
             box[0] + (box[2]-box[0])/2)
 
@@ -160,9 +161,8 @@ def ssdp_irradiance(timestr, ghi, dhi, albedo, nsky,
     output_type = kwargs['output_type']
     kwargs['output_type'] = 'pickle'
 
-    utc_time = _timestr2utc_time(timestr)
-    lon, lat \
-        = _centre_of_box(kwargs['box'])
+    utc_time = timestr2utc_time(timestr)
+    lon, lat = centre_of_box(kwargs['box'])
 
     tasks = sample_raster(**kwargs)
     tasks |= compute_irradiance.signature\
