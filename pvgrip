@@ -230,15 +230,15 @@ parse_args $@
 
 case "${what}" in
     webserver)
-        prune_byname "pvgrip-${what}" || exit 1
+        prune_byname "${name_prefix}-${what}" || exit 1
         docommand=$(start_webserver)
         ;;
     worker)
-        prune_byname "pvgrip-${what}" || exit 1
+        prune_byname "${name_prefix}-${what}" || exit 1
         docommand=$(start_worker)
         ;;
     broker)
-        prune_byname "pvgrip-${what}" || exit 1
+        prune_byname "${name_prefix}-${what}" || exit 1
         docommand=$(start_broker)
         ;;
     build)
