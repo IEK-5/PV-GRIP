@@ -213,7 +213,7 @@ def _upload_defaults():
              Must be specified as a form element.
 
              For example, for a local file '/files/example.txt', say
-             curl -F file=@/files/example.txt <site>/api/upload
+             curl -F data=@/files/example.txt <site>/api/upload
              """)}
 
 

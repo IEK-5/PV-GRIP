@@ -33,7 +33,7 @@ def upload(request_data):
     name = os.path.join\
         (RESULTS_PATH,
          "upload_" + _hash_file(ofn))
-    _upload_file(fn = ofn, name = name)
+    name = _upload_file(fn = ofn, name = name)
 
     remove_file(ofn)
     return {'storage_fn': name}
