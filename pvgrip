@@ -33,7 +33,7 @@ function print_help {
     echo "  -d,--dry          just echo command, do not execute"
     echo
     echo "  --what            action: start \"webserver\", \"worker\" or \"broker\";"
-    echo "                    or \"build\", \"tag\" or \"push\" image."
+    echo "                    or \"build\", \"tag\", \"push\" or \"pull\" image."
     echo "                    Default: \"${what}\""
     echo
     echo "  --mnt-data        mount point of the data directory"
@@ -65,7 +65,7 @@ function print_help {
     echo "                    Default: \"${ifmntcode}\""
     echo
     echo "  --next-tag        the version to use in the next tag."
-    echo "                    Used only with --what=tag and --what=push commands."
+    echo "                    Used only with --what=tag, --what=push and --what=pull commands."
     echo "                    Default: \"${next_tag}\""
     echo
 }
@@ -249,6 +249,9 @@ case "${what}" in
         ;;
     push)
         docommand=$(echo docker push "${registry}pvgrip:${next_tag}")
+        ;;
+    pull)
+        docommand=$(echo docker pull "${registry}pvgrip:${next_tag}")
         ;;
     *)
         echo "unknown value of --what!"
