@@ -1,7 +1,5 @@
 #!/bin/bash
 
-cd $(git rev-parse --show-toplevel)
-
 builddir=$(mktemp -d -p .)
 
 git clone https://github.com/rahra/smrender.git "${builddir}/src"
