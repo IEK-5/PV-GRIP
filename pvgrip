@@ -125,6 +125,11 @@ function parse_args {
             -h|--help)
                 print_help
                 exit
+                ;;
+            *)
+                echo "unknown argument!"
+                exit
+                ;;
         esac
     done
 }
@@ -246,6 +251,8 @@ case "${what}" in
         docommand=$(echo docker push "${registry}pvgrip:${next_tag}")
         ;;
     *)
+        echo "unknown value of --what!"
+        exit
         ;;
 esac
 
