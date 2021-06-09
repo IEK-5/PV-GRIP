@@ -17,7 +17,8 @@ from open_elevation.cache_fn_results \
 from open_elevation.celery_one_instance \
     import one_instance
 from open_elevation.utils \
-    import get_tempfile, remove_file
+    import get_tempfile, remove_file, \
+    format_dictionary
 from open_elevation.celery_tasks.save_geotiff \
     import save_geotiff
 from open_elevation.celery_tasks.save_png \
@@ -81,15 +82,8 @@ def _compute_mesh(box, step, mesh_type):
 @one_instance(expire = 60*10)
 def sample_from_box(box, data_re, stat,
                     mesh_type = 'metric', step = 1):
-    logging.debug("""
-    sample_from_box
-    box = %s
-    data_re = %s
-    stat = %s
-    mesh_type = %s
-    step = %s
-    """ % (str(box), str(data_re), str(stat),
-           str(mesh_type), str(step)))
+    logging.debug("sample_from_box\n{}"\
+                  .format(format_dictionary(locals())))
     SPATIAL_DATA = get_SPATIAL_DATA()
     index = SPATIAL_DATA.subset(box = box,
                                 data_re = data_re,

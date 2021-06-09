@@ -1,4 +1,5 @@
 import pickle
+import logging
 import numpy as np
 
 from osgeo import gdal
@@ -12,7 +13,7 @@ from open_elevation.cache_fn_results \
 from open_elevation.celery_one_instance \
     import one_instance
 from open_elevation.utils \
-    import get_tempfile, remove_file
+    import get_tempfile, remove_file, format_dictionary
 
 
 def save_gdal(ofn, array, geotransform, epsg):
@@ -56,6 +57,8 @@ def _save_geotiff(data, ofn):
 @cache_fn_results()
 @one_instance(expire = 10)
 def save_geotiff(pickle_fn):
+    logging.debug("save_geotiff\n{}"\
+                  .format(format_dictionary(locals())))
     with open(pickle_fn, 'rb') as f:
         data = pickle.load(f)
     ofn = get_tempfile()

@@ -30,7 +30,7 @@ from open_elevation.celery_tasks.ssdp \
 
 from open_elevation.utils \
     import get_tempfile, remove_file, \
-    run_command, get_tempdir
+    run_command, get_tempdir, format_dictionary
 
 from open_elevation.cassandra_path \
     import Cassandra_Path, is_cassandra_path
@@ -84,24 +84,8 @@ def write_result(route, ssdp_ofn, ofn):
 def compute_route(ifn, route, lat, lon,
                   ghi_default, dhi_default,
                   time_default, albedo, nsky):
-    logging.debug("""
-    compute_route
-    ifn = {ifn}
-    route = <omitted>
-    lat = {lat}
-    lon = {lon}
-    ghi_default = {ghi_default}
-    dhi_default = {dhi_default}
-    time_default = {time_default}
-    albedo = {albedo}
-    nsky = {nsky}
-    """.format(ifn = ifn,
-               lat = lat, lon = lon,
-               ghi_default = ghi_default,
-               dhi_default = dhi_default,
-               time_default = time_default,
-               albedo = albedo,
-               nsky = nsky))
+    logging.debug("compute_route\n{}"\
+                  .format(format_dictionary(locals())))
     wdir = get_tempdir()
     ofn = get_tempfile()
 
@@ -146,6 +130,8 @@ def compute_route(ifn, route, lat, lon,
 @cache_fn_results()
 @one_instance(expire = 10)
 def merge_tsv(tsv_files):
+    logging.debug("merge_tsv\n{}"\
+                  .format(format_dictionary(locals())))
     ofn = get_tempfile()
 
     try:

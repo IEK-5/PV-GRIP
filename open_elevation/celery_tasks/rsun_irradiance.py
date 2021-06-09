@@ -1,5 +1,6 @@
 import os
 import shutil
+import logging
 
 import numpy as np
 
@@ -23,7 +24,8 @@ from open_elevation.celery_tasks.sample_raster_box \
     import sample_raster
 from open_elevation.utils \
     import get_tempfile, remove_file, \
-    run_command, get_tempdir
+    run_command, get_tempdir, \
+    format_dictionary
 
 
 def _join_tif(ofn, ifns):
@@ -123,6 +125,8 @@ def rsun_irradiance(elevation_fn, timestr,
                     linke_fn = None, linke_value = None,
                     albedo_fn = None, albedo_value = None,
                     coeff_bh_fn = None, coeff_dh_fn = None):
+    logging.debug("rsun_irradiance\n{}"\
+                  .format(format_dictionary(locals())))
     wdir = get_tempdir()
     ofn = get_tempfile()
 

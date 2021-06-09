@@ -4,6 +4,7 @@ import cv2
 import shutil
 import pickle
 import geohash
+import logging
 import requests
 
 import numpy as np
@@ -24,7 +25,8 @@ from open_elevation.globals \
 
 from open_elevation.utils \
     import get_tempfile, remove_file, \
-    run_command, get_tempdir
+    run_command, get_tempdir, \
+    format_dictionary
 
 from cassandra_io.utils \
     import bbox2hash
@@ -58,6 +60,8 @@ def _form_query(bbox, tag):
 @cache_fn_results()
 @one_instance(expire = 10)
 def find_osm_data_online(bbox, tag):
+    logging.debug("find_osm_data_online\n{}"\
+                  .format(format_dictionary(locals())))
     query = _form_query(bbox, tag)
 
     response = requests.get\
@@ -120,6 +124,8 @@ def create_rules(tag):
 @cache_fn_results()
 @one_instance(expire = 10)
 def render_osm_data(osm_fn, rules_fn, box, width):
+    logging.debug("render_osm_data\n{}"\
+                  .format(format_dictionary(locals())))
     wdir = get_tempdir()
     ofn = get_tempfile()
     # -P specifies dimensions in mm
@@ -147,6 +153,8 @@ def render_osm_data(osm_fn, rules_fn, box, width):
 @cache_fn_results()
 @one_instance(expire = 10)
 def merge_osm(osm_files):
+    logging.debug("merge_osm\n{}"\
+                  .format(format_dictionary(locals())))
     wdir = get_tempdir()
     ofn = get_tempfile()
     try:
@@ -166,6 +174,8 @@ def merge_osm(osm_files):
 @cache_fn_results()
 @one_instance(expire = 10)
 def readpng_asarray(png_fn, box, step, mesh_type):
+    logging.debug("readpng_asarray\n{}"\
+                  .format(format_dictionary(locals())))
     grid = mesh.mesh(box = box, step = step,
                      which = mesh_type)
 

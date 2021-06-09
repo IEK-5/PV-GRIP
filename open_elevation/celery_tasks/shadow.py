@@ -18,7 +18,8 @@ from open_elevation.grass \
     import upload_grass_data, download_grass_data
 from open_elevation.utils \
     import get_tempfile, remove_file, \
-    run_command, get_tempdir
+    run_command, get_tempdir, \
+    format_dictionary
 from open_elevation.celery_tasks.sample_raster_box \
     import sample_raster
 from open_elevation.celery_tasks.save_geotiff \
@@ -47,6 +48,8 @@ def _compute_sun_incidence(wdir, solar_time,
 @cache_fn_results()
 @one_instance(expire = 10)
 def compute_shadow_map(ifn):
+    logging.debug("compute_shadow_map\n{}"\
+                  .format(format_dictionary(locals())))
     from open_elevation.gdalinterface \
         import GDALInterface
     incidence = GDALInterface(ifn)
@@ -69,6 +72,8 @@ def compute_shadow_map(ifn):
 @cache_fn_results()
 @one_instance(expire = 60*10)
 def compute_incidence(tif_fn, timestr):
+    logging.debug("compute_incidence\n{}"\
+                  .format(format_dictionary(locals())))
     wdir = get_tempdir()
     ofn = get_tempfile()
 
@@ -116,6 +121,8 @@ def _save_binary_png(ifn, ofn):
 @cache_fn_results()
 @one_instance(expire = 10)
 def save_binary_png(tif_fn):
+    logging.debug("save_binary_png\n{}"\
+                  .format(format_dictionary(locals())))
     ofn = get_tempfile()
     try:
         _save_binary_png(ifn = tif_fn, ofn = ofn)

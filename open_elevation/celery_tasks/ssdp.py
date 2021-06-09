@@ -25,7 +25,8 @@ from open_elevation.ssdp \
 
 from open_elevation.utils \
     import get_tempfile, remove_file, \
-    run_command, get_tempdir
+    run_command, get_tempdir, \
+    format_dictionary
 
 
 def call_ssdp(what):
@@ -105,6 +106,8 @@ def compute_irradiance(ifn,
                        utc_time, lat, lon,
                        ghi, dhi, albedo,
                        nsky):
+    logging.debug("compute_irradiance_ssdp\n{}"\
+                  .format(format_dictionary(locals())))
     ssdp_ifn = get_tempfile()
     ssdp_ofn = get_tempfile()
     ofn = get_tempfile()

@@ -105,3 +105,10 @@ def call_matching(func, kwargs):
             for k,v in kwargs.items() \
             if k in args}
     return func(**args)
+
+
+def format_dictionary(d):
+    res = ""
+    for key, item in d.items():
+        res += "{} = {}\n".format(key,item)
+    return res
