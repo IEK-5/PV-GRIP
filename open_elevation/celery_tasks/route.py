@@ -155,6 +155,9 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
     kwargs['mesh_type'] = 'metric'
 
     if is_cassandra_path(tsvfn_uploaded):
+        if not Cassandra_Path(tsvfn_uploaded).in_cassandra():
+            raise RuntimeError("{} not in storage!"\
+                               .format(tsvfn_uploaded))
         tsvfn_uploaded = Cassandra_Path\
             (tsvfn_uploaded).get_locally()
     route = pd.read_csv(tsvfn_uploaded, sep=None, engine='python')
