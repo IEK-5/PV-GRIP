@@ -12,7 +12,7 @@ def _dummy_route(N, dummy):
                                  'other1','other2'])
 
 
-def do_get_list_rasters(N=100, dummy = (0,100), box=3, box_delta=2):
+def do_get_list_rasters(N=100, dummy = (1,60), box=30, box_delta=2):
     route = _dummy_route(N = N, dummy = dummy)
     box = (-box,)*2 + (box,)*2
 
@@ -25,13 +25,12 @@ def do_get_list_rasters(N=100, dummy = (0,100), box=3, box_delta=2):
 
 def test_get_list_rasters():
     assert 1 == len(do_get_list_rasters(N=1, box_delta = 1))
-    assert 100 == len(do_get_list_rasters(N=100, box_delta = 1))
-    assert 100 == len(do_get_list_rasters(N=100, dummy=(0,1), box=1e-5, box_delta=1))
 
     do_get_list_rasters(N=1000)
     do_get_list_rasters(N=1)
-    do_get_list_rasters(box=1, box_delta=2)
-    do_get_list_rasters(box=1e-5, box_delta=2)
-    do_get_list_rasters(dummy=(0,1e-6), box=1e-5, box_delta=2)
-    do_get_list_rasters(dummy=(0,1e-6), box=1, box_delta=2)
-    do_get_list_rasters(dummy=(0,1e-6), box=100, box_delta=2)
+    do_get_list_rasters(box=1000)
+    do_get_list_rasters(box=1)
+    do_get_list_rasters(box=1e-5)
+    do_get_list_rasters(box_delta = 1e-5)
+    do_get_list_rasters(box_delta = 1)
+    do_get_list_rasters(box_delta = 1e+2)

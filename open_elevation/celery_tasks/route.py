@@ -36,10 +36,12 @@ from open_elevation.cassandra_path \
     import Cassandra_Path, is_cassandra_path
 
 
+_T2MT = pyproj.Transformer.from_crs(4326, 3857,
+                                    always_xy=True)
+
+
 def _convert_to_metric(lon, lat):
-    transform = pyproj.Transformer.from_crs(4326, 3857,
-                                            always_xy=True)
-    return transform.transform(lon, lat)
+    return _T2MT.transform(lon, lat)
 
 
 def write_locations(route,

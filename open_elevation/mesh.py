@@ -2,6 +2,12 @@ import pyproj
 import numpy as np
 
 
+_T2LL = pyproj.Transformer.from_crs(3857, 4326,
+                                    always_xy=True)
+_T2MT = pyproj.Transformer.from_crs(4326, 3857,
+                                    always_xy=True)
+
+
 def _mesh_metric(box, step):
     """Generate mesh in 'epsg:3857'
 
@@ -14,17 +20,14 @@ def _mesh_metric(box, step):
     grid. 'raster_box' and 'step' define what needed to make a
     georaster
     """
-    t2ll = pyproj.Transformer.from_crs(3857, 4326, always_xy=True)
-    t2mt = pyproj.Transformer.from_crs(4326, 3857, always_xy=True)
-
-    box_mt = t2mt.transform(box[1], box[0]) + \
-        t2mt.transform(box[3], box[2])
+    box_mt = _T2MT.transform(box[1], box[0]) + \
+        _T2MT.transform(box[3], box[2])
 
     lon = np.arange(box_mt[0], box_mt[2], step)
     lat = np.arange(box_mt[1], box_mt[3], step)
 
-    lon = [t2ll.transform(i, box_mt[1])[0] for i in lon]
-    lat = [t2ll.transform(box_mt[0], i)[1] for i in lat]
+    lon = [_T2LL.transform(i, box_mt[1])[0] for i in lon]
+    lat = [_T2LL.transform(box_mt[0], i)[1] for i in lat]
     return {'mesh': (lon,lat),
             'raster_box': box_mt,
             'step': step,

@@ -247,9 +247,9 @@ def _ssdp_defaults():
 def _route_defaults():
     res = _ssdp_defaults()
     res.update({'box': \
-                ([-0.0008,-0.0008,0.0008,0.0008],
+                ([-50,-50,50,50],
                  """
-                 bounding box steps around each location in degrees
+                 bounding box steps around each location in meters
 
                  format: [east,south,west,north]
 
