@@ -19,6 +19,7 @@ function set_defaults {
     image_tag=$(python3 scripts/get_config.py \
                         server image_tag)
     next_tag=$(./scripts/get_version.sh)
+    prunekeep=2
     ifdry="no"
 }
 
@@ -33,7 +34,7 @@ function print_help {
     echo "  -d,--dry          just echo command, do not execute"
     echo
     echo "  --what            action: start \"webserver\", \"worker\" or \"broker\";"
-    echo "                    or \"build\", \"tag\", \"push\" or \"pull\" image."
+    echo "                    or \"build\", \"tag\", \"push\", \"pull\", \"prune\" image."
     echo "                    Default: \"${what}\""
     echo
     echo "  --mnt-data        mount point of the data directory"
@@ -67,6 +68,9 @@ function print_help {
     echo "  --next-tag        the version to use in the next tag."
     echo "                    Used only with --what=tag, --what=push and --what=pull commands."
     echo "                    Default: \"${next_tag}\""
+    echo
+    echo "  --prunekeep       number of images to keep at pruning."
+    echo "                    Default: \"${prunekeep}\""
     echo
 }
 
@@ -117,6 +121,10 @@ function parse_args {
                 ;;
             --next-tag=*)
                 next_tag="${i#*=}"
+                shift
+                ;;
+            --prunekeep=*)
+                prunekeep="${i#*=}"
                 shift
                 ;;
             -d|--dry)
@@ -224,6 +232,23 @@ function start_broker {
 }
 
 
+function prune_old_local {
+    images=$(docker images | \
+                 grep "${registry}"pvgrip | \
+                 grep -v latest | \
+                 sort -V | head -n -${prunekeep} \
+                 | awk '{print $1":"$2}' \
+                 | xargs)
+
+    if [ ! -z "${images}" ]
+    then
+        echo docker rmi "${images}"
+        return 0
+    fi
+
+    return 0
+}
+
 set_defaults
 parse_args $@
 [ ! -z "${registry}" ] && registry="${registry}/"
@@ -252,6 +277,9 @@ case "${what}" in
         ;;
     pull)
         docommand=$(echo docker pull "${registry}pvgrip:${next_tag}")
+        ;;
+    prune)
+        docommand=$(prune_old_local)
         ;;
     *)
         echo "unknown value of --what!"
