@@ -3,4 +3,4 @@
 	url = git@github.com:esovetkin/cassandra_io.git
 [submodule "open_elevation/ssdp"]
 	path = open_elevation/ssdp
-	url = git@jugit.fz-juelich.de:b.pieters/ssdp.git
+	url = git@jugit.fz-juelich.de:pearl-project/ssdp.git
