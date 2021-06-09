@@ -137,7 +137,7 @@ def merge_tsv(tsv_files):
     ofn = get_tempfile()
 
     try:
-         res = pd.concat([pd.read_csv(fn, sep=None) \
+         res = pd.concat([pd.read_csv(fn, sep=None, engine='python') \
                           for fn in tsv_files])
          res.to_csv(ofn, sep='\t', index=False)
     except Exception as e:
@@ -155,7 +155,8 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
     if is_cassandra_path(tsvfn_uploaded):
         tsvfn_uploaded = Cassandra_Path\
             (tsvfn_uploaded).get_locally()
-    route = pd.read_csv(tsvfn_uploaded, sep=None)
+    route = pd.read_csv(tsvfn_uploaded, sep=None, engine='python')
+    route.columns = [x.lower() for x in route.columns]
 
     rasters = get_list_rasters(route = route,
                                box = box,
