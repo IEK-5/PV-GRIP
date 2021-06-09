@@ -66,7 +66,7 @@ function print_help {
     echo "                    Default: \"${ifmntcode}\""
     echo
     echo "  --next-tag        the version to use in the next tag."
-    echo "                    Used only with --what=tag, --what=push and --what=pull commands."
+    echo "                    Used only with --what=tag and --what=push commands."
     echo "                    Default: \"${next_tag}\""
     echo
     echo "  --prunekeep       number of images to keep at pruning."
@@ -276,7 +276,7 @@ case "${what}" in
         docommand=$(echo docker push "${registry}pvgrip:${next_tag}")
         ;;
     pull)
-        docommand=$(echo docker pull "${registry}pvgrip:${next_tag}")
+        docommand=$(echo docker pull "${registry}pvgrip:${image_tag}")
         ;;
     prune)
         docommand=$(prune_old_local)
