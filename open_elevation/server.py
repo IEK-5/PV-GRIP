@@ -278,6 +278,7 @@ def _route_defaults():
 
                  """)})
     del res['output_type']
+    del res['mesh_type']
     return res
 
 

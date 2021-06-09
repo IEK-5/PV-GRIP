@@ -149,6 +149,9 @@ def merge_tsv(tsv_files):
 
 def ssdp_route(tsvfn_uploaded, box, box_delta,
                dhi, ghi, albedo, timestr, nsky, **kwargs):
+    kwargs['output_type'] = 'pickle'
+    kwargs['mesh_type'] = 'metric'
+
     if is_cassandra_path(tsvfn_uploaded):
         tsvfn_uploaded = Cassandra_Path\
             (tsvfn_uploaded).get_locally()

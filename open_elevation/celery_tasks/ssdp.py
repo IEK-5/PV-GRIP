@@ -162,6 +162,7 @@ def ssdp_irradiance(timestr, ghi, dhi, albedo, nsky,
     """
     output_type = kwargs['output_type']
     kwargs['output_type'] = 'pickle'
+    kwargs['mesh_type'] = 'metric'
 
     utc_time = timestr2utc_time(timestr)
     lon, lat = centre_of_box(kwargs['box'])
