@@ -1,8 +1,16 @@
 import rtree
 import pyproj
+import pickle
 
 import numpy as np
 import pandas as pd
+
+
+from open_elevation.cache_fn_results \
+    import cache_fn_results
+
+from open_elevation.utils \
+    import get_tempfile, remove_file
 
 
 _T2LL = pyproj.Transformer.from_crs(3857, 4326,
@@ -51,10 +59,12 @@ def _box_mt2ll(box_metric):
     return box
 
 
-def get_list_rasters(route, box, box_delta):
+@cache_fn_results()
+def get_list_rasters(route_fn, box, box_delta):
     """Cluster route in boxes
 
-    :route: a pd.dataframe with 'latitude' and 'longitude' columns
+    :route: fn for the dataframe with 'latitude' and 'longitude'
+    columns
 
     :box: a box describing a minimum required neighbourhood for each
     route point
@@ -67,6 +77,9 @@ def get_list_rasters(route, box, box_delta):
     with its neighbourhood described by the 'box' parameter
 
     """
+    route = pd.read_csv(route_fn, sep=None, engine='python')
+    route.columns = [x.lower() for x in route.columns]
+
     route = _add_metric_coordinates(route)
     idx = _build_route_index(route = route, box = box)
     bigbox = _get_bigbox(box = box, box_delta = box_delta)
@@ -98,4 +111,11 @@ def get_list_rasters(route, box, box_delta):
                  'box': _box_mt2ll(raster),
                  'route': points}]
 
-    return res
+    ofn = get_tempfile()
+    try:
+        with open(ofn, 'wb') as f:
+            pickle.dump(res, f)
+    except Exception as e:
+        remove_file(ofn)
+        raise e
+    return ofn

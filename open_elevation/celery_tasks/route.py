@@ -1,4 +1,5 @@
 import os
+import pickle
 import pyproj
 import celery
 import shutil
@@ -154,18 +155,13 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
     kwargs['output_type'] = 'pickle'
     kwargs['mesh_type'] = 'metric'
 
-    if is_cassandra_path(tsvfn_uploaded):
-        if not Cassandra_Path(tsvfn_uploaded).in_cassandra():
-            raise RuntimeError("{} not in storage!"\
-                               .format(tsvfn_uploaded))
-        tsvfn_uploaded = Cassandra_Path\
-            (tsvfn_uploaded).get_locally()
-    route = pd.read_csv(tsvfn_uploaded, sep=None, engine='python')
-    route.columns = [x.lower() for x in route.columns]
+    rasters_fn = get_list_rasters(route_fn = tsvfn_uploaded,
+                                  box = box,
+                                  box_delta = box_delta)
+    with open(Cassandra_Path(rasters_fn)\
+              .get_locally(),'rb') as f:
+        rasters = pickle.load(f)
 
-    rasters = get_list_rasters(route = route,
-                               box = box,
-                               box_delta = box_delta)
     check_box_not_too_big(box = rasters[0]['box'],
                           step = kwargs['step'],
                           mesh_type = kwargs['mesh_type'])
