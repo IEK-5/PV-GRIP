@@ -39,7 +39,7 @@ def _set_sky(nsky = 20):
 
 
 def _import_topography(topography_fname, grid):
-    ny, nx, y1, x1, y2, x2 = grid
+    nlon, nlat, lon1, lat1, lon2, lat2 = grid
 
     return """
 
@@ -47,11 +47,11 @@ def _import_topography(topography_fname, grid):
     read_array a0=z file={topography_fname}
 
     # import the topography in the configuration variable
-    config_topogrid C=C z=z Nx={nx} Ny={ny} x1={x1} y1={y1} x2={x2} y2={y2}
+    config_topogrid C=C z=z Ny={nlat} Nx={nlon} y1={lat1} x1={lon1} y2={lat2} x2={lon2}
     """.format(topography_fname = topography_fname,
-               nx = nx, ny = ny,
-               x1 = x1, y1 = y1,
-               x2 = x2, y2 = y2)
+               nlat = nlat, nlon = nlon,
+               lat1 = lat1, lon1 = lon1,
+               lat2 = lat2, lon2 = lon2)
 
 
 def _config_location_time_irradiance(locations_fn, albedo):

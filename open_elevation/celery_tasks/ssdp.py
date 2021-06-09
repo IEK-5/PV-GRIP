@@ -65,15 +65,14 @@ def pickle2ssdp_topography(ifn, ofn):
     step = data['mesh']['step']
     nlon = len(data['mesh']['mesh'][0])
     nlat = len(data['mesh']['mesh'][1])
-    a = np.transpose(data['raster'][::-1,:,:],
-                     axes=(1,0,2))\
+    a = np.transpose(data['raster'][::-1,:,:],axes=(1,0,2))\
           .reshape(nlon*nlat)
 
-    grid = (nlat, nlon)\
-        + (box[0],
-           box[1],
-           box[0]+step*nlat,
-           box[1]+step*nlon)
+    grid = (nlon, nlat)\
+        + (box[1],
+           box[0],
+           box[1]+step*nlat,
+           box[0]+step*nlon)
 
     with open(ofn, 'w') as f:
         for i in range(nlon*nlat):
