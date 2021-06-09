@@ -217,6 +217,13 @@ def _upload_defaults():
              """)}
 
 
+def _download_defaults():
+    return {'path': \
+            ('NA',
+             """a storage path for a file to download
+             """)}
+
+
 def _ssdp_defaults():
     res = _raster_defaults()
     res.update({'ghi': \
@@ -313,7 +320,8 @@ def get_help():
 
     /api/datasets        list available datasets
 
-    /api/upload          upload a file to a storage
+    /api/upload          upload a file to the storage
+    /api/download        upload a file from the storage
 
     /api/raster          get a raster image of a region
 
@@ -357,6 +365,8 @@ def get_what_help(what):
         res = _ssdp_defaults()
     elif 'upload' == what:
         res = _upload_defaults()
+    elif 'download' == what:
+        res = _download_defaults()
     elif 'route' == what:
         res = _route_defaults()
     else:
@@ -404,6 +414,8 @@ def do_method(method):
             return _return_exception(e)
 
         return _serve(upload(data))
+    elif 'download' == method:
+        return _serve(args['path'])
     elif 'route' == method:
         if 'tsvfn_uploaded' == 'NA':
             return _return_exception\
