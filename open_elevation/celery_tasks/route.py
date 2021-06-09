@@ -63,13 +63,15 @@ def write_locations(route,
                 x['ghi'] = ghi_default
 
             if 'timestr' not in x:
-                x['timestr'] = timestr2utc_time(time_default)
+                x['utc_time'] = timestr2utc_time(time_default)
             else:
-                x['timestr'] = timestr2utc_time(x['timestr'])
+                x['utc_time'] = timestr2utc_time(x['timestr'])
 
             fmt = '\t'.join(('%.12f',)*4 + ('%d\n',))
 
-            f.write(fmt %(lat_met, lon_met, x['ghi'],x['dhi'],x['timestr']))
+            f.write(fmt %(lat_met, lon_met, x['ghi'],x['dhi'],x['utc_time']))
+
+    return route
 
 
 def write_result(route, ssdp_ofn, ofn):
@@ -100,11 +102,11 @@ def compute_route(ifn, route, lat, lon,
         ssdp_ifn, data, grid = \
             pickle2ssdp_topography(ifn, ssdp_ifn)
 
-        write_locations(route = route,
-                        ghi_default = ghi_default,
-                        dhi_default = dhi_default,
-                        time_default = time_default,
-                        locations_fn = locations_fn)
+        route = write_locations(route = route,
+                                ghi_default = ghi_default,
+                                dhi_default = dhi_default,
+                                time_default = time_default,
+                                locations_fn = locations_fn)
 
         call = poa_route\
             (topography_fname = ssdp_ifn,
