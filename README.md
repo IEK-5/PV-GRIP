@@ -16,7 +16,7 @@ To install get all necessary code for the PV-GRIP say
 ```
 git clone git@github.com:esovetkin/open-elevation.git
 cd open-elevation
-make submodule
+git submodule update --init --recursive
 ```
 
 ## Running the server
