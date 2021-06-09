@@ -11,6 +11,9 @@ RUN apt-get update -y && apt-get install -y \
     pdal \
     python3-pip
 
+EXPOSE 8080
+EXPOSE 6379
+
 RUN mkdir /code
 WORKDIR /code
 
@@ -42,6 +45,3 @@ RUN ./scripts/install_ssdp.sh
 FROM build-stage5 AS build-stage6
 ADD . /code/
 RUN pip3 install -e .
-
-EXPOSE 8080
-EXPOSE 6379
