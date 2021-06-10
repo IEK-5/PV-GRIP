@@ -149,12 +149,12 @@ def convert2output_type(tasks, output_type):
                            'pngnormalize'):
         raise RuntimeError("Invalid 'output_type' argument!")
 
-    if output_type in ('png'):
+    if output_type == 'png':
         tasks |= save_png.signature()
         return tasks
 
-    if output_type in ('pngnormalize'):
-        tasks |= save_png.signature(normalize = True)
+    if output_type == 'pngnormalize':
+        tasks |= save_png.signature(kwargs = {'normalize': True})
         return tasks
 
     if output_type in ('geotiff', 'pnghillshade'):
