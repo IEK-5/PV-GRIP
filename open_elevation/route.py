@@ -80,6 +80,10 @@ def get_list_rasters(route_fn, box, box_delta):
     route = pd.read_csv(route_fn, sep=None, engine='python')
     route.columns = [x.lower() for x in route.columns]
 
+    if 'longitude' not in x or 'latitude' not in x:
+        raise RuntimeError\
+            ("longitude or latitude is missing!")
+
     route = _add_metric_coordinates(route)
     idx = _build_route_index(route = route, box = box)
     bigbox = _get_bigbox(box = box, box_delta = box_delta)
