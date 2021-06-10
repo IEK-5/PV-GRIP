@@ -289,6 +289,24 @@ def _route_defaults():
     return res
 
 
+def _integrate_defaults():
+    res = _ssdp_defaults()
+
+    res.update({'tsvfn_uploaded': \
+                ('NA',
+                 """a pvgrip path resulted from /api/upload
+
+                 The tsv file must contain a header with 'timestr',
+                 'ghi' and 'dhi' columns.
+
+                 """)})
+    del res['ghi']
+    del res['dhi']
+    del res['timestr']
+    del res['mesh_type']
+    return res
+
+
 @cache_fn_results(link = True,
                   ignore = lambda x: isinstance(x,dict))
 def _call_task(task, args):
@@ -369,6 +387,8 @@ def get_what_help(what):
         res = _download_defaults()
     elif 'route' == what:
         res = _route_defaults()
+    elif 'integrate' == what:
+        res = _integrate_defaults()
     else:
         return error404('no help for the %s available' % what)
     return {'results': _format_help(res)}
@@ -424,6 +444,14 @@ def do_method(method):
 
         defaults = _route_defaults
         run = tasks.ssdp_route
+    elif 'integrate' == method:
+        if 'tsvfn_uploaded' == 'NA':
+            return _return_exception\
+                (RuntimeError\
+                 ('tsvfn_uploaded must be provided!'))
+
+        defaults = _integrate_defaults
+        run = tasks.ssdp_integrate
     else:
         return error404('method is not implemented')
 

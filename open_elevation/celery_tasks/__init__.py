@@ -9,3 +9,4 @@ from .osm import *
 from .ssdp import *
 from .inspect_tasks import *
 from .route import *
+from .integrate import *

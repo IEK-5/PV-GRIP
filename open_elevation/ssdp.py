@@ -88,6 +88,23 @@ def _sim_route(ofn):
     """.format(ofn = ofn)
 
 
+def _config_time_irradiance(irrtimes):
+    return """
+
+    # read times
+    read_array a0=TIMEs a1=GHIs a2=DHIs file={irrtimes}
+    """.format(irrtimes = irrtimes)
+
+
+def _sim_static_integral(ofn):
+    return """
+
+    # compute the integrated POA
+    sim_static_integral C=C t=TIMEs GHI=GHIs DHI=DHIs POA=P
+    write_array a0=P file={ofn}
+    """.format(ofn = ofn)
+
+
 def _sample_topogrid_locations(albedo):
     return """
 
@@ -138,5 +155,17 @@ def poa_route(**kwargs):
     call += call_matching(_config_location_time_irradiance,
                           kwargs)
     call += call_matching(_sim_route, kwargs)
+
+    return _strip(call)
+
+
+def poa_integrate(**kwargs):
+    call  = call_matching(_init_config, kwargs)
+    call += call_matching(_set_sky, kwargs)
+    call += call_matching(_set_coord, kwargs)
+    call += call_matching(_import_topography, kwargs)
+    call += call_matching(_sample_topogrid_locations, kwargs)
+    call += call_matching(_config_time_irradiance, kwargs)
+    call += call_matching(_sim_static_integral, kwargs)
 
     return _strip(call)
