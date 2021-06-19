@@ -42,6 +42,10 @@ def _write_pdaljson(laz_fn, ofn, resolution, what, json_ofn):
     data['pipeline'] = [{
         'type': 'readers.las',
         'filename': laz_fn}]
+    # ignore noise points
+    data['pipeline'] += [{
+        'type': 'filters.range',
+        'limits': 'Classification![18:18]'}]
     data['pipeline'] += \
     [{'filename': ofn,
       'gdaldriver': 'GTiff',
