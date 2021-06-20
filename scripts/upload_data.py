@@ -3,7 +3,7 @@
 import os
 import sys
 
-from open_elevation.globals \
+from pvgrip.globals \
     import get_SPATIAL_DATA, GIT_ROOT
 
 

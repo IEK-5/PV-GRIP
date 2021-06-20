@@ -23,9 +23,11 @@ git submodule update --init --recursive
 
 The PV-GRIP consists of several components: storage ([cassandra
 storage](https://cassandra.apache.org/)), message broker
-([redis](https://redis.io/)), processing nodes
-([celery](https://docs.celeryproject.org/en/stable/)) and the
+([redis](https://redis.io/)), compute nodes
+(managed by [celery](https://docs.celeryproject.org/en/stable/)) and the
 webserver ([bottle](https://bottlepy.org/docs/dev/)).
+
+<img src="docs/network.jpg" width="300">
 
 The webserver listens to the user requests, builds the processing
 pipelines and serves the collected results back to user. The
@@ -68,7 +70,7 @@ network. Below we assume that the `node1` has an ip address
 
 To start the first cassandra node on the `node1` say
 ```
-cd open_elevation/cassandra_io
+cd pvgrip/storage/cassandra_io
 ./scripts/start_cassandra.sh --broadcast=10.0.0.1
 ```
 
@@ -76,7 +78,7 @@ Several arguments can be specified, e.g. mount point `--mnt` where the
 actual data resides, used `--max_heap_size` for the maximum RAM being
 allocated for cassandra. See more info using
 ```
-cd open_elevation/cassandra_io
+cd pvgrip/storage/cassandra_io
 ./scripts/start_cassandra.sh --help
 ```
 
@@ -88,7 +90,7 @@ docker logs cassandra_storage | grep 'Startup complete'
 
 To start the second cassandra node on the `node2` say
 ```
-cd open_elevation/cassandra_io
+cd pvgrip/storage/cassandra_io
 ./scripts/start_cassandra.sh --broadcast=10.0.0.2 --seed=10.0.0.1
 ```
 
@@ -97,7 +99,7 @@ cd open_elevation/cassandra_io
 Before starting with worker/webserver nodes a docker image should be
 present. To build the docker image say
 ```
-./pvgrip --what=build
+./pvgrip.sh --what=build
 ```
 
 Alternatively, a docker image can be pulled from the docker image
@@ -129,15 +131,15 @@ interface = pvgrip
 
 The following line
 ```
-./pvgrip --what=webserver
+./pvgrip.sh --what=webserver
 ```
 starts the webserver,
 ```
-./pvgrip --what=broker
+./pvgrip.sh --what=broker
 ```
 starts the broker, and
 ```
-./pvgrip --what=worker
+./pvgrip.sh --what=worker
 ```
 starts a processing node.
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd open_elevation/ssdp
+cd pvgrip/ssdp/ssdp
 
 chmod 700 autogen.sh
 ./autogen.sh

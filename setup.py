@@ -26,7 +26,7 @@ def find_executable(path):
 
 
 setuptools.setup(
-    name='open-elevation',
+    name='pvgrip',
     version='0.1',
     author='Evgenii Sovetkin',
     author_email='e.sovetkin@gmail.com',

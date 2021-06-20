@@ -59,14 +59,14 @@ function _start_celery_string {
 
 
 function start_worker {
-    celery -A open_elevation.celery_tasks \
+    celery -A pvgrip \
            worker \
            $(_start_celery_string)
 }
 
 
 function start_webserver {
-    python3 open_elevation/server.py
+    python3 pvgrip/webserver/server.py
 }
 
 

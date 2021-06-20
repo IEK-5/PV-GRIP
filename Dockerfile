@@ -18,8 +18,8 @@ RUN mkdir /code
 WORKDIR /code
 
 FROM build-stage0 AS build-stage1
-ADD ./open_elevation/cassandra_io/requirements.txt /code/open_elevation/cassandra_io/requirements.txt
-WORKDIR /code/open_elevation/cassandra_io
+ADD ./pvgrip/storage/cassandra_io/requirements.txt /code/pvgrip/storage/cassandra_io/requirements.txt
+WORKDIR /code/pvgrip/storage/cassandra_io
 RUN pip3 install -r requirements.txt
 
 FROM build-stage1 AS build-stage2
@@ -32,13 +32,13 @@ ADD ./scripts/install_smrender.sh /code/scripts/install_smrender.sh
 RUN ./scripts/install_smrender.sh
 
 FROM build-stage3 AS build-stage4
-ADD ./open_elevation/cassandra_io /code/open_elevation/cassandra_io
-WORKDIR /code/open_elevation/cassandra_io
+ADD ./pvgrip/storage/cassandra_io /code/pvgrip/storage/cassandra_io
+WORKDIR /code/pvgrip/storage/cassandra_io
 RUN pip3 install -e .
 
 FROM build-stage4 AS build-stage5
 WORKDIR /code
-ADD ./open_elevation/ssdp /code/open_elevation/ssdp
+ADD ./pvgrip/ssdp/ssdp /code/pvgrip/ssdp/ssdp
 ADD ./scripts/install_ssdp.sh /code/scripts/install_ssdp.sh
 RUN ./scripts/install_ssdp.sh
 
