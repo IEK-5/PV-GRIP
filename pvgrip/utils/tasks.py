@@ -2,9 +2,9 @@ import time
 
 from cassandra_io.files \
     import Cassandra_Files
-from pvgrip.celery_one_instance \
+from pvgrip.utils.celery_one_instance \
     import one_instance
-from pvgrip.celery_tasks \
+from pvgrip \
     import CELERY_APP
 
 

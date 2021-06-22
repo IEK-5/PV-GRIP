@@ -75,6 +75,8 @@ AUTODISCOVER_TASKS = [
     'pvgrip.route',
     'pvgrip.shadow',
     'pvgrip.status',
+    'pvgrip.storage',
+    'pvgrip.utils',
 ]
 
 

@@ -1,7 +1,7 @@
 import time
 
-from pvgrip.celery_tasks import\
-    task_test_queueonce
+from pvgrip.utils.tasks \
+    import task_test_queueonce
 
 
 def test_queueonce():

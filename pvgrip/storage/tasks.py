@@ -1,4 +1,4 @@
-from pvgrip.celery_tasks \
+from pvgrip \
     import CELERY_APP
 
 
