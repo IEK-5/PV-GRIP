@@ -267,7 +267,7 @@ case "${what}" in
         docommand=$(start_broker)
         ;;
     build)
-        docommand=$(echo docker build -t pvgrip .)
+        docommand=$(echo "git submodule update --init --recursive; docker build -t pvgrip .")
         ;;
     tag)
         docommand=$(echo docker tag pvgrip "${registry}pvgrip:${next_tag}")

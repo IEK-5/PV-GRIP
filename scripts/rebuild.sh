@@ -9,31 +9,31 @@ git reset --hard origin/dev
 git stash pop
 
 echo "Building image"
-./pvgrip --what=build -d
-./pvgrip --what=build
+./pvgrip.sh --what=build -d
+./pvgrip.sh --what=build
 
 echo "Tagging a release"
-./pvgrip --what=tag -d
-./pvgrip --what=tag
+./pvgrip.sh --what=tag -d
+./pvgrip.sh --what=tag
 
 echo "Push to a remote registry"
-./pvgrip --what=push -d
-./pvgrip --what=push
+./pvgrip.sh --what=push -d
+./pvgrip.sh --what=push
 
 echo "Prune older images"
-./pvgrip --what=prune -d
-./pvgrip --what=prune
+./pvgrip.sh --what=prune -d
+./pvgrip.sh --what=prune
 
 read -p "Label the release as 'latest'? (y/n)" choice
 case "${choice}" in
     y|Y)
         echo "Tagging a release"
-        ./pvgrip --what=tag --next-tag=latest -d
-        ./pvgrip --what=tag --next-tag=latest
+        ./pvgrip.sh --what=tag --next-tag=latest -d
+        ./pvgrip.sh --what=tag --next-tag=latest
 
         echo "Push to a remote registry"
-        ./pvgrip --what=push --next-tag=latest -d
-        ./pvgrip --what=push --next-tag=latest
+        ./pvgrip.sh --what=push --next-tag=latest -d
+        ./pvgrip.sh --what=push --next-tag=latest
         ;;
     *)
         exit
