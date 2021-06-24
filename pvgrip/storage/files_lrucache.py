@@ -88,13 +88,7 @@ class Files_LRUCache:
 
         if (time.time() - self._sizes['checked_at']) > self.check_every:
             self._sizes['checked_at'] = time.time()
-            from pvgrip.storage.check_files_lrucache \
-                import task_check_files_lrucache
-
-            task_check_files_lrucache.delay\
-                (maxsize = self.maxsize / (1024**3),
-                 path = self.path,
-                 check_every = self.check_every / (60**2))
+            self.check_content()
 
 
     def add(self, fn):
