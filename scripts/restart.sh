@@ -9,18 +9,18 @@ git reset --hard origin/dev
 git stash pop
 
 echo "Pull latest"
-./pvgrip --what=pull -d
-./pvgrip --what=pull
+./pvgrip.sh --what=pull -d
+./pvgrip.sh --what=pull
 
 echo "Prune older images"
-./pvgrip --what=prune -d
-./pvgrip --what=prune
+./pvgrip.sh --what=prune -d
+./pvgrip.sh --what=prune
 
 read -p "Restart worker? (y/n)" choice
 case "${choice}" in
     y|Y)
         docker kill pvgrip-worker
-        ./pvgrip --what=worker
+        ./pvgrip.sh --what=worker
         ;;
     *)
         ;;
@@ -30,7 +30,7 @@ read -p "Restart webserver? (y/n)" choice
 case "${choice}" in
     y|Y)
         docker kill pvgrip-webserver
-        ./pvgrip --what=webserver
+        ./pvgrip.sh --what=webserver
         ;;
     *)
         ;;
