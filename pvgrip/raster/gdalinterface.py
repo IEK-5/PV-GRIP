@@ -90,16 +90,26 @@ class GDALInterface(object):
              gt[3], -gt[4] / dev, gt[1] / dev)
 
 
+    def _make3channels(self, arr):
+        if 3 == len(arr.shape):
+            # make channels last
+            return np.transpose(arr, axes = (1,2,0))
+
+        if 2 == len(arr.shape):
+            arr = np.expand_dims(arr, axis = 2)
+
+        return arr
+
+
     @lazy
     def points_array(self):
         res = self.src.ReadAsArray()
-        if 3 == len(res.shape):
-            return np.transpose(res, axes = (1,2,0))
+        return self._make3channels(res)
 
-        if 2 == len(res.shape):
-            res = np.expand_dims(res, axis = 2)
 
-        return res
+    def _slice_array(self, *args, **kwargs):
+        res = self.src.ReadAsArray(*args, **kwargs)
+        return self._make3channels(res)
 
 
     def _get_pixels(self, points):
@@ -116,13 +126,61 @@ class GDALInterface(object):
         return data
 
 
-    def lookup(self, points):
+    def _get_box(self, box):
+        """Get a minimal raster box from degree box
+
+        :box: degree box
+        """
+        box = self._get_pixels([(box[1],box[0]),
+                                (box[3],box[2]),
+                                (box[1],box[2]),
+                                (box[3],box[0])])
+        box = [min(box[1][0],box[2][0]),
+               min(box[0][1],box[2][1]),
+               max(box[0][0],box[3][0]),
+               max(box[1][1],box[3][1])]
+        args = {'xoff': box[1],
+                'yoff': box[0],
+                'xsize': box[3]-box[1] + 1,
+                'ysize':box[2]-box[0] + 1}
+        if args['xoff'] < 0:
+            args['xoff'] = 0
+        if args['yoff'] < 0:
+            args['yoff'] = 0
+        if args['xsize'] + args['xoff'] > self.src.RasterXSize:
+            args['xsize'] = self.src.RasterXSize - args['xoff']
+        if args['ysize'] + args['yoff'] > self.src.RasterYSize:
+            args['ysize'] = self.src.RasterYSize - args['yoff']
+
+        return args
+
+
+    def lookup(self, points, box = None):
+        """Lookup values of points
+
+        :points: list of tuples (lon, lat)
+
+        :box: optional box [lat_min,lon_min,lat_max,lon_max] where all
+        points belong to
+
+        :return: a list of values
+        """
         points = self._get_pixels(points)
+        if box:
+            args = self._get_box(box)
+        else:
+            args = {'xoff': 0, 'yoff': 0,
+                    'xsize': self.src.RasterXSize,
+                    'ysize': self.src.RasterYSize}
+        raster = self._slice_array(**args)
+
         res = []
         for y,x in points:
-            if 0 <= y < self.src.RasterYSize \
-               and 0 <= x < self.src.RasterXSize:
-                res += [self.points_array[y,x]]
+            y -= args['yoff']
+            x -= args['xoff']
+            if 0 <= y < raster.shape[0] \
+               and 0 <= x < raster.shape[1]:
+                res += [raster[y,x]]
             else:
                 res += [self.SEA_LEVEL*np.ones((self.src.RasterCount,))]
 
@@ -130,7 +188,7 @@ class GDALInterface(object):
 
 
     def lookup_one(self, lat, lon):
-        return self.lookup([lon, lat])[0]
+        return self.lookup([(lon, lat)], box=[lat,lon,lat,lon])[0]
 
 
     def close(self):
