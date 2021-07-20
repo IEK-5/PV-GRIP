@@ -21,6 +21,9 @@ def return_exception(e):
 def parse_args(data, defaults):
     res = {}
 
+    if not data:
+        return res
+
     for key, _ in data.items():
         if key not in defaults:
             raise RuntimeError("Unknown argument: '%s'" % key)

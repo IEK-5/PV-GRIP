@@ -16,6 +16,8 @@ from pvgrip.shadow.calls \
 from pvgrip.status.utils \
     import status
 
+from pvgrip.webserver.utils \
+    import serve
 
 from pvgrip.globals \
     import get_SPATIAL_DATA, PVGRIP_CONFIGS
