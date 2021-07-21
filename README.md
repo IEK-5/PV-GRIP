@@ -105,7 +105,7 @@ present. To build the docker image say
 Alternatively, a docker image can be pulled from the docker image
 repository:
 ```
-...
+docker pull esovetkin/pvgrip:latest
 ```
 
 A series of configuration parameters should be set up in the
