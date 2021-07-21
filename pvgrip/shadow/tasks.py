@@ -54,7 +54,7 @@ def compute_shadow_map(ifn):
 
 
 @CELERY_APP.task()
-@cache_fn_results()
+@cache_fn_results(minage = 1626846910)
 @one_instance(expire = 60*10)
 def compute_incidence(tif_fn, timestr):
     logging.debug("compute_incidence\n{}"\

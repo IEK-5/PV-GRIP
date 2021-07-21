@@ -35,4 +35,4 @@ def solar_time(timestr, lon):
     s = datetime.combine(dt.date(),time(0))+\
         timedelta(minutes=tst)
     return {'day': s.timetuple().tm_yday,
-            'hour': s.hour + s.minute/60 + s.second/(60*60)}
+            'hour': s.hour + s.minute/60 + s.second/(60*60) - 24*(lon / 360)}

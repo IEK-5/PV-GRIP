@@ -69,7 +69,7 @@ def compute_irradiance_ssdp(ifn,
 
 
 @CELERY_APP.task()
-@cache_fn_results()
+@cache_fn_results(minage = 1626846910)
 @one_instance(expire = 60*10)
 def compute_irradiance_grass(elevation_fn, timestr,
                              aspect_fn = None, aspect_value = None,
