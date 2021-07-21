@@ -53,7 +53,8 @@ def _compute_ofn(keys, args, kwargs, fname):
 def cache_fn_results(keys = None,
                      link = False,
                      ignore = lambda x: False,
-                     ofn_arg = None):
+                     ofn_arg = None,
+                     minage = None):
     """Cache results of a function that returns a file
 
     :keys: list of arguments name to use for computing the unique name
@@ -66,6 +67,9 @@ def cache_fn_results(keys = None,
 
     :ofn_arg: optional name of the argument that is intented to be
     used as a output filename
+
+    :minage: unixtime, minage of acceptable stored cached value. if
+    None any cached value is accepted
 
     """
     def wrapper(fun):
@@ -90,7 +94,11 @@ def cache_fn_results(keys = None,
                 key = %s
                 ofn = %s
                 """ % (str(key), str(ofn)))
-                return str(Cassandra_Path(ofn))
+                if not minage:
+                    return str(Cassandra_Path(ofn))
+
+                if Cassandra_Path(ofn).get_timestamp() > minage:
+                    return str(Cassandra_Path(ofn))
 
             logging.debug("""
                 File is NOT in cache!

@@ -38,6 +38,14 @@ class Cassandra_Path:
         return self.get_path() in CASSANDRA_STORAGE
 
 
+    def get_timestamp(self):
+        from pvgrip.globals \
+            import get_CASSANDRA_STORAGE
+        fn = self.get_path()
+        CASSANDRA_STORAGE = get_CASSANDRA_STORAGE()
+        return CASSANDRA_STORAGE.get_timestamp(fn)
+
+
     def get_locally(self):
         from pvgrip.globals \
             import get_CASSANDRA_STORAGE, get_RESULTS_CACHE
