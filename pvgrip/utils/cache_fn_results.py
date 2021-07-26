@@ -1,4 +1,5 @@
 import os
+import pickle
 import logging
 
 from functools import wraps
@@ -7,6 +8,9 @@ from pvgrip.storage.cassandra_path \
     import Cassandra_Path, is_cassandra_path
 from pvgrip.utils.float_hash \
     import float_hash_fn
+
+from pvgrip.utils.files \
+    import get_tempfile, remove_file
 
 
 def _get_locally_item(x):
@@ -123,4 +127,48 @@ def cache_fn_results(keys = None,
             RESULTS_CACHE.add(ofn)
             return str(Cassandra_Path(ofn))
         return wrap
+    return wrapper
+
+
+def _results2pickle(fun):
+    """Pickle results to a storage
+
+    """
+    @wraps(fun)
+    def wrap(*args, **kwargs):
+        res = fun(*args, **kwargs)
+
+        ofn = get_tempfile()
+        try:
+            with open(ofn, 'wb') as f:
+                pickle.dump(res, f)
+        except Exception as e:
+            remove_file(ofn)
+            raise e
+
+        return ofn
+    return wrap
+
+
+def _pickle2results(fun):
+    """Get a pickled file and load it
+
+    """
+    @wraps(fun)
+    def wrap(*args, **kwargs):
+        ifn = fun(*args, **kwargs)
+
+        ifn = Cassandra_Path(ifn).get_locally()
+        with open(ifn, 'rb') as f:
+            return pickle.load(f)
+    return wrap
+
+
+def cache_results(keys = None,
+                  minage = None):
+    def wrapper(fun):
+        return _pickle2results\
+            (cache_fn_results\
+             (keys = keys, minage = minage)\
+             (_results2pickle(fun)))
     return wrapper
