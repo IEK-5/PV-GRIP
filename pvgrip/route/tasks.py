@@ -29,7 +29,7 @@ from pvgrip.utils.format_dictionary \
 
 @CELERY_APP.task()
 @cache_fn_results()
-@one_instance(expire = 10)
+@one_instance(expire = 400)
 def merge_tsv(tsv_files):
     logging.debug("merge_tsv\n{}"\
                   .format(format_dictionary(locals())))
