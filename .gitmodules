@@ -4,3 +4,6 @@
 [submodule "open_elevation/ssdp"]
 	path = pvgrip/ssdp/ssdp
 	url = git@jugit.fz-juelich.de:pearl-project/ssdp.git
+[submodule "pvgrip/storage/ipfs_io"]
+	path = pvgrip/storage/ipfs_io
+	url = git@github.com:esovetkin/ipfs_io.git
