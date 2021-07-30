@@ -13,6 +13,8 @@ from pvgrip.storage.spatial_data \
     import Spatial_Data
 from pvgrip.storage.files_lrucache \
     import Files_LRUCache
+from pvgrip.utils.redis_dictionary \
+    import Redis_Dictionary
 
 
 def get_configs(fn):
@@ -77,6 +79,7 @@ AUTODISCOVER_TASKS = [
     'pvgrip.status',
     'pvgrip.storage',
     'pvgrip.utils',
+    'pvgrip.webserver',
 ]
 
 
@@ -105,3 +108,10 @@ def get_SPATIAL_DATA():
          base_args = \
          {'replication': _CASSANDRA_REPLICATION,
           'replication_args': _CASSANDRA_REPLICATION_ARGS})
+
+
+def get_Tasks_Queues():
+    return Redis_Dictionary(name = 'pvgrip_tasks_queue',
+                            host = PVGRIP_CONFIGS['redis']['ip'],
+                            port = 6379,
+                            db = 0)

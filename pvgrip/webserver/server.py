@@ -11,12 +11,12 @@ logging.basicConfig(filename = 'data/server.log',
 
 from pvgrip.webserver.utils \
     import format_help, return_exception, \
-    call_method, parse_args
+    call_method, parse_args, serve
 
 from pvgrip.webserver.defaults \
     import call_defaults, calls_help
 
-from pvgrip.webserver.tasks \
+from pvgrip.webserver.get_task \
     import get_task
 
 
@@ -55,7 +55,7 @@ def do_method(method):
     if not isinstance(task, types.FunctionType):
         return task
 
-    return call_method(task=task, args=args)
+    return serve(call_method(method=method, args=args))
 
 
 @bottle.error(404)
@@ -66,8 +66,8 @@ def error404(error):
 bottle.run(host='0.0.0.0', port=8080,
            server='gunicorn',
            workers=int(
-               PVGRIP_CONFIGS['server']['server_workers']),
+               PVGRIP_CONFIGS['webserver']['workers']),
            max_requests=int(
-               PVGRIP_CONFIGS['server']['max_requests']),
+               PVGRIP_CONFIGS['webserver']['max_requests']),
            timeout=int(
-               PVGRIP_CONFIGS['server']['timeout']))
+               PVGRIP_CONFIGS['webserver']['request_timeout']))
