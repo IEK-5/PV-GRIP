@@ -9,6 +9,8 @@ function set_defaults {
     docker_maxmemory=$(echo "scale=2; $(grep MemTotal /proc/meminfo | awk '{print $2}')/1024/1024*0.9" \
                            | bc | awk '{printf "%.2f", $0}')"g"
     what="webserver"
+    webserver_hostport=$(python3 scripts/get_config.py \
+                                 webserver hostport)
     ifrestart="yes"
     mnt_data="$(pwd)/data"
     mnt_configs="$(pwd)/configs"
@@ -72,6 +74,11 @@ function print_help {
     echo "  --prunekeep       number of images to keep at pruning."
     echo "                    Default: \"${prunekeep}\""
     echo
+    echo "  --webserver-hostport"
+    echo "                    port to bind webserver to."
+    echo "                    Leave empty to bind to --network."
+    echo "                    Default: \"${webserver_hostport}\""
+    echo
 }
 
 
@@ -125,6 +132,10 @@ function parse_args {
                 ;;
             --prunekeep=*)
                 prunekeep="${i#*=}"
+                shift
+                ;;
+            --webserver-hostport=*)
+                webserver_hostport="${i#*=}"
                 shift
                 ;;
             -d|--dry)
@@ -209,9 +220,15 @@ function mount_volumes {
 
 
 function start_webserver {
+    bind="-p $(get_ip "${network_interface}"):8080:8080"
+    if [ ! -z "${webserver_hostport}" ]
+    then
+        bind+=" -p ${webserver_hostport}"
+    fi
+
     $(start_preamble) \
         $(mount_volumes) \
-        -p "$(get_ip "${network_interface}"):8080:8080" \
+        "${bind}:8080" \
         "${registry}pvgrip:${image_tag}" \
         ./scripts/start.sh --what="${what}"
 }
