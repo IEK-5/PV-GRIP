@@ -17,8 +17,8 @@ from pvgrip.utils.cache_fn_results \
 from pvgrip.utils.exceptions \
     import TASK_RUNNING
 
-from pvgrip.storage.cassandra_path \
-    import Cassandra_Path, is_cassandra_path
+from pvgrip.storage.remotestorage_path \
+    import searchandget_locally, is_remote_path
 
 from pvgrip.globals \
     import get_Tasks_Queues, PVGRIP_CONFIGS
@@ -65,9 +65,8 @@ def serve(data):
     if isinstance(data, dict):
         return data
 
-    if is_cassandra_path(data):
-        with open(Cassandra_Path(data).get_locally(),
-                  'rb') as f:
+    if is_remote_path(data):
+        with open(searchandget_locally(data),'rb') as f:
             return f.read()
 
     return data

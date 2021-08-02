@@ -6,6 +6,8 @@ import configparser
 
 from cassandra_io.files \
     import Cassandra_Files
+from ipfs_io.files \
+    import IPFS_Files
 
 from pvgrip.utils.git \
     import git_root
@@ -46,10 +48,17 @@ _CASSANDRA_SPATIAL_INDEX_HASH_MIN = \
 _CASSANDRA_SPATIAL_INDEX_DEPTH = \
     int(PVGRIP_CONFIGS['cassandra']['spatial_index_depth'])
 
+_IPFS_STORAGE_IP = \
+    PVGRIP_CONFIGS['ipfs']['ip']
+_IPFS_STORAGE_KEYSPACE_SUFFIX = \
+    PVGRIP_CONFIGS['ipfs']['keyspace_suffix']
 
 REDIS_URL = 'redis://' + \
     PVGRIP_CONFIGS['redis']['ip'] + ':6379/0'
 
+ALLOWED_REMOTE = \
+    json.loads(PVGRIP_CONFIGS['storage']['use_remotes'])
+DEFAULT_REMOTE = PVGRIP_CONFIGS['storage']['default']
 
 GRASS=PVGRIP_CONFIGS['grass']['executable']
 GRASS_NJOBS = int(PVGRIP_CONFIGS['grass']['njobs'])
@@ -100,6 +109,15 @@ def get_CASSANDRA_STORAGE():
          connect_timeout = 60,
          idle_heartbeat_timeout = 300,
          control_connection_timeout = 30)
+
+
+def get_IPFS_STORAGE():
+    return  IPFS_Files\
+        (ipfs_ip = _IPFS_STORAGE_IP,
+         cluster_ips = [_CASSANDRA_STORAGE_IP],
+         keyspace_suffix = _IPFS_STORAGE_KEYSPACE_SUFFIX,
+         replication = _CASSANDRA_REPLICATION,
+         replication_args = _CASSANDRA_REPLICATION_ARGS)
 
 
 def get_SPATIAL_DATA():

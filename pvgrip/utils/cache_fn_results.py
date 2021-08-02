@@ -4,8 +4,12 @@ import logging
 
 from functools import wraps
 
-from pvgrip.storage.cassandra_path \
-    import Cassandra_Path, is_cassandra_path
+from pvgrip.globals \
+    import DEFAULT_REMOTE
+
+from pvgrip.storage.remotestorage_path \
+    import RemoteStoragePath, is_remote_path, \
+    searchandget_locally, search_determineremote
 from pvgrip.utils.float_hash \
     import float_hash_fn
 
@@ -22,8 +26,8 @@ def _get_locally_item(x):
         x = [_get_locally_item(v) for v in x]
 
     if isinstance(x, str) and \
-       is_cassandra_path(x):
-        x = Cassandra_Path(x).get_locally()
+       is_remote_path(x):
+        x = RemoteStoragePath(x).get_locally()
 
     return x
 
@@ -58,7 +62,8 @@ def cache_fn_results(keys = None,
                      link = False,
                      ignore = lambda x: False,
                      ofn_arg = None,
-                     minage = None):
+                     minage = None,
+                     storage_type = DEFAULT_REMOTE):
     """Cache results of a function that returns a file
 
     :keys: list of arguments name to use for computing the unique name
@@ -75,13 +80,12 @@ def cache_fn_results(keys = None,
     :minage: unixtime, minage of acceptable stored cached value. if
     None any cached value is accepted
 
+    :storage_type: type of remote storage. Either: 'cassandra_path' or 'ipfs_path'.
+
     """
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
-            from pvgrip.globals \
-                import get_CASSANDRA_STORAGE, get_RESULTS_CACHE
-
             if not ofn_arg or ofn_arg not in kwargs:
                 ofn, key = _compute_ofn(keys = keys,
                                    args = args,
@@ -89,20 +93,25 @@ def cache_fn_results(keys = None,
                                    fname = fun.__name__)
             else:
                 ofn, key = kwargs[ofn_arg], 'NA'
+            rpath = RemoteStoragePath\
+                (ofn, remotetype=storage_type)
+            _rpath = search_determineremote\
+                (ofn, ignore_remote = storage_type)
 
-            RESULTS_CACHE = get_RESULTS_CACHE()
+            if rpath.in_storage() or _rpath is not None:
+                if _rpath is not None:
+                    rpath = _rpath
 
-            if Cassandra_Path(ofn).in_cassandra():
                 logging.debug("""
                 File is in cache!
                 key = %s
                 ofn = %s
                 """ % (str(key), str(ofn)))
                 if not minage:
-                    return str(Cassandra_Path(ofn))
+                    return str(rpath)
 
-                if Cassandra_Path(ofn).get_timestamp() > minage:
-                    return str(Cassandra_Path(ofn))
+                if rpath.get_timestamp() > minage:
+                    return str(rpath)
 
             logging.debug("""
                 File is NOT in cache!
@@ -115,17 +124,15 @@ def cache_fn_results(keys = None,
             if ignore(tfn):
                 return tfn
 
-            if is_cassandra_path(tfn):
-                tfn = Cassandra_Path(tfn).get_locally()
+            if is_remote_path(tfn):
+                tfn = searchandget_locally(tfn)
 
-            CASSANDRA_STORAGE = get_CASSANDRA_STORAGE()
-            CASSANDRA_STORAGE.upload(tfn, Cassandra_Path(ofn).get_path())
             if link:
                 os.link(tfn, ofn)
             else:
                 os.replace(tfn, ofn)
-            RESULTS_CACHE.add(ofn)
-            return str(Cassandra_Path(ofn))
+            rpath.upload()
+            return str(rpath)
         return wrap
     return wrapper
 
@@ -158,7 +165,7 @@ def _pickle2results(fun):
     def wrap(*args, **kwargs):
         ifn = fun(*args, **kwargs)
 
-        ifn = Cassandra_Path(ifn).get_locally()
+        ifn = RemoteStoragePath(ifn).get_locally()
         with open(ifn, 'rb') as f:
             return pickle.load(f)
     return wrap

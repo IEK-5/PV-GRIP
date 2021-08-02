@@ -1,7 +1,7 @@
 import celery
 
-from pvgrip.storage.cassandra_path \
-    import Cassandra_Path
+from pvgrip.storage.remotestorage_path \
+    import searchif_instorage
 
 from pvgrip.globals \
     import get_SPATIAL_DATA
@@ -22,7 +22,7 @@ def check_all_data_available(*args, **kwargs):
 
     tasks = []
     for x in index.iterate():
-        if Cassandra_Path(x['file']).in_cassandra():
+        if searchif_instorage(x['file']):
             continue
 
         if 'remote_meta' in x:

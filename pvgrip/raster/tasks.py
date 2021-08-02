@@ -13,8 +13,8 @@ from pvgrip.raster.mesh \
 from pvgrip.raster.gdalinterface \
     import GDALInterface
 
-from pvgrip.storage.cassandra_path \
-    import Cassandra_Path
+from pvgrip.storage.remotestorage_path \
+    import searchandget_locally
 
 from pvgrip \
     import CELERY_APP
@@ -114,7 +114,7 @@ def sample_from_box(box, data_re, stat,
 
     res = None
     for fn in index.files():
-        fn = Cassandra_Path(fn).get_locally()
+        fn = searchandget_locally(fn)
         interface = GDALInterface(fn)
         x = np.array(interface.lookup(points = points,
                                       box = box))

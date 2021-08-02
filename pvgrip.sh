@@ -35,7 +35,7 @@ function print_help {
     echo
     echo "  -d,--dry          just echo command, do not execute"
     echo
-    echo "  --what            action: start \"webserver\", \"worker\" or \"broker\";"
+    echo "  --what            action: start \"webserver\", \"worker\", \"broker\" or \"storage_ipfs\";"
     echo "                    or \"build\", \"tag\", \"push\", \"pull\", \"prune\" image."
     echo "                    Default: \"${what}\""
     echo
@@ -229,7 +229,7 @@ function start_webserver {
     $(start_preamble) \
         $(mount_volumes) \
         "${bind}:8080" \
-        "${registry}pvgrip:${image_tag}" \
+        "${registry}${name_prefix}:${image_tag}" \
         ./scripts/start.sh --what="${what}"
 }
 
@@ -237,7 +237,7 @@ function start_webserver {
 function start_worker {
     $(start_preamble) \
         $(mount_volumes) \
-        "${registry}pvgrip:${image_tag}" \
+        "${registry}${name_prefix}:${image_tag}" \
         ./scripts/start.sh --what="${what}"
 }
 
@@ -251,7 +251,7 @@ function start_broker {
 
 function prune_old_local {
     images=$(docker images | \
-                 grep "${registry}"pvgrip | \
+                 grep "${registry}${name_prefix}" | \
                  grep -v latest | \
                  sort -V | head -n -${prunekeep} \
                  | awk '{print $1":"$2}' \
@@ -283,17 +283,21 @@ case "${what}" in
         prune_byname "${name_prefix}-${what}" || exit 1
         docommand=$(start_broker)
         ;;
+    storage_ipfs)
+        prune_byname "${name_prefix}-${what}" || exit 1
+        docommand=$(echo ./pvgrip/storage/ipfs_io/ipfs_io.sh --network="${network_interface}")
+        ;;
     build)
-        docommand=$(echo "git submodule update --init --recursive; docker build -t pvgrip .")
+        docommand=$(echo "git submodule update --init --recursive; docker build -t ${name_prefix} .")
         ;;
     tag)
-        docommand=$(echo docker tag pvgrip "${registry}pvgrip:${next_tag}")
+        docommand=$(echo docker tag "${name_prefix}" "${registry}${name_prefix}:${next_tag}")
         ;;
     push)
-        docommand=$(echo docker push "${registry}pvgrip:${next_tag}")
+        docommand=$(echo docker push "${registry}${name_prefix}:${next_tag}")
         ;;
     pull)
-        docommand=$(echo docker pull "${registry}pvgrip:${image_tag}")
+        docommand=$(echo docker pull "${registry}${name_prefix}:${image_tag}")
         ;;
     prune)
         docommand=$(prune_old_local)

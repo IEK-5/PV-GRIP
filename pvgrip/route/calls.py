@@ -16,8 +16,8 @@ from pvgrip.raster.utils \
 from pvgrip.ssdp.utils \
     import centre_of_box
 
-from pvgrip.storage.cassandra_path \
-    import Cassandra_Path
+from pvgrip.storage.remotestorage_path \
+    import searchandget_locally
 
 
 def ssdp_route(tsvfn_uploaded, box, box_delta,
@@ -28,7 +28,7 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
     rasters_fn = get_list_rasters(route_fn = tsvfn_uploaded,
                                   box = box,
                                   box_delta = box_delta)
-    with open(Cassandra_Path(rasters_fn)\
+    with open(searchandget_locally(rasters_fn)\
               .get_locally(),'rb') as f:
         rasters = pickle.load(f)
 
