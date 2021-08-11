@@ -95,7 +95,11 @@ def get_CASSANDRA_STORAGE():
          keyspace_suffix = _CASSANDRA_STORAGE_KEYSPACE_SUFFIX,
          chunk_size = _CASSANDRA_STORAGE_CHUNKSIZE,
          replication = _CASSANDRA_REPLICATION,
-         replication_args = _CASSANDRA_REPLICATION_ARGS)
+         replication_args = _CASSANDRA_REPLICATION_ARGS,
+         protocol_version = 4,
+         connect_timeout = 60,
+         idle_heartbeat_timeout = 300,
+         control_connection_timeout = 30)
 
 
 def get_SPATIAL_DATA():
