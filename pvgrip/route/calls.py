@@ -28,8 +28,7 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
     rasters_fn = get_list_rasters(route_fn = tsvfn_uploaded,
                                   box = box,
                                   box_delta = box_delta)
-    with open(searchandget_locally(rasters_fn)\
-              .get_locally(),'rb') as f:
+    with open(searchandget_locally(rasters_fn),'rb') as f:
         rasters = pickle.load(f)
 
     check_box_not_too_big(box = rasters[0]['box'],
