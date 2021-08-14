@@ -117,7 +117,11 @@ def get_IPFS_STORAGE():
          cluster_ips = [_CASSANDRA_STORAGE_IP],
          keyspace_suffix = _IPFS_STORAGE_KEYSPACE_SUFFIX,
          replication = _CASSANDRA_REPLICATION,
-         replication_args = _CASSANDRA_REPLICATION_ARGS)
+         replication_args = _CASSANDRA_REPLICATION_ARGS,
+         protocol_version = 4,
+         connect_timeout = 60,
+         idle_heartbeat_timeout = 300,
+         control_connection_timeout = 30)
 
 
 def get_SPATIAL_DATA():
