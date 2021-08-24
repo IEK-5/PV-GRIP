@@ -1,9 +1,9 @@
 [submodule "open_elevation/cassandra_io"]
 	path = pvgrip/storage/cassandra_io
-	url = git@github.com:esovetkin/cassandra_io.git
+	url = https://github.com/esovetkin/cassandra_io.git
 [submodule "open_elevation/ssdp"]
 	path = pvgrip/ssdp/ssdp
 	url = git@jugit.fz-juelich.de:pearl-project/ssdp.git
 [submodule "pvgrip/storage/ipfs_io"]
 	path = pvgrip/storage/ipfs_io
-	url = git@github.com:esovetkin/ipfs_io.git
+	url = https://github.com/esovetkin/ipfs_io.git
