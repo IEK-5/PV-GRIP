@@ -86,17 +86,18 @@ def get_job_results(job_id, key, timeout):
         state = job.state
         if 'SUCCESS' == state:
             fn = job.result
-
-        if 'PENDING' == state:
+        elif 'PENDING' == state:
             fn = job.wait(timeout = timeout)
-
-        if 'FAILURE' == state:
+        elif 'FAILURE' == state:
             res = job.result
             if not isinstance(res, BaseException):
                 raise RuntimeError\
                     ("""FAILURE state is not an exception!..
                     job.result = {}""".format(res))
             raise res
+        else:
+            return {'results': {'message': 'task is running',
+                                'state': state}}
     except TASK_RUNNING:
         return {'results': {'message': 'task is running'}}
     except celery.exceptions.TimeoutError:
