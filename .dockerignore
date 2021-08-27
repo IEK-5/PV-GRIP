@@ -1,3 +1,4 @@
 data/
 pvgrip/storage/cassandra_io/storage_mount_point/
 pvgrip/storage/ipfs_io/ipfs_storage/
+pvgrip/storage/ipfs_io/secret/
