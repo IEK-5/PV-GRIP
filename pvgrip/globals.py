@@ -125,9 +125,16 @@ def get_IPFS_STORAGE():
 
 
 def get_SPATIAL_DATA():
-    CASSANDRA_STORAGE = get_CASSANDRA_STORAGE()
+    if 'ipfs_path' == DEFAULT_REMOTE:
+        storage = get_IPFS_STORAGE()
+    elif 'cassandra_path' == DEFAULT_REMOTE:
+        storage = get_CASSANDRA_STORAGE()
+    else:
+        raise RuntimeError("unknown storage type")
+
     return Spatial_Data\
-        (cfs = CASSANDRA_STORAGE,
+        (cassandra_ips = [_CASSANDRA_STORAGE_IP],
+         storage = storage,
          index_args = \
          {'hash_min': _CASSANDRA_SPATIAL_INDEX_HASH_MIN,
           'depth': _CASSANDRA_SPATIAL_INDEX_DEPTH},

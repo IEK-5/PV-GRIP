@@ -79,20 +79,24 @@ class Spatial_Data:
 
     """
 
-    def __init__(self, cfs, index_args, base_args):
+    def __init__(self, cassandra_ips, storage,
+                 index_args, base_args):
         """init
 
-        :cfs: Cassandra_Files storage
+        :cassandra_ips: ips for cassandra connection
+
+        :storage: remote storage to use
 
         :kwargs: arguments used for Cassandra_Spatial_Index
 
         """
-        self.cfs = cfs
+        self.storage = storage
+        self._cassandra_ips = cassandra_ips
         self.index = Cassandra_Spatial_Index\
-            (cluster_ips = self.cfs._cluster_ips,
+            (cluster_ips = self._cassandra_ips,
              **index_args, **base_args)
         self.datasets = Datasets\
-            (cluster_ips = self.cfs._cluster_ips,
+            (cluster_ips = self._cassandra_ips,
              **base_args)
 
 
@@ -121,9 +125,8 @@ class Spatial_Data:
 
                 data = self._get_index_data(fn)
 
-                if fn not in self.cfs:
-                    self.cfs.upload(ifn = fn,
-                                    cassandra_fn = fn)
+                if fn not in self.storage:
+                    self.storage.upload(fn, fn)
                 self.index.insert(data = data)
                 self.datasets.add(os.path.dirname(fn))
             except Exception as e:
