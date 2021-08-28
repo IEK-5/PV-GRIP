@@ -19,9 +19,10 @@ def fill_missing(data, missing_value = -9999):
 
 
 def check_box_not_too_big(box, step, mesh_type,
-                          limit = 0.1, max_points = 2e+7):
-    if abs(box[2] - box[0]) > limit \
-       or abs(box[3] - box[1]) > limit:
+                          limit = 4400, max_points = 2e+7):
+    const = 1 if 'wgs84' == mesh_type else 111000
+    if const*abs(box[2] - box[0])/step > limit \
+       or const*abs(box[3] - box[1])/step > limit:
         raise RuntimeError\
             ("step in box should not be larger than %.2f" % limit)
 
