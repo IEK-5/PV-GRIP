@@ -2,68 +2,208 @@
 
 [![Find a bird!](http://img.youtube.com/vi/GGpmm5at-a8/0.jpg)](http://www.youtube.com/watch?v=GGpmm5at-a8)
 
-A scalable server that provides access to geospatial data. This is a
-fork of [https://open-elevation.com](https://open-elevation.com)
-updated and extended by few things I need in my project.
+PV-GRIP is a distributed service that provides access to geospatial
+data and performs various computations relevant to photovoltaics (PV).
 
-## Installation
+PV-GRIP originated as a fork of the
+[open-elevation](https://github.com/Jorl17/open-elevation)
+project. However, unlike the open-elevation, PV-GRIP features
+distributed computation and storage design, handles multiple data
+types and performs several PV simulations.
 
-To run the PV-GRIP each node should have a docker installed, with user
-privileges to run docker images (optionally privileges to set up
-network interfaces).
+## Distributed service design
 
-To install get all necessary code for the PV-GRIP say
+The PV-GRIP consists of several components: webserver nodes
+([bottle](https://bottlepy.org/docs/dev/)), compute nodes
+([celery](https://docs.celeryproject.org/en/stable/)), storage nodes
+([cassandra](https://cassandra.apache.org/) and/or
+[ipfs](https://ipfs.io/)), message broker
+([redis](https://redis.io/)).
+
+The following figure demonstrates the interaction of those components.
+
+<img src="docs/network.png" width="300">
+
+The webserver listens to the user requests, starts tasks and serves
+results. The message broker assigns tasks among compute nodes and
+collects tasks' results. Furthermore, the broker implements the
+inter-node locking mechanism and a hash table containing records on
+the current user queries. The compute nodes execute various tasks. The
+storage nodes handle data exchange between the nodes and implements
+the spatial index.
+
+PV-GRIP can be run on a single computer or multiple machines.
+
+Below are provided examples and deployment instructions.
+
+## Examples
+
+Here we assume that a machine has access to the webserver running on
+`10.0.0.1`.
+
+The server timeout is 10 seconds. In this time it either response with
+a binary file or a json dictionary.
+
+In case task is running the following message is returned:
+```
+{"message": "task is running"}
+```
+
+### Query help
+
+On a node with an access to the webserver
+```
+> curl 10.0.0.1:8080/api/help | jq -r .results
+```
+to see all available commands.
+
+To query help on any particular command call
+```
+> curl 10.0.0.1:8080/api/help/raster | jq -r .results
+```
+
+### Sample raster images
+
+```
+> curl 10.0.0.1:8080/api/raster
+```
+samples data from several data sources and produces a require output.
+
+`box` argument defines area location in the format
+`'[min_latitude,min_longitude,max_latitude,max_longitude]'`. `step`
+defines pixel size (in meters by default).
+
+For example,
+```
+> curl 10.0.0.1:8080/api/raster\?box='\[50.85910,6.07627,50.86033,6.07767\]'\&output_type='pnghillshade'\&data_re='.*NRW_Las.*'\&stat='max'\&step=0.5 -o kerkrade.png
+```
+produces
+
+<img src="docs/kerkrade.png" width="300">
+
+### Compute shadows
+
+```
+> curl 10.0.0.1:8080/api/shadow
+```
+computes binary mask for shadow locations.
+
+For example,
+```
+> curl 10.0.0.1:8080/api/shadow\?box='\[50.85910,6.07627,50.86033,6.07767\]'\&output_type='png'\&data_re='.*NRW_Las.*'\&stat='max'\&step=0.5\&timestr='2020-07-01_06:00:00 -o kerkrade_shadow.png
+```
+produces
+
+<img src="docs/kerkrade_shadow.png" width="300">
+
+### Compute irradiance
+
+```
+> curl 10.0.0.1:8080/api/irradiance
+```
+computes irradiance raster map for a time and given atmospheric GHI
+and DHI values.
+
+For example,
+```
+> curl 10.0.0.1:8080/api/irradiance\?box='\[50.85910,6.07627,50.86033,6.07767\]'\&output_type='pngnormalize'\&data_re='.*NRW_Las.*'\&stat='max'\&step=0.5\&ghi=500\&dhi=200\&timestr='2020-07-01_06:00:00 -o kerkrade_irr.png
+```
+produces
+
+<img src="docs/kerkrade_irr.png" width="300">
+
+### Compute integrated irradiance
+
+```
+> curl 10.0.0.1:8080/api/integrate
+```
+computes integrated irradiance over a period of time, provided `GHI`,
+`DHI` and timestamp.
+
+To integrate irradiance over a certain period of time an additional
+file has to be supplied, where `GHI`, `DHI` and `timestr` are
+provided.
+```
+> cat > data.tsv
+"ghi" "dhi" "timestr"
+0 0 "2015-06-03_02:45:00"
+0 0 "2015-06-03_02:50:00"
+...
+
+> curl -F data=@data.tsv 10.0.0.1:8080/api/upload
+{"storage_fn": "ipfs_path:///code/data/results_cache/upload_a5e9a7bf6c5b1ea95fa337b2655a0f55"}
+> curl 10.0.0.1:8080/api/integrate\?box='\[50.85910,6.07627,50.86033,6.07767\]'\&output_type='pngnormalize'\&data_re='.*NRW_Las.*'\&stat='max'\&step=0.5\&tsvfn_uploaded="ipfs_path:///code/data/results_cache/upload_a5e9a7bf6c5b1ea95fa337b2655a0f55" -o kerkrade_int.png
+```
+
+produces
+
+<img src="docs/kerkrade_int.png" width="300">
+
+### Computation along a route
+
+```
+> curl 10.0.0.1:8080/api/route
+```
+performs computations of effective irradiance along a given route.
+
+For the route computation, `box` (e.g. `'[-50,-50,50,50]'`) parameter
+specifies minimum distance allowed from every observation point in the
+route to the edge of the sampled data (in meters). `box_delta` defines
+maximum allowed box.
+
+To compute route, a series of regions is sampled to cover every point
+along a route. Then, the effective irradiance computed using the
+sampled topographical data.
+
+For example,
+```
+> cat > route.tsv
+latitude longitude timestr dhi ghi
+50.8668 6.49331 2019-12-02_11:16:18 138.486 166.368
+50.8668 6.49331 2019-12-02_11:16:20 138.486 166.368
+...
+
+> curl -F data=@route.tsv 10.0.0.1:8080/api/upload
+{"storage_fn": "ipfs_path:///code/data/results_cache/upload_7eecd21d53dd5e42aa9cf2041cca2102"}
+> curl 10.0.0.1:8080/api/route\?tsvfn_uploaded="ipfs_path:///code/data/results_cache/upload_7eecd21d53dd5e42aa9cf2041cca2102"\&data_re=".*_Las.*"\&step=0.5 -o route_effective_GHI.tsv
+> cat route_effective_GHI.tsv
+latitude longitude timestr dhi ghi POA
+50.8668 6.49331 2019-12-02_11:16:18 138.486 166.368 122.815861595034
+50.8668 6.49331 2019-12-02_11:16:20 138.486 166.368 122.819899972226
+...
+
+```
+
+## Deployment
+
+The following subsection describe steps to deploy PVGRIP.
+
+### Requirements
+
+To run the PV-GRIP, each node should have a docker installed, with
+user privileges to run docker images (optionally user privileges to
+set up network interfaces). Further, scripts below assume that tools
+`curl`, `awk`, `jq`, `bc` are present on the system.
+
+### Submodules
+
+PV-GRIP consists of several submodules. Make sure to clone all of
+them:
 ```
 git clone git@github.com:esovetkin/open-elevation.git
 cd open-elevation
 git submodule update --init --recursive
 ```
 
-## Running the server
-
-The PV-GRIP consists of several components: storage ([cassandra
-storage](https://cassandra.apache.org/)), message broker
-([redis](https://redis.io/)), compute nodes
-(managed by [celery](https://docs.celeryproject.org/en/stable/)) and the
-webserver ([bottle](https://bottlepy.org/docs/dev/)).
-
-<img src="docs/network.jpg" width="300">
-
-The webserver listens to the user requests, builds the processing
-pipelines and serves the collected results back to user. The
-communication between the webserver and the processing nodes are
-handled by the message broker. The messages are strings (required for
-accessing the data in the distributed storage) or dictionaries
-(specifying a required job parameters).
-
-The message broker handles distributing processing pipeline tasks
-among processing nodes and collecting results. The message broker runs
-on the same node as the webserver. The broker should be accessible to
-every processing node.
-
-The distributed tasks queue runs processing jobs from the pipeline
-built by the webserver. Multiple processing nodes can be run.
-
-The storage handles data storage, webserver cache and spatial
-indexing. The storage is run on multiple nodes providing robustness
-against node failures.
-
-Server can be run on multiple nodes. Each node can be a storage unit,
-a broker, a processing worker or a webserver (or all of that
-together).
-
-Below are provided steps assisting setting up the network, storage,
-workers and the webserver nodes.  All commands below are assumed to be
-run in the root of the git repository.
-
 ### Setting up network
 
 It is recommended to set up a [Wireguard](https://www.wireguard.com/)
-network for communications between storage/worker nodes.
+network for communications between storage/worker nodes. For our setup
+we utilise [innernet](https://github.com/tonarino/innernet).
 
-Below it is assumed that each node has a network interface `pvgrip0`
+Below it is assumed that each node has a network interface `pvgrip`
 set up, such that each node can reach another one within this
-network. Below we assume that the `node1` has an ip address
+network. Further, we assume that the `node1` has an ip address
 `10.0.0.1`, whereas the `node2` has an ip address `10.0.0.2`, etc.
 
 ### Setting up cassandra storage
@@ -94,7 +234,24 @@ cd pvgrip/storage/cassandra_io
 ./scripts/start_cassandra.sh --broadcast=10.0.0.2 --seed=10.0.0.1
 ```
 
-### Setting up a worker/webserver node
+### Setting up ipfs storage
+
+IPFS storage consists of IPFS daemon, and IPFS-cluster. See [ipfs_io
+REAMDE](https://github.com/IEK-5/ipfs_io#readme) for more details.
+
+When all `pvgrip/storage/ipfs_io/secret` are set up, it is sufficient
+to say
+```
+cd pvgrip/storage/ipfs_io
+./ipfs_io.sh
+```
+
+See further arguments in
+```
+./ipfs_io.sh --help
+```
+
+### Building/Getting PV-GRIP images
 
 Before starting with worker/webserver nodes a docker image should be
 present. To build the docker image say
@@ -107,6 +264,9 @@ repository:
 ```
 docker pull esovetkin/pvgrip:latest
 ```
+
+### Setting up a worker/webserver node
+
 
 A series of configuration parameters should be set up in the
 `configs/pvgrip.conf` file depending your network configuration.
@@ -145,8 +305,9 @@ starts a processing node.
 
 ## Data
 
-The server utilises [Cassandra storage](https://cassandra.apache.org/)
-that stores distributed data and spatial index.
+The server utilises [Cassandra](https://cassandra.apache.org/) and
+[IPFS](https://ipfs.io/) that stores distributed data and spatial
+index.
 
 ### Uploading data
 
@@ -175,6 +336,11 @@ will process all data placed in the `data/current` directory.
 
 All data should be placed in `data/current` directory.
 
+### Templates for remote data
+
+`templates` directory contains examples of the `remote_meta.json`
+files defining the location of several data sources.
+
 ### Preprocessing raster files
 
 Say
@@ -185,21 +351,21 @@ to preprocess data. That command converts splits files on smaller
 chunks (maximum is 3000x3000 pixels).
 
 Some parts of the scripts depends on the version of GDAL being used
-(and also requires GDAL installed on the host machine). Hence, it is
-possible to run the scripts from inside the docker image
+(and also requires GDAL installed on the host machine). Without the
+GDAL the script has to be run from the docker image
 ```
 #in docker image
 scripts/preprocess.sh
 ```
 
-Preprocess script create a backup of the data using the
+Preprocess script creates a backup of the data using the
 ```
 cp -rl data/current data/current.bak
 ```
 
 ### Workers cache
 
-When data is queried from the cassandra storage, it is cached to a
+When data is queried from the distributed storage, it is cached to a
 local node disk. The amount of the local cache is controlled by the
 following option in the `configs/pvgrip.conf`
 ```
@@ -208,113 +374,21 @@ limit_worker = 10
 # amount in GB
 ```
 
-### Data replication
+### Data replication in cassandra
 
 The replication in the cassandra is controlled by the following
-options in the `configs/pvgrip.conf`
-```
-[cassandra]
-replication = SimpleStrategy
-replication_args = {"replication_factor": 1}
-```
-The replication_args must be a valid json string.
+options in the `configs/pvgrip.conf` ``` [cassandra] replication =
+SimpleStrategy replication_args = {"replication_factor": 1} ``` The
+replication_args must be a valid json string.
 
 See more information on the replication in the cassandra
 [here](https://docs.datastax.com/en/cassandra-oss/3.x/cassandra/architecture/archDataDistributeReplication.html).
 
+### Data replication in IPFS
 
-## Querying data
-
-Here we assume that a machine has access to the webserver running on
-`10.0.0.1`.
-
-The server timeout is 30 seconds. In this time it either response with
-a binary file or a json dictionary.
-
-In case task is running the following message is returned:
-```
-{"message": "task is running"}
-```
-
-### Query help
-
-On a node with an access to the webserver
-```
-> curl 10.0.0.1:8080/api/help
-```
-to see all available commands.
-
-To query help on any particular command call
-```
-> curl 10.0.0.1:8080/api/raster/help
-```
-
-### NRW Lidar and Aerial data
-
-The server gives access to [geospatial
-datasets](https://www.opengeodata.nrw.de/produkte/geobasis/) provided
-by NRW.
-
-For the a special file `remote_meta.json` should be specified in the
-corresponding directory. See examples in `templates` directory.
-
-For example, for the Lidar data:
-```
-{
-    "root_url": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/3dm_32_%s_%s_1_nw.laz",
-    "step": 1000,
-    "box_resolution": 1,
-    "epsg": 25832,
-    "box_step": 1,
-    "pdal_resolution": 0.3,
-    "meta_url": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/3dm_l_las/3dm_l_las/index.json",
-    "meta_entry_regex": "^3dm_32_(.*)_(.*)_1_nw.*$",
-    "las_stats": ["max","min","count","mean","idw","stdev"],
-    "if_compute_las": "yes"
-}
-```
-where `pdal_resolition` indicated that Lidar data is computed with a
-resolution of 30cm, resolution is given in terms of EPSG:25832, and
-hence in meters.
-
-From a cloud point several statistic can be computed: `min`, `max` and
-`count`. Those functions are taken for every region with a specified
-resolution. See more info on available statistics
-[here](https://pdal.io/stages/writers.gdal.html#writers-gdal).
-
-If `if_compute_las` is not `"yes"`, then `las_stats` and
-`pdal_resolution` arguments are ignored.
-
-### Sample raster images
-
-It is possible to query a coordinate from a bounding box. For example,
-```
-> curl 10.0.0.1:8080/api/raster\?box="\[50.7731,6.0793,50.7780,6.0882\]" -o output_fn
-```
-the box argument is given either as a list (in POST query) or as a json string list (in GET query).
-
-See
-```
-> curl 10.0.0.1:8080/api/raster/help
-```
-to see default options.
-
-### Shadows
-
-To obtain shadows say
-```
-> curl 10.0.0.1:8080/api/shadow\?box="\[50.6046,6.38,50.6098,6.3977\]"\&timestr="2020-05-01_5:3:00"
-```
-time must be UTC.
-
-As usual
-```
-> curl 10.0.0.1:8080/api/shadow/help
-```
-gives some help.
-
-To compile a shadow video use `scripts/shadow_movie/query_data.sh`
-script. It also allow to stress test the server.
+The replication in the ipfs storage is controlled by the arguments
+`--ipfs-cluster-rmax` and `--ipfs-cluster-rmin` of `ipfs_io.sh`
+script.
 
 ## Contributors
 
