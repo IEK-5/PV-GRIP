@@ -27,6 +27,9 @@ def calls_help():
 
     /api/shadow          compute binary map of a shadow at a time of a region
 
+        /api/shadow/average
+                         compute average value of shadows over given times
+
     /api/osm             render binary images of rendered from OSM
 
     /api/status          print current active and scheduled jobs
@@ -93,6 +96,23 @@ def shadow_defaults():
          the incidence map always produces geotiff
          shadow produces a binary shadow map""")})
     res.update(timestr_argument())
+    return res
+
+
+def shadow_average_defaults():
+    res = raster_defaults()
+    res.update({
+        'timestrs_fn': \
+        ('NA',
+        """a pvgrip path resulted from /api/upload
+
+        The tsv file must contain a header with at least
+        'timestr', where every time is given in the format
+
+        %Y-%m-%d_%H:%M:%S
+        e.g.
+        2020-07-01_06:00:00
+        """)})
     return res
 
 
@@ -240,6 +260,8 @@ def call_defaults(method):
         res = raster_defaults()
     elif 'shadow' == method:
         res = shadow_defaults()
+    elif 'shadow/average' == method:
+        res = shadow_average_defaults()
     elif 'irradiance' == method:
         res = ssdp_defaults()
     elif 'irradiance/ssdp' == method:

@@ -1,5 +1,7 @@
+import cv2
 import shutil
 import logging
+import pickle
 
 import numpy as np
 
@@ -93,5 +95,38 @@ def compute_incidence(tif_fn, timestr):
         raise e
     finally:
         shutil.rmtree(wdir)
+
+    return ofn
+
+
+@CELERY_APP.task()
+@cache_fn_results(minage = 1626846910)
+@one_instance(expire = 60*10)
+def average_png(png_files):
+    """Compute average
+
+    :png_files: a list of binary png files (with 0 or 1 values)
+
+    :return:
+
+    """
+    logging.debug("average_png\n{}"\
+                  .format(format_dictionary(locals())))
+
+    res = cv2.imread(png_files[0],0)
+
+    for png_fn in png_files[1:]:
+        res += cv2.imread(png_fn, 0)
+
+    res = res.astype(float)
+    res /= len(png_files)
+
+    ofn = get_tempfile()
+    try:
+        with open(ofn, 'wb') as f:
+            pickle.dump({'raster': res}, f)
+    except Exception as e:
+        remove_file(ofn)
+        raise e
 
     return ofn

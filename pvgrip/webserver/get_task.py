@@ -11,7 +11,7 @@ from pvgrip.irradiance.calls \
 from pvgrip.route.calls \
     import ssdp_route
 from pvgrip.shadow.calls \
-    import shadow
+    import shadow, average_shadow
 
 from pvgrip.status.utils \
     import status
@@ -40,6 +40,8 @@ def get_task(method, args):
         run = sample_raster
     elif 'shadow' == method:
         run = shadow
+    elif 'shadow/average' == method:
+        run = average_shadow
     elif 'osm' == method:
         run = osm_render
     elif 'irradiance' == method:
