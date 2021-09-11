@@ -2,9 +2,7 @@ from pvgrip.shadow.tasks \
     import compute_incidence, compute_shadow_map
 
 from pvgrip.raster.calls \
-    import sample_raster
-from pvgrip.raster.tasks \
-    import save_binary_png
+    import sample_raster, convert_from_to
 
 
 def shadow(timestr, what='shadow',
@@ -23,8 +21,6 @@ def shadow(timestr, what='shadow',
     """
     if what not in ('shadow', 'incidence'):
         raise RuntimeError("Invalid 'what' argument")
-    if output_type not in ('png', 'geotiff'):
-        raise RuntimeError("Invalid 'output' argument")
 
     kwargs['output_type'] = 'geotiff'
     tasks = sample_raster(**kwargs)
@@ -35,7 +31,7 @@ def shadow(timestr, what='shadow',
     if 'shadow' == what:
         tasks |= compute_shadow_map.signature()
 
-        if 'png' == output_type:
-            tasks |= save_binary_png.signature()
+    return convert_from_to(tasks,
+                           from_type = 'geotiff',
+                           to_type = output_type)
 
-    return tasks

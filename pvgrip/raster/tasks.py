@@ -70,12 +70,12 @@ def save_png(pickle_fn, normalize = False):
 @CELERY_APP.task()
 @cache_fn_results()
 @one_instance(expire = 10)
-def save_binary_png(tif_fn):
-    logging.debug("save_binary_png\n{}"\
+def save_pnghillshade(geotiff_fn):
+    logging.debug("save_pnghillshade\n{}"\
                   .format(format_dictionary(locals())))
     ofn = get_tempfile()
     try:
-        io.save_binary_png_from_tif(ifn = tif_fn, ofn = ofn)
+        io.save_pnghillshade(geotiff_fn, ofn)
     except Exception as e:
         remove_file(ofn)
         raise e
@@ -84,11 +84,13 @@ def save_binary_png(tif_fn):
 
 @CELERY_APP.task()
 @cache_fn_results()
-@one_instance(expire = 10)
-def save_pnghillshade(geotiff_fn):
+@one_instance(expire = 30)
+def save_pickle(geotiff_fn):
+    logging.debug("save_pickle\n{}"\
+                  .format(format_dictionary(locals())))
     ofn = get_tempfile()
     try:
-        io.save_pnghillshade(geotiff_fn, ofn)
+        io.save_pickle(geotiff_fn, ofn)
     except Exception as e:
         remove_file(ofn)
         raise e

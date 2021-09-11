@@ -83,9 +83,6 @@ def timestr_argument():
 def shadow_defaults():
     res = raster_defaults()
     res.update({
-        'output_type': \
-        ('png',
-         'type of output ("png","geotiff")'),
         'what': \
         ('shadow',
          """

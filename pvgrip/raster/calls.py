@@ -11,7 +11,8 @@ from pvgrip.lidar.calls \
 
 from pvgrip.raster.tasks \
     import save_png, save_geotiff, \
-    save_pnghillshade, sample_from_box
+    save_pnghillshade, save_pickle, \
+    sample_from_box
 from pvgrip.raster.utils \
     import check_box_not_too_big
 
@@ -39,7 +40,7 @@ def check_all_data_available(*args, **kwargs):
     return celery.group(tasks)
 
 
-def convert2output_type(tasks, output_type):
+def _convert_from_pickle(tasks, output_type):
     if output_type not in ('geotiff', 'pickle',
                            'pnghillshade','png',
                            'pngnormalize'):
@@ -62,6 +63,26 @@ def convert2output_type(tasks, output_type):
     return tasks
 
 
+def convert_from_to(tasks, from_type, to_type):
+    if 'pickle' == from_type:
+        if 'pickle' == to_type:
+            return tasks
+
+        return _convert_from_pickle(tasks, to_type)
+
+    if 'geotiff' == from_type:
+        if 'geotiff' == to_type:
+            return tasks
+
+        if 'pnghillshade' == to_type:
+            return tasks | save_pnghillshade.signature()
+
+        tasks = tasks | save_pickle.signature()
+
+
+    return _convert_from_pickle(tasks, to_type)
+
+
 def sample_raster(box, data_re, stat,
                   mesh_type, step, output_type):
     check_box_not_too_big(box = box, step = step,
@@ -79,5 +100,6 @@ def sample_raster(box, data_re, stat,
                     'step': step},
           immutable = True))
 
-    return convert2output_type(tasks,
-                               output_type = output_type)
+    return convert_from_to(tasks,
+                           from_type = 'pickle',
+                           to_type = output_type)

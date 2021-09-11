@@ -1,5 +1,5 @@
 from pvgrip.raster.calls \
-    import sample_raster, convert2output_type
+    import sample_raster, convert_from_to
 
 from pvgrip.integrate.tasks \
     import integrate_irradiance
@@ -24,5 +24,6 @@ def ssdp_integrate(tsvfn_uploaded,
              'lon': lon,
              'lat': lat})
 
-    return convert2output_type(tasks,
-                               output_type = output_type)
+    return convert_from_to(tasks,
+                           from_type = 'pickle',
+                           to_type = output_type)

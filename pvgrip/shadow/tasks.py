@@ -35,6 +35,11 @@ from pvgrip.utils.format_dictionary \
 @cache_fn_results()
 @one_instance(expire = 10)
 def compute_shadow_map(ifn):
+    """convert incidence geotiff to binary shadow map
+
+    :ifn: geotiff with incidence angle. nan are shadows
+
+    """
     logging.debug("compute_shadow_map\n{}"\
                   .format(format_dictionary(locals())))
     incidence = GDALInterface(ifn)
@@ -57,6 +62,13 @@ def compute_shadow_map(ifn):
 @cache_fn_results(minage = 1626846910)
 @one_instance(expire = 60*10)
 def compute_incidence(tif_fn, timestr):
+    """compute sun incidence angle
+
+    :tif_fn: elevation geotiff
+
+    :timestr: utc time string
+
+    """
     logging.debug("compute_incidence\n{}"\
                   .format(format_dictionary(locals())))
     wdir = get_tempdir()

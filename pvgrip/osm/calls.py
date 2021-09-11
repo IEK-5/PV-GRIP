@@ -6,7 +6,7 @@ from pvgrip.osm.utils \
 from pvgrip.raster.utils \
     import check_box_not_too_big
 from pvgrip.raster.calls \
-    import convert2output_type
+    import convert_from_to
 
 from pvgrip.osm.tasks \
     import find_osm_data_online, \
@@ -37,5 +37,6 @@ def osm_render(box, step, mesh_type, tag, output_type):
         (kwargs={'box': box, 'step': step,
                  'mesh_type': mesh_type})
 
-    return convert2output_type(tasks,
-                               output_type = output_type)
+    return convert_from_to(tasks,
+                           from_type = 'pickle',
+                           to_type = output_type)

@@ -1,5 +1,5 @@
 from pvgrip.raster.calls \
-    import sample_raster, convert2output_type
+    import sample_raster, convert_from_to
 from pvgrip.irradiance.tasks \
     import compute_irradiance_ssdp, compute_irradiance_grass
 
@@ -35,8 +35,9 @@ def irradiance_ssdp(timestr, ghi, dhi, albedo, nsky,
              'lon':lon,'lat':lat,'albedo':albedo,
              'utc_time':utc_time})
 
-    return convert2output_type(tasks,
-                               output_type = output_type)
+    return convert_from_to(tasks,
+                           from_type = 'pickle',
+                           to_type = output_type)
 
 
 def irradiance_grass(timestr, rsun_args, **kwargs):

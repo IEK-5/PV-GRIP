@@ -1,6 +1,7 @@
 import os
 import cv2
 import shutil
+import pickle
 
 import numpy as np
 
@@ -52,6 +53,17 @@ def save_geotiff(data, ofn):
 
     :ofn: name of the output file
     """
+    if 'raster' not in data:
+        raise RuntimeError('"raster" field is not in pickle!')
+    if 'mesh' not in data:
+        raise RuntimeError('"mesh" field is not in pickle!')
+    if 'raster_box' not in data['mesh']:
+        raise RuntimeError\
+            ('"raster_box" field is not in data["mesh"]!')
+    if 'epsg' not in data['mesh']:
+        raise RuntimeError\
+            ('"epsg" field is not in data["mesh"]!')
+
     array = data['raster']
 
     xmin, ymin, xmax, ymax = data['mesh']['raster_box']
@@ -61,6 +73,30 @@ def save_geotiff(data, ofn):
     geotransform = (xmin, xres, 0, ymax, 0, -yres)
     save_gdal(ofn, data['raster'],
               geotransform, data['mesh']['epsg'])
+
+
+def save_pickle(geotiff_fn, ofn):
+    """Save pickle from a geotiff
+
+    :geotiff_fn: input filename
+
+    :ofn: output filename. pickle in the same format as
+    _sample_from_box
+
+    """
+    mesh = {}
+    raster = GDALInterface(geotiff_fn)
+    xmin, xres, _, ymax, _, yres = raster.geo_transform
+    nrows, ncols, nchannels = raster.get_shape()
+    xmax = xres*ncols + xmin
+    ymin = ymax - yres*nrows
+    mesh['raster_box'] = xmin, ymin, xmax, ymax
+    mesh['step'] = max(xres,yres)
+    mesh['epsg'] = 4326
+
+    with open(ofn,'wb') as f:
+        pickle.dump({'raster': raster.points_array,
+                     'mesh': mesh}, f)
 
 
 def save_png(data, ofn, normalize):
@@ -87,27 +123,6 @@ def save_png(data, ofn, normalize):
         shutil.rmtree(wdir)
 
     return ofn
-
-
-def save_binary_png_from_tif(ifn, ofn):
-    """Save a binary tiff as a binary png
-
-    :ifn: input tiff filename
-
-    :ofn: output png filename
-    """
-    wdir = get_tempdir()
-
-    try:
-        run_command\
-            (what = ['gdal_translate',
-                     '-scale','0','1','0','255',
-                     '-of','png',
-                     ifn,'mask.png'],
-             cwd = wdir)
-        os.rename(os.path.join(wdir, 'mask.png'), ofn)
-    finally:
-        shutil.rmtree(wdir)
 
 
 def save_pnghillshade(ifn, ofn):
