@@ -2,6 +2,26 @@
 
 cd $(git rev-parse --show-toplevel)
 
+webserver="no"
+worker="no"
+
+for i in "$@"
+do
+    case "${i}" in
+        webserver)
+            webserver="yes"
+            ;;
+        worker)
+            worker="yes"
+            ;;
+        *)
+            echo "unknown argument!"
+            exit
+            ;;
+    esac
+done
+
+
 echo "Update repository"
 git stash
 git fetch
@@ -16,22 +36,14 @@ echo "Prune older images"
 ./pvgrip.sh --what=prune -d
 ./pvgrip.sh --what=prune
 
-read -p "Restart worker? (y/n)" choice
-case "${choice}" in
-    y|Y)
-        docker kill pvgrip-worker
-        ./pvgrip.sh --what=worker
-        ;;
-    *)
-        ;;
-esac
+if [ "${worker}" = "yes" ]
+then
+    docker kill pvgrip-worker
+    ./pvgrip.sh --what=worker
+fi
 
-read -p "Restart webserver? (y/n)" choice
-case "${choice}" in
-    y|Y)
-        docker kill pvgrip-webserver
-        ./pvgrip.sh --what=webserver
-        ;;
-    *)
-        ;;
-esac
+if [ "${webserver}" = "yes" ]
+then
+    docker kill pvgrip-webserver
+    ./pvgrip.sh --what=webserver
+fi
