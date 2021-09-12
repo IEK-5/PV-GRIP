@@ -125,12 +125,15 @@ def shadow_average_defaults():
         """a pvgrip path resulted from /api/upload
 
         The tsv file must contain a header with at least
-        'timestr', where every time is given in the format
+        'timestr', where every time is given in the format.
 
         %Y-%m-%d_%H:%M:%S
         e.g.
         2020-07-01_06:00:00
-        """)})
+
+        Note, in case csv contains a single column, wrap the column
+        name in quotes, otherwise this might happen:
+        https://github.com/pandas-dev/pandas/issues/17333""")})
     return res
 
 
