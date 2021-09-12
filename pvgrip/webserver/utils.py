@@ -18,7 +18,8 @@ from pvgrip.utils.exceptions \
     import TASK_RUNNING
 
 from pvgrip.storage.remotestorage_path \
-    import searchandget_locally, is_remote_path
+    import searchandget_locally, is_remote_path, \
+    RemoteStoragePath
 
 from pvgrip.globals \
     import get_Tasks_Queues, PVGRIP_CONFIGS
@@ -61,13 +62,24 @@ def parse_args(data, defaults):
     return res
 
 
-def serve(data):
+def serve(data, serve_type):
     if isinstance(data, dict):
         return data
 
     if is_remote_path(data):
-        with open(searchandget_locally(data),'rb') as f:
-            return f.read()
+        if 'file' == serve_type:
+            with open(searchandget_locally(data),'rb') as f:
+                return f.read()
+        elif 'path' == serve_type:
+            return {'storage_fn': data}
+        elif 'ipfs_cid' == serve_type:
+            return {'ipfs_cid': \
+                    '/ipfs/{}'\
+                    .format(RemoteStoragePath(data)\
+                            .get_cid())}
+        else:
+            raise RuntimeError('unknow serve_type = {}'\
+                               .format(serve_type))
 
     return data
 

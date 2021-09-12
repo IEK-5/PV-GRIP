@@ -125,6 +125,15 @@ class RemoteStoragePath:
         return self.path in self._storage
 
 
+    def get_cid(self):
+        if self.remotetype != 'ipfs_path':
+            raise RuntimeError\
+                ('get_cid is meaningless for {}'\
+                 .format(self.remotetype))
+
+        return self._storage._get_ipfs_cid(self.path)
+
+
     def get_timestamp(self):
         return self._storage.get_timestamp(self.path)
 

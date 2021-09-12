@@ -36,19 +36,37 @@ def calls_help():
 
     """
 
-def lookup_defaults():
-    return {'location': \
-            ([50.87,6.12],
-             '[latitude, longitude] of the desired location'),
-            'data_re': \
-            (r'.*',
-             'regular expression matching the dataset'),
-            'stat': \
-            ('max',
-             """
-             statistic to compute for LAS files
 
-             choice: ("max","min","mean","idw","count","stdev")""")}
+def global_defaults():
+    return {'serve_type': \
+            ('file',
+             """
+             type of output to serve
+
+             choice: ("file","path","ipfs_cid")
+
+              - "file": webserver sends back a file
+              - "path": webserver sends back a pvgrip path
+                    a file can be downloaded with /download
+              - "ipfs_cid": webserver sends back an ipfs_cid
+                    a file can be downloaded through ipfs""")}
+
+
+def lookup_defaults():
+    res = global_defaults()
+    res.update({'location': \
+                ([50.87,6.12],
+                 '[latitude, longitude] of the desired location'),
+                'data_re': \
+                (r'.*',
+                 'regular expression matching the dataset'),
+                'stat': \
+                ('max',
+                 """
+                 statistic to compute for LAS files
+
+                 choice: ("max","min","mean","idw","count","stdev")""")})
+    return res
 
 
 def raster_defaults():

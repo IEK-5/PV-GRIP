@@ -55,7 +55,11 @@ def do_method(method):
     if not isinstance(task, types.FunctionType):
         return task
 
-    return serve(call_method(method=method, args=args))
+    serve_type = args['serve_type']
+    del args['serve_type']
+
+    return serve(call_method(method=method, args=args),
+                 serve_type = serve_type)
 
 
 @bottle.error(404)
