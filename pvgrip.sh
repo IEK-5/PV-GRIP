@@ -201,6 +201,7 @@ function prune_byname {
 
 function start_preamble {
     res="docker run -d -t -i"
+    res+=" --hostname $(hostname)-${what}"
     res+=" --memory ${docker_maxmemory}"
     res+=" --name ${name_prefix}-${what}"
     res+=" $(get_restart)"
