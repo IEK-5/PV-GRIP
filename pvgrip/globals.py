@@ -67,6 +67,14 @@ GRASS_NJOBS = int(PVGRIP_CONFIGS['grass']['njobs'])
 SSDP=PVGRIP_CONFIGS['ssdp']['executable']
 SSDP_NJOBS = int(PVGRIP_CONFIGS['ssdp']['njobs'])
 
+COPERNICUS_HASH_LENGTH = \
+    int(PVGRIP_CONFIGS['copernicus']['hash_length'])
+COPERNICUS_CDS = {
+    'url': PVGRIP_CONFIGS['copernicus']['cds_url'],
+    'key': PVGRIP_CONFIGS['copernicus']['cds_key']}
+COPERNICUS_ADS = {
+    'url': PVGRIP_CONFIGS['copernicus']['ads_url'],
+    'key': PVGRIP_CONFIGS['copernicus']['ads_key']}
 
 _LOGGING = {'INFO': logging.INFO,
             'DEBUG': logging.DEBUG,

@@ -1,5 +1,6 @@
 bottle
 cachetools
+cdsapi
 celery[redis]
 diskcache
 gunicorn

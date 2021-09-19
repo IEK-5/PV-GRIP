@@ -12,6 +12,8 @@ from pvgrip.route.calls \
     import ssdp_route
 from pvgrip.shadow.calls \
     import shadow, average_shadow
+from pvgrip.weather.calls \
+    import irradiance_route, irradiance_bbox
 
 from pvgrip.status.utils \
     import status
@@ -71,6 +73,12 @@ def get_task(method, args):
         return serve(upload(bottle.request.files.data))
     elif 'download' == method:
         return serve(args['path'], args['serve_type'])
+    elif 'weather/irradiance' == method:
+        run = irradiance_bbox
+    elif 'weather/irradiance/box' == method:
+        run = irradiance_bbox
+    elif 'weather/irradiance/route' == method:
+        run = irradiance_route
     else:
         raise RuntimeError\
             ('method is not implemented')
