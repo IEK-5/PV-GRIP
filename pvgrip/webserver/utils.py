@@ -62,7 +62,7 @@ def parse_args(data, defaults):
     return res
 
 
-def serve(data, serve_type):
+def serve(data, serve_type = 'file'):
     if isinstance(data, dict):
         return data
 

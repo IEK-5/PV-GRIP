@@ -70,7 +70,7 @@ def get_task(method, args):
     elif 'upload' == method:
         return serve(upload(bottle.request.files.data))
     elif 'download' == method:
-        return serve(args['path'])
+        return serve(args['path'], args['serve_type'])
     else:
         raise RuntimeError\
             ('method is not implemented')

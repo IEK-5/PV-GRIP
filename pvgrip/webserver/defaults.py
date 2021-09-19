@@ -187,10 +187,13 @@ def upload_defaults():
 
 
 def download_defaults():
-    return {'path': \
-            ('NA',
-             """a storage path for a file to download
-             """)}
+    res = global_defaults()
+    res.update({
+        'path': \
+        ('NA',
+         """a storage path for a file to download
+         """)})
+    return res
 
 
 def ssdp_defaults():
