@@ -41,17 +41,17 @@ Below are provided examples and deployment instructions.
 Here we assume that a machine has access to the webserver running on
 `10.0.0.1`.
 
-The server timeout is 10 seconds. In this time it either response with
-a binary file or a json dictionary.
+The server timeout is 10 seconds. In this time, it either responds
+with a binary file or a json dictionary.
 
-In case task is running the following message is returned:
+In case the task is being executed, the following message is returned:
 ```
 {"message": "task is running"}
 ```
 
 ### Query help
 
-On a node with an access to the webserver
+On a node with access to the webserver
 ```
 > curl 10.0.0.1:8080/api/help | jq -r .results
 ```
@@ -67,7 +67,7 @@ To query help on any particular command call
 ```
 > curl 10.0.0.1:8080/api/raster
 ```
-samples data from several data sources and produces a require output.
+samples data from several data sources and produces a required output.
 
 `box` argument defines area location in the format
 `'[min_latitude,min_longitude,max_latitude,max_longitude]'`. `step`
@@ -147,12 +147,12 @@ produces
 performs computations of effective irradiance along a given route.
 
 For the route computation, `box` (e.g. `'[-50,-50,50,50]'`) parameter
-specifies minimum distance allowed from every observation point in the
-route to the edge of the sampled data (in meters). `box_delta` defines
-maximum allowed box.
+specifies the minimum distance allowed from every observation point in
+the route to the edge of the sampled data (in meters). `box_delta`
+defines the maximum allowed box.
 
-To compute route, a series of regions is sampled to cover every point
-along a route. Then, the effective irradiance computed using the
+To compute route, a series of regions are sampled to cover every point
+along a route. Then, the effective irradiance is computed using the
 sampled topographical data.
 
 For example,
@@ -174,6 +174,69 @@ latitude longitude timestr dhi ghi POA
 
 ```
 
+### Querying weather
+
+```
+> curl 10.0.0.1:8080/api/weather
+```
+queries various weather related parameters.
+
+The weather data is queried from the
+[copernicus](https://ads.atmosphere.copernicus.eu/) data bank. For
+that one needs to register, obtain [API
+keys](https://ads.atmosphere.copernicus.eu/api-how-to), and set the in the `config/pvgrip.conf`
+```
+...
+[copernicus]
+cds_url = https://cds.climate.copernicus.eu/api/v2
+ads_url = https://ads.atmosphere.copernicus.eu/api/v2
+cds_key = {UID}:{API_key}
+ads_key = {UID}:{API_key}
+hash_length = 6
+...
+```
+
+The spatial resolution of the copernicus data is about 4x4 km^2, hence
+the data to query is assigned to different regions defined by its
+geohash. `hash_length = 6` results in approximately 1x1 km^2 regions.
+
+#### Querying irradiance
+
+Irradiance values can be queried using `/weather/irradiance/route` and
+`/weather/irradiance/box`.
+
+For example,
+```
+> curl 10.0.0.1:8080/api/weather/irradiance/route\?tsvfn_uploaded='ipfs_path:///code/data/results_cache/upload_...'
+latitude longitude timestr region_hash GHI DHI
+50.9048 6.40418 2019-12-02_11:00:50 127.728 174.786 u1h99d 170.766 130.254
+50.9048 6.40417 2019-12-02_11:00:52 127.728 174.786 u1h99d 170.766 130.254
+...
+```
+queries irradiance values along a given route.
+
+```
+> curl localhost:8081/api/weather/irradiance/box\?time_step='2minutes'\&box='\[50.865,7.119,50.867,7.121\]'
+region_hash timestr region_latitude region_longitude GHI DHI
+u1j13g 2019-07-01_10:00:00 50.86395263671875 7.1136474609375 830.28  146.592
+u1j13g 2019-07-01_10:02:00 50.86395263671875 7.1136474609375 832.572 147.0
+...
+```
+queries irradiance values in a given box.
+
+### Type of output
+
+The `serve_type` parameter in almost every query type instructs the
+webserver to return data in different formats.
+
+  - `serve_type=file` (default) transmits a file
+
+  - `serve_type=path` sends back a pvgrip path (similar to `/upload` output)
+
+  - `serve_type=ipfs_cid` sends back a ipfs_cid that can be downloaded
+    with ipfs.  or viewed on a public service like
+    `https://ipfs.io/ipfs/Q...`
+
 ## Deployment
 
 The following subsection describe steps to deploy PVGRIP.
@@ -181,7 +244,7 @@ The following subsection describe steps to deploy PVGRIP.
 ### Requirements
 
 To run the PV-GRIP, each node should have a docker installed, with
-user privileges to run docker images (optionally user privileges to
+user privileges to run docker images (optionally, user privileges to
 set up network interfaces). Further, scripts below assume that tools
 `curl`, `awk`, `jq`, `bc` are present on the system.
 
@@ -392,11 +455,21 @@ script.
 
 ## Contributors
 
+    pvgrip and open-elevation:
     - Jenya Sovetkin
     - João Ricardo Lourenço
-    - Nikola Balog
     - ligi
     - Chris Lukic
+
+    pvgrip/ssdp/ssdp:
+    - Bart E. Pieters
+
+    pvgrip/weather/copernicus:
+    - Leonard Raumann
+    - Neel Patel
+
+    pvgrip/osm:
+    - Nikola Balog
 
 ## Caveats
 
