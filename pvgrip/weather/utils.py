@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime
 
 from pvgrip.utils.times import \
-    timestr2datetime
+    timestr2datetime, time_range2list
 
 
 def bbox2hash(bbox, hash_length):
@@ -51,10 +51,12 @@ def timelocation_add_datetimes(tl):
         (lambda x: \
          timestr2datetime(x['timestr']),
          axis = 1)
-    tl['date'] = tl.apply\
-        (lambda x: \
-         datetime.strftime(x['datetime'],'%Y-%m-%d'),
-         axis = 1)
+    tl['date'], tl['year'], tl['week'] = \
+        zip(*tl['datetime']\
+            .map(lambda x: \
+                 datetime.strftime\
+                 (x,'%Y-%m-%d|%G|%V')\
+                 .split('|')))
     return tl
 
 
@@ -73,4 +75,50 @@ def timelocation_add_region(tl, output):
     tl['region_bbox'] = tl['region_hash'].apply\
         (lambda x: tuple(geohash.bbox(x).values()))
 
+    return tl
+
+
+def _raiseiftoorecent(tl):
+    if (datetime.now() - tl.datetime.max()).days < 8:
+        raise RuntimeError\
+            ("""you ask for too recent observations!
+
+            take a break for a week...
+            """)
+
+
+def bbox_tl(box, time_range, time_step,
+            hash_length,
+            sample_hash_length = None,
+            region_type = 'coordinate'):
+    if not sample_hash_length:
+        sample_hash_length = hash_length
+    tl = bbox2hash(box, sample_hash_length)
+    tl['sample_hash'] = tl['region_hash']
+    tl['region_hash'] = tl['region_hash']\
+        .str.slice(0,hash_length)
+    times = time_range2list(time_range = time_range,
+                            time_step = time_step,
+                            time_format = '%Y-%m-%d_%H:%M:%S')
+    times = pd.DataFrame(times, columns = ['timestr'])
+    tl = tl.merge(times, how='cross')
+    tl = timelocation_add_datetimes(tl)
+    _raiseiftoorecent(tl)
+    tl = timelocation_add_region(tl, region_type)
+    return tl
+
+
+def route_tl(route_fn, hash_length,region_type = 'coordinate'):
+    tl = pd.read_csv(route_fn, sep=None, engine='python')
+
+    if 'timestr' not in tl or \
+       'longitude' not in tl or \
+       'latitude' not in tl:
+        raise RuntimeError\
+            ("longitude, latitude or timestr are missing!")
+
+    tl = timelocation_add_datetimes(tl)
+    _raiseiftoorecent(tl)
+    tl = timelocation_add_hash(tl, hash_length)
+    tl = timelocation_add_region(tl, region_type)
     return tl

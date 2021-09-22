@@ -1,3 +1,10 @@
+from pvgrip.utils.format_dictionary \
+    import format_dictionary
+
+from pvgrip.weather.copernicus \
+    import reanalysis_era5_variables
+
+
 def calls_help():
     return """
     Query geo-spatial data
@@ -36,7 +43,7 @@ def calls_help():
 
         /api/weather/irradiance/{route,box}
                          get irradiance values for a route or region
-        /api/weather/reanalysis
+        /api/weather/reanalysis/{route,box}
                          get various reanalysis data
 
     /api/status          print current active and scheduled jobs
@@ -321,9 +328,23 @@ def _irradiance_options():
           - 'BNI' Beam irradiation on mobile plane following the sun
             at normal incidence (W/m2)
 
-          - 'Reliability' Proportion of reliable data in the
-            summarization (0-1)
          """)}
+
+
+def _reanalysis_options():
+    return {
+        'what': \
+        (['10m_u_component_of_wind',
+          '10m_v_component_of_wind',
+          '2m_temperature'],
+         """what to get
+
+         Options are:
+
+         {}
+
+         """.format(reanalysis_era5_variables))
+    }
 
 
 def weather_irradiance_route():
@@ -343,6 +364,50 @@ def weather_irradiance_route():
 def weather_irradiance_box():
     res = global_defaults()
     res.update(_irradiance_options())
+    res.update({
+        'box': \
+        ([50.865,7.119,50.867,7.121],
+         """
+         bounding box of desired locations
+
+         format: [lat_min, lon_min, lat_max, lon_max]"""),
+        'time_range': \
+        ('2019-07-01_10:00:00/2019-07-01_11:00:00',
+         """a string specifying a time range in UTC
+
+         It can be either in the format:
+         '%Y-%m-%d_%H:%M:%S/%Y-%m-%d_%H:%M:%S'
+         specifying a true range, or
+         '%Y-%m-%d_%H:%M:%S'
+         specifying a single time
+         """),
+        'time_step': \
+        ('20minutes',
+         """a string specifying a time step
+
+         Format: '<integer><units>',
+         where unit is second, minute, hour or day (or plural)
+         """)})
+    return res
+
+
+def weather_reanalysis_route():
+    res = global_defaults()
+    res.update(_reanalysis_options())
+    res.update({
+        'tsvfn_uploaded': \
+        ('NA',
+         """a pvgrip path resulted from /api/upload
+
+         The tsv file must contain a header with at least
+         'latitude', 'longitude' and 'timestr' columns.
+         """)})
+    return res
+
+
+def weather_reanalysis_box():
+    res = global_defaults()
+    res.update(_reanalysis_options())
     res.update({
         'box': \
         ([50.865,7.119,50.867,7.121],
@@ -401,6 +466,12 @@ def call_defaults(method):
         res = weather_irradiance_box()
     elif 'weather/irradiance/route' == method:
         res = weather_irradiance_route()
+    elif 'weather/reanalysis' == method:
+        res = weather_reanalysis_box()
+    elif 'weather/reanalysis/box' == method:
+        res = weather_reanalysis_box()
+    elif 'weather/reanalysis/route' == method:
+        res = weather_reanalysis_route()
     else:
         return None
 

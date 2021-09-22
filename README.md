@@ -200,7 +200,7 @@ The spatial resolution of the copernicus data is about 4x4 km^2, hence
 the data to query is assigned to different regions defined by its
 geohash. `hash_length = 6` results in approximately 1x1 km^2 regions.
 
-#### Querying irradiance
+#### Querying irradiance data
 
 Irradiance values can be queried using `/weather/irradiance/route` and
 `/weather/irradiance/box`.
@@ -216,13 +216,35 @@ latitude longitude timestr region_hash GHI DHI
 queries irradiance values along a given route.
 
 ```
-> curl localhost:8081/api/weather/irradiance/box\?time_step='2minutes'\&box='\[50.865,7.119,50.867,7.121\]'
+> curl 10.0.0.1:8080/api/weather/irradiance/box\?time_step='2minutes'\&box='\[50.865,7.119,50.867,7.121\]'
 region_hash timestr region_latitude region_longitude GHI DHI
 u1j13g 2019-07-01_10:00:00 50.86395263671875 7.1136474609375 830.28  146.592
 u1j13g 2019-07-01_10:02:00 50.86395263671875 7.1136474609375 832.572 147.0
 ...
 ```
 queries irradiance values in a given box.
+
+See `/api/help/weather/irradiance` for a list of values that can be
+queried.
+
+#### Querying reanalysis data
+
+Various reanalysis values from ERA5-Land can be queries using
+`/weather/reanalysis/route` and `/weather/reanalysis/box`.
+
+For example
+```
+> curl 10.0.0.1:8080/api/weather/reanalysis/box\?time_step='2minutes'\&box='\[50.865,7.119,50.867,7.121\]'
+region_hash sample_hash timestr latitude longitude 10m_u_component_of_wind 10m_v_component_of_wind 2m_temperature
+u1j u1j13u 2019-07-01_10:00:00 50.86944580078125 7.1136474609375 4.211197058849415 -0.9137861066780429 295.89421226672954
+u1j u1j13u 2019-07-01_10:02:00 50.86944580078125 7.1136474609375 4.211197058849415 -0.9137861066780429 295.89421226672954
+...
+```
+queries irradiance values in a given box.
+
+[CDS Climate
+Data](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land?tab=overview)
+provides a list of possible values that can be queried.
 
 ### Type of output
 

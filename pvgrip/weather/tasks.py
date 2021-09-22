@@ -1,11 +1,11 @@
 import logging
+import geohash
 import functools
 
-import pandas as pd
-
 from pvgrip.globals \
-    import COPERNICUS_HASH_LENGTH, \
-    COPERNICUS_CDS, COPERNICUS_ADS
+    import COPERNICUS_CDS, COPERNICUS_ADS, \
+    COPERNICUS_CDS_HASH_LENGTH, \
+    COPERNICUS_ADS_HASH_LENGTH
 
 from pvgrip \
     import CELERY_APP
@@ -21,19 +21,15 @@ from pvgrip.utils.files \
 from pvgrip.utils.format_dictionary \
     import format_dictionary
 
-from pvgrip.utils.times \
-    import time_range2list
-
 from pvgrip.weather.copernicus \
     import retrieve, \
     cams_solar_radiation_timeseries, \
-    sample_irradiance
+    reanalysis_era5_land, \
+    sample_irradiance, \
+    sample_reanalysis
 
 from pvgrip.weather.utils \
-    import timelocation_add_datetimes, \
-    timelocation_add_hash, \
-    timelocation_add_region, \
-    bbox2hash
+    import bbox_tl, route_tl
 
 
 @CELERY_APP.task()
@@ -58,25 +54,27 @@ def retrieve_source(credentials_type, what, args, ofn):
     return ofn
 
 
-def _sample_irradiance(tl, what):
-    res = []
-    for sfn, piece in tl.groupby(tl['source_fn']):
-        piece[list(what)] = sample_irradiance\
-            (piece, sfn, what = what)
-        res += [piece]
-    res = functools.reduce(lambda x,y: x.append(y),res)
-
-    # drop duplicated data columns
-    res = res.drop(['datetime','date','source_fn'],
-                   axis = 1)
-
+def _save_tsv(df):
     ofn = get_tempfile()
     try:
-        res.to_csv(ofn, sep='\t', index=False)
+        df.to_csv(ofn, sep='\t', index=False)
         return ofn
     except Exception as e:
         remove_file(ofn)
         raise e
+
+
+def _sample(tl, what, how, drop):
+    res = []
+    for sfn, piece in tl.groupby(tl['source_fn']):
+        piece[list(what)] = how(piece, sfn, what = what)
+        res += [piece]
+    res = functools.reduce(lambda x,y: x.append(y),res)
+
+    # drop duplicated data columns
+    res = res.drop(drop, axis = 1)
+
+    return _save_tsv(res)
 
 
 @CELERY_APP.task()
@@ -86,20 +84,16 @@ def sample_irradiance_route(route_fn, what):
     logging.debug("sample_irradiance_route\n{}"\
                   .format(format_dictionary(locals())))
 
-    tl = pd.read_csv(route_fn, sep=None, engine='python')
-    tl = timelocation_add_datetimes(tl)
-    tl = timelocation_add_hash(tl, COPERNICUS_HASH_LENGTH)
-    tl = timelocation_add_region(tl, 'coordinate')
+    tl = route_tl(route_fn = route_fn,
+                  hash_length = COPERNICUS_CDS_HASH_LENGTH,
+                  region_type = 'coordinate')
     tl['source_fn'] = tl.apply\
         (lambda x: \
-         cams_solar_radiation_timeseries\
-         (date = x['datetime'],
-          location = x[['region_latitude',
-                        'region_longitude',
-                        'region_hash']])['ofn'],
+         cams_solar_radiation_timeseries(location = x)['ofn'],
          axis = 1)
 
-    return _sample_irradiance(tl, what)
+    return _sample(tl, what = what, how = sample_irradiance,
+                   drop = ['datetime','date','year','week','source_fn'])
 
 
 @CELERY_APP.task()
@@ -109,21 +103,63 @@ def sample_irradiance_bbox(bbox, time_range, time_step, what):
     logging.debug("sample_irradiance_bbox\n{}"\
                   .format(format_dictionary(locals())))
 
-    tl = bbox2hash(bbox, COPERNICUS_HASH_LENGTH)
-    times = time_range2list(time_range = time_range,
-                            time_step = time_step,
-                            time_format = '%Y-%m-%d_%H:%M:%S')
-    times = pd.DataFrame(times, columns = ['timestr'])
-    tl = tl.merge(times, how='cross')
-    tl = timelocation_add_datetimes(tl)
-    tl = timelocation_add_region(tl, 'coordinate')
+    tl = bbox_tl(box = bbox,
+                 time_range = time_range,
+                 time_step = time_step,
+                 hash_length = COPERNICUS_CDS_HASH_LENGTH,
+                 region_type = 'coordinate')
+
     tl['source_fn'] = tl.apply\
         (lambda x: \
-         cams_solar_radiation_timeseries\
-         (date = x['datetime'],
-          location = x[['region_latitude',
-                        'region_longitude',
-                        'region_hash']])['ofn'],
+         cams_solar_radiation_timeseries(location = x)['ofn'],
          axis = 1)
 
-    return _sample_irradiance(tl, what)
+    return _sample(tl, what = what, how = sample_irradiance,
+                   drop = ['datetime','date','year','week','source_fn'])
+
+
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire = 600)
+def sample_reanalysis_route(route_fn, what):
+    logging.debug("sample_reanalysis_route\n{}"\
+                  .format(format_dictionary(locals())))
+
+    tl = route_tl(route_fn = route_fn,
+                  hash_length = COPERNICUS_ADS_HASH_LENGTH,
+                  region_type = 'bbox')
+    tl['source_fn'] = tl.apply\
+        (lambda x: \
+         reanalysis_era5_land(location = x)['ofn'],
+         axis = 1)
+
+    return _sample(tl, what = what, how = sample_reanalysis,
+                   drop = ['datetime','date','year','week','source_fn',
+                           'dtimes','dlats','dlons','region_bbox'])
+
+
+@CELERY_APP.task()
+@cache_fn_results()
+@one_instance(expire = 600)
+def sample_reanalysis_bbox(bbox, time_range, time_step, what):
+    logging.debug("sample_reanalsysis_bbox\n{}"\
+                  .format(format_dictionary(locals())))
+
+    tl = bbox_tl(box = bbox,
+                 time_range = time_range,
+                 time_step = time_step,
+                 hash_length = COPERNICUS_ADS_HASH_LENGTH,
+                 sample_hash_length = COPERNICUS_CDS_HASH_LENGTH,
+                 region_type = 'bbox')
+    tl['latitude'], tl['longitude'] = \
+        zip(*tl['sample_hash']\
+            .map(lambda x: \
+                 geohash.decode_exactly(x)[:2]))
+    tl['source_fn'] = tl.apply\
+        (lambda x: \
+         reanalysis_era5_land(location = x)['ofn'],
+         axis = 1)
+
+    return _sample(tl, what = what, how = sample_reanalysis,
+                   drop = ['datetime','date','year','week','source_fn',
+                           'dtimes','dlats','dlons','region_bbox'])

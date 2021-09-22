@@ -5,6 +5,7 @@ celery[redis]
 diskcache
 gunicorn
 lazy
+netcdf4
 numpy
 opencv-python
 pandas
@@ -15,4 +16,5 @@ requests
 rtree
 scipy
 shapely
+suntime
 tqdm

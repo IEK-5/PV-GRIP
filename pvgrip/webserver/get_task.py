@@ -13,7 +13,8 @@ from pvgrip.route.calls \
 from pvgrip.shadow.calls \
     import shadow, average_shadow
 from pvgrip.weather.calls \
-    import irradiance_route, irradiance_bbox
+    import irradiance_route, irradiance_bbox, \
+    reanalysis_route, reanalysis_bbox
 
 from pvgrip.status.utils \
     import status
@@ -79,6 +80,12 @@ def get_task(method, args):
         run = irradiance_bbox
     elif 'weather/irradiance/route' == method:
         run = irradiance_route
+    elif 'weather/reanalysis' == method:
+        run = reanalysis_bbox
+    elif 'weather/reanalysis/box' == method:
+        run = reanalysis_bbox
+    elif 'weather/reanalysis/route' == method:
+        run = reanalysis_route
     else:
         raise RuntimeError\
             ('method is not implemented')

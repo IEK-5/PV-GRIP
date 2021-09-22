@@ -67,8 +67,10 @@ GRASS_NJOBS = int(PVGRIP_CONFIGS['grass']['njobs'])
 SSDP=PVGRIP_CONFIGS['ssdp']['executable']
 SSDP_NJOBS = int(PVGRIP_CONFIGS['ssdp']['njobs'])
 
-COPERNICUS_HASH_LENGTH = \
-    int(PVGRIP_CONFIGS['copernicus']['hash_length'])
+COPERNICUS_CDS_HASH_LENGTH = \
+    int(PVGRIP_CONFIGS['copernicus']['cds_hash_length'])
+COPERNICUS_ADS_HASH_LENGTH = \
+    int(PVGRIP_CONFIGS['copernicus']['ads_hash_length'])
 COPERNICUS_CDS = {
     'url': PVGRIP_CONFIGS['copernicus']['cds_url'],
     'key': PVGRIP_CONFIGS['copernicus']['cds_key']}
@@ -120,7 +122,7 @@ def get_CASSANDRA_STORAGE():
 
 
 def get_IPFS_STORAGE():
-    return  IPFS_Files\
+    return IPFS_Files\
         (ipfs_ip = _IPFS_STORAGE_IP,
          cluster_ips = [_CASSANDRA_STORAGE_IP],
          keyspace_suffix = _IPFS_STORAGE_KEYSPACE_SUFFIX,
