@@ -3,7 +3,8 @@ import geohash
 import functools
 
 from pvgrip.globals \
-    import COPERNICUS_CDS, COPERNICUS_ADS, \
+    import COPERNICUS_ADS_CREDENTIALS, \
+    COPERNICUS_CDS_CREDENTIALS, \
     COPERNICUS_CDS_HASH_LENGTH, \
     COPERNICUS_ADS_HASH_LENGTH
 
@@ -42,9 +43,9 @@ def retrieve_source(credentials_type, what, args, ofn):
     logging.debug("retrieve_source\n{}"\
                   .format(format_dictionary(locals())))
     if 'cds' == credentials_type:
-        credentials = COPERNICUS_CDS
+        credentials = COPERNICUS_CDS_CREDENTIALS()
     elif 'ads' == credentials_type:
-        credentials = COPERNICUS_ADS
+        credentials = COPERNICUS_ADS_CREDENTIALS()
     else:
         raise RuntimeError("unknown credentials_type = {}"\
                            .format(credentials_type))

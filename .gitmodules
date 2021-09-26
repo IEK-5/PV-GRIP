@@ -7,3 +7,6 @@
 [submodule "pvgrip/storage/ipfs_io"]
 	path = pvgrip/storage/ipfs_io
 	url = https://github.com/esovetkin/ipfs_io.git
+[submodule "configs/secret"]
+	path = configs/secret
+	url = gitolite:albus/juelich/pvgrip/secret

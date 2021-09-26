@@ -19,6 +19,9 @@ from pvgrip.utils.redis.dictionary \
 from pvgrip.utils.get_configs \
     import get_configs
 
+from pvgrip.utils.credentials_circle \
+    import Credentials_Circle
+
 
 GIT_ROOT = git_root()
 
@@ -62,16 +65,16 @@ GRASS_NJOBS = int(PVGRIP_CONFIGS['grass']['njobs'])
 SSDP=PVGRIP_CONFIGS['ssdp']['executable']
 SSDP_NJOBS = int(PVGRIP_CONFIGS['ssdp']['njobs'])
 
+COPERNICUS_ADS_CREDENTIALS = Credentials_Circle\
+    (config_fn=PVGRIP_CONFIGS['copernicus']['credentials_ads'],
+     redis_url = REDIS_URL)
+COPERNICUS_CDS_CREDENTIALS = Credentials_Circle\
+    (config_fn=PVGRIP_CONFIGS['copernicus']['credentials_cds'],
+     redis_url = REDIS_URL)
 COPERNICUS_CDS_HASH_LENGTH = \
     int(PVGRIP_CONFIGS['copernicus']['cds_hash_length'])
 COPERNICUS_ADS_HASH_LENGTH = \
     int(PVGRIP_CONFIGS['copernicus']['ads_hash_length'])
-COPERNICUS_CDS = {
-    'url': PVGRIP_CONFIGS['copernicus']['cds_url'],
-    'key': PVGRIP_CONFIGS['copernicus']['cds_key']}
-COPERNICUS_ADS = {
-    'url': PVGRIP_CONFIGS['copernicus']['ads_url'],
-    'key': PVGRIP_CONFIGS['copernicus']['ads_key']}
 
 _LOGGING = {'INFO': logging.INFO,
             'DEBUG': logging.DEBUG,

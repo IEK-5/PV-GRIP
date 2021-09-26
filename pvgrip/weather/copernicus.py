@@ -16,6 +16,9 @@ from pvgrip.globals \
 from pvgrip.utils.times \
     import time_step2seconds
 
+from pvgrip.utils.limit_concurrent \
+    import limit_concurrent
+
 
 timeperiod_re = \
     r'([0-9]{4}-[0-9]{2}-[0-9]{2}T' + \
@@ -80,6 +83,7 @@ reanalysis_era5_variables = {
 }
 
 
+@limit_concurrent(maxtimes = 2)
 def retrieve(credentials, what, args, ofn):
     """Download CDS/ADS data
 
