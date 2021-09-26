@@ -9,7 +9,8 @@ from pvgrip.globals \
     COPERNICUS_CDS_HASH_LENGTH
 
 from pvgrip.storage.remotestorage_path \
-    import searchif_instorage
+    import searchif_instorage, \
+    searchandget_locally
 
 from pvgrip.weather.tasks \
     import retrieve_source, \
@@ -80,6 +81,7 @@ def irradiance_bbox(box, time_range, time_step, what):
 
 
 def irradiance_route(tsvfn_uploaded, what):
+    tsvfn_uploaded = searchandget_locally(tsvfn_uploaded)
     tl = route_tl(route_fn = tsvfn_uploaded,
                   hash_length = COPERNICUS_CDS_HASH_LENGTH,
                   region_type = 'coordinate')
@@ -94,6 +96,7 @@ def irradiance_route(tsvfn_uploaded, what):
 
 
 def reanalysis_route(tsvfn_uploaded, what):
+    tsvfn_uploaded = searchandget_locally(tsvfn_uploaded)
     tl = route_tl(route_fn = tsvfn_uploaded,
                   hash_length = COPERNICUS_ADS_HASH_LENGTH,
                   region_type = 'bbox')

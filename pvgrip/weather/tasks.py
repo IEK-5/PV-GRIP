@@ -21,6 +21,9 @@ from pvgrip.utils.files \
 from pvgrip.utils.format_dictionary \
     import format_dictionary
 
+from pvgrip.storage.remotestorage_path \
+    import searchandget_locally
+
 from pvgrip.weather.copernicus \
     import retrieve, \
     cams_solar_radiation_timeseries, \
@@ -67,6 +70,7 @@ def _save_tsv(df):
 def _sample(tl, what, how, drop):
     res = []
     for sfn, piece in tl.groupby(tl['source_fn']):
+        sfn = searchandget_locally(sfn)
         piece[list(what)] = how(piece, sfn, what = what)
         res += [piece]
     res = functools.reduce(lambda x,y: x.append(y),res)
@@ -84,6 +88,7 @@ def sample_irradiance_route(route_fn, what):
     logging.debug("sample_irradiance_route\n{}"\
                   .format(format_dictionary(locals())))
 
+    route_fn = searchandget_locally(route_fn)
     tl = route_tl(route_fn = route_fn,
                   hash_length = COPERNICUS_CDS_HASH_LENGTH,
                   region_type = 'coordinate')
@@ -125,6 +130,7 @@ def sample_reanalysis_route(route_fn, what):
     logging.debug("sample_reanalysis_route\n{}"\
                   .format(format_dictionary(locals())))
 
+    route_fn = searchandget_locally(route_fn)
     tl = route_tl(route_fn = route_fn,
                   hash_length = COPERNICUS_ADS_HASH_LENGTH,
                   region_type = 'bbox')
