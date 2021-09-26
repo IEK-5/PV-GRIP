@@ -38,7 +38,7 @@ def parse_args(data, defaults):
     res = {}
 
     if not data:
-        return res
+        data = {}
 
     for key, _ in data.items():
         if key not in defaults:
