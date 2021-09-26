@@ -160,7 +160,16 @@ def _method_results(method, args):
 
 
 @cache_fn_results(link = True,
-                  ignore = lambda x: isinstance(x,dict))
+                  ignore = lambda x: isinstance(x,dict),
+                  minage =
+                  {'method': \
+                   [('weather/irradiance',1632547215),
+                    ('weather/irradiance/route',1632547215),
+                    ('weather/irradiance/box',1632547215),
+                    ('weather/reanalysis',1632547215),
+                    ('weather/reanalysis/route',1632547215),
+                    ('weather/reanalysis/box',1632547215),
+                    ]})
 def call_method(method, args):
     tasks_queues = get_Tasks_Queues()
 

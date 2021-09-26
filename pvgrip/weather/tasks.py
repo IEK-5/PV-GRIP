@@ -78,7 +78,7 @@ def _sample(tl, what, how, drop):
 
 
 @CELERY_APP.task()
-@cache_fn_results()
+@cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
 def sample_irradiance_route(route_fn, what):
     logging.debug("sample_irradiance_route\n{}"\
@@ -97,7 +97,7 @@ def sample_irradiance_route(route_fn, what):
 
 
 @CELERY_APP.task()
-@cache_fn_results(minage = 1632258318)
+@cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
 def sample_irradiance_bbox(bbox, time_range, time_step, what):
     logging.debug("sample_irradiance_bbox\n{}"\
@@ -119,7 +119,7 @@ def sample_irradiance_bbox(bbox, time_range, time_step, what):
 
 
 @CELERY_APP.task()
-@cache_fn_results()
+@cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
 def sample_reanalysis_route(route_fn, what):
     logging.debug("sample_reanalysis_route\n{}"\
@@ -139,7 +139,7 @@ def sample_reanalysis_route(route_fn, what):
 
 
 @CELERY_APP.task()
-@cache_fn_results()
+@cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
 def sample_reanalysis_bbox(bbox, time_range, time_step, what):
     logging.debug("sample_reanalsysis_bbox\n{}"\

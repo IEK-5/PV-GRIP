@@ -58,6 +58,51 @@ def _compute_ofn(keys, args, kwargs, fname):
       return float_hash_fn(key), key
 
 
+def _ifpass_minage(minage, fntime, kwargs):
+    if not minage:
+        return False
+
+    if isinstance(minage, (int, float)):
+        return fntime > minage
+
+    if not isinstance(minage, dict):
+        logging.warning("""
+        minage argument has invalid format!
+        ignoting the minage value
+        minage = {}
+        fntime = {}
+        kwargs = {}
+        """.format(minage, fntime, kwargs))
+        return False
+
+    for k,item in minage.items():
+        if k not in kwargs:
+            logging.warning("""
+            minage argument contains irrelevant keys!
+            minage = {}
+            fntime = {}
+            kwargs = {}
+            """.format(minage, fntime, kwargs))
+            return False
+
+        if not isinstance(item, list):
+            logging.warning("""
+            minage argument has invalid format!
+            ignoring the values
+            minage = {}
+            fntime = {}
+            kwargs = {}
+            """.format(minage, fntime, kwargs))
+            return False
+
+        for x in item:
+            if kwargs[k] == x[0] \
+               and fntime < x[1]:
+                return False
+
+    return True
+
+
 def cache_fn_results(keys = None,
                      link = False,
                      ignore = lambda x: False,
@@ -107,10 +152,9 @@ def cache_fn_results(keys = None,
                 key = %s
                 ofn = %s
                 """ % (str(key), str(ofn)))
-                if not minage:
-                    return str(rpath)
-
-                if rpath.get_timestamp() > minage:
+                if _ifpass_minage(minage,
+                                  rpath.get_timestamp(),
+                                  kwargs):
                     return str(rpath)
 
             logging.debug("""
@@ -128,6 +172,8 @@ def cache_fn_results(keys = None,
                 tfn = searchandget_locally(tfn)
 
             if link:
+                if os.path.exists(ofn):
+                    os.remove(ofn)
                 os.link(tfn, ofn)
             else:
                 os.replace(tfn, ofn)
