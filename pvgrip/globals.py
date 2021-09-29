@@ -2,7 +2,6 @@ import os
 import json
 import celery
 import logging
-import configparser
 
 from cassandra_io.files \
     import Cassandra_Files
@@ -17,12 +16,8 @@ from pvgrip.storage.files_lrucache \
     import Files_LRUCache
 from pvgrip.utils.redis.dictionary \
     import Redis_Dictionary
-
-
-def get_configs(fn):
-    config = configparser.ConfigParser()
-    config.read(fn)
-    return config
+from pvgrip.utils.get_configs \
+    import get_configs
 
 
 GIT_ROOT = git_root()
