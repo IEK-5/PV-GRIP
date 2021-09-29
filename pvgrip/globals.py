@@ -15,7 +15,7 @@ from pvgrip.storage.spatial_data \
     import Spatial_Data
 from pvgrip.storage.files_lrucache \
     import Files_LRUCache
-from pvgrip.utils.redis_dictionary \
+from pvgrip.utils.redis.dictionary \
     import Redis_Dictionary
 
 
@@ -53,8 +53,8 @@ _IPFS_STORAGE_IP = \
 _IPFS_STORAGE_KEYSPACE_SUFFIX = \
     PVGRIP_CONFIGS['ipfs']['keyspace_suffix']
 
-REDIS_URL = 'redis://' + \
-    PVGRIP_CONFIGS['redis']['ip'] + ':6379/0'
+REDIS_URL = 'redis://{ip}:{port}/{db}'.format\
+    (ip=PVGRIP_CONFIGS['redis']['ip'],port=6379,db=0)
 
 ALLOWED_REMOTE = \
     json.loads(PVGRIP_CONFIGS['storage']['use_remotes'])
@@ -155,6 +155,4 @@ def get_SPATIAL_DATA():
 
 def get_Tasks_Queues():
     return Redis_Dictionary(name = 'pvgrip_tasks_queue',
-                            host = PVGRIP_CONFIGS['redis']['ip'],
-                            port = 6379,
-                            db = 0)
+                            redis_url = REDIS_URL)

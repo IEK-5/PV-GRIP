@@ -4,30 +4,29 @@ import redis
 from pvgrip.utils.float_hash \
     import float_hash
 
+from pvgrip.utils.redis.parse_url \
+    import parse_url
+
 
 class Redis_Dictionary:
 
 
-    def __init__(self, name, host, port, db,
+    def __init__(self, name, redis_url,
                  hash_function = float_hash,
                  expire_time = 7200):
         """A distributed dictionary with redis
 
-        :name: name of the hset in redis
+        :name: name of the set in redis
 
-        :host: redis hostname
-
-        :port: redis port
-
-        :db: redis db to use
+        :redis_url: how to connect to redis
 
         :hash_function: function that produces a hash for keys
 
         :expire_time: time to expire for dictionary items
         """
-        self._hash = hash_function
-        self._client = redis.StrictRedis(host = host, port = port, db = db)
         self._name = name
+        self._client = redis.StrictRedis(**parse_url(redis_url))
+        self._hash = hash_function
         self._expire = expire_time
 
 
