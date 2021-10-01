@@ -96,6 +96,7 @@ AUTODISCOVER_TASKS = [
     'pvgrip.status',
     'pvgrip.storage',
     'pvgrip.utils',
+    'pvgrip.weather',
     'pvgrip.webserver',
 ]
 
