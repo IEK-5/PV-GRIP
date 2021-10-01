@@ -1,4 +1,4 @@
-albus.pvgrip.wg     worker
-lupin.pvgrip.wg     worker webserver
-ipv357.pvgrip.wg    worker webserver
-jugepard7.pvgrip.wg worker
+albus.pvgrip.wg     worker worker_requests
+lupin.pvgrip.wg     worker worker_requests webserver
+ipv357.pvgrip.wg    worker worker_requests webserver
+jugepard7.pvgrip.wg worker worker_requests

@@ -182,7 +182,7 @@ function get_restart {
 function prune_byname {
     expr="$1"
     ids=$(docker container ls -a | \
-              grep "${expr}" | \
+              grep "${expr}\$" | \
               awk '{print $1}' | xargs)
     if [ ! -z "${ids}" ]
     then
@@ -277,6 +277,10 @@ case "${what}" in
         docommand=$(start_webserver)
         ;;
     worker)
+        prune_byname "${name_prefix}-${what}" || exit 1
+        docommand=$(start_worker)
+        ;;
+    worker_requests)
         prune_byname "${name_prefix}-${what}" || exit 1
         docommand=$(start_worker)
         ;;

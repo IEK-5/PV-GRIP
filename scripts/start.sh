@@ -54,7 +54,7 @@ function _start_celery_string {
                                       max_memory_worker) \
          -l $(python3 scripts/get_config.py \
                       server logging_level) \
-         --logfile='data/celery/logs/%n%I.log'
+         --logfile="data/celery/logs/%n$1%I.log"
 }
 
 
@@ -62,6 +62,14 @@ function start_worker {
     celery -A pvgrip \
            worker \
            $(_start_celery_string)
+}
+
+
+function start_worker_requests {
+    celery -A pvgrip \
+           worker \
+           -Q requests \
+           $(_start_celery_string "_requests")
 }
 
 
@@ -78,6 +86,9 @@ init_dirs
 case "${what}" in
     worker)
         start_worker
+        ;;
+    worker_requests)
+        start_worker_requests
         ;;
     webserver)
         start_webserver
