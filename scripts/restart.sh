@@ -27,6 +27,8 @@ git stash
 git fetch
 git reset --hard origin/dev
 git stash pop
+git submodule sync
+git submodule update --init configs/secret
 
 echo "Pull latest"
 ./pvgrip.sh --what=pull -d
