@@ -21,20 +21,26 @@ from pvgrip.utils.redis.lock \
 def limit_concurrent(maxtimes = 2,
                      sleep = 3,
                      locksleep = 0.5,
-                     lockexpire = 60):
+                     lockexpire = 60,
+                     keys = None):
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
             REDIS = redis.StrictRedis(**parse_url(REDIS_URL))
-            key = float_hash(("limit_concurrent_list",
-                              fun.__name__))
+            if keys is None:
+                key = float_hash(("limit_concurrent_list",
+                                  fun.__name__, args, kwargs))
+            else:
+                key = float_hash(("limit_concurrent_list",
+                                  fun.__name__, args,
+                                  [k for k in keys
+                                   if k in kwargs]))
 
             while True:
                 with RedisLock\
                      (redis_url = REDIS_URL,
                       key = float_hash\
-                      (("limit_concurrent_lock",
-                        fun.__name__, args, kwargs)),
+                      (("limit_concurrent_lock", key)),
                       sleep = locksleep,
                       timeout = lockexpire):
                     if REDIS.llen(key) <= maxtimes:

@@ -83,7 +83,7 @@ reanalysis_era5_variables = {
 }
 
 
-@limit_concurrent(maxtimes = 2)
+@limit_concurrent(maxtimes = 2, keys = ['credentials'])
 def retrieve(credentials, what, args, ofn):
     """Download CDS/ADS data
 
