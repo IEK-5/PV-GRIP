@@ -5,7 +5,7 @@ from pvgrip.utils.tasks \
 
 
 def test_queueonce():
-    from pvgrip.utils import TASK_RUNNING
+    from pvgrip.utils.exceptions import TASK_RUNNING
 
     a = task_test_queueonce.delay(sleep = 2, dummy = 1)
     b = task_test_queueonce.delay(sleep = 1, dummy = 1)

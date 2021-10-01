@@ -1,3 +1,5 @@
+import logging
+
 from functools \
     import wraps
 
@@ -18,14 +20,18 @@ def one_instance(expire=60):
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
+            key = float_hash\
+                (("one_instance_lock",
+                  fun.__name__, args, kwargs))
             try:
                 with RedisLock\
                      (redis_url = REDIS_URL,
-                      key = float_hash\
-                      (("one_instance_lock",
-                        fun.__name__, args, kwargs))):
+                      key = key,
+                      timeout = expire):
                     return fun(*args, **kwargs)
             except Locked:
-                raise TASK_RUNNING()
+                logging.debug("one_instance: {} is locked!"\
+                              .format(key))
+            raise TASK_RUNNING()
         return wrap
     return wrapper
