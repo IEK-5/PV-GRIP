@@ -131,7 +131,7 @@ class Credentials_Circle:
             current usage = {}
             """.format(name, [l.usage() \
                               for l in self._limits[name]]))
-            return self._data[name]
+            return (name, self._data[name])
 
         waittill = max([x for _, x in \
                         self._waittime_cache.items()])

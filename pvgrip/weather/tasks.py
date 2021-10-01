@@ -42,20 +42,39 @@ from pvgrip.weather.utils \
 def retrieve_source(credentials_type, what, args, ofn):
     logging.debug("retrieve_source\n{}"\
                   .format(format_dictionary(locals())))
-    if 'cds' == credentials_type:
-        credentials = COPERNICUS_CDS_CREDENTIALS()
-    elif 'ads' == credentials_type:
-        credentials = COPERNICUS_ADS_CREDENTIALS()
-    else:
-        raise RuntimeError("unknown credentials_type = {}"\
-                           .format(credentials_type))
 
-    retrieve(credentials = credentials,
-             what = what,
-             args = args,
-             ofn = ofn)
+    tried = dict()
+    while True:
+        if 'cds' == credentials_type:
+            name, credentials = COPERNICUS_CDS_CREDENTIALS()
+        elif 'ads' == credentials_type:
+            name, credentials = COPERNICUS_ADS_CREDENTIALS()
+        else:
+            raise RuntimeError("unknown credentials_type = {}"\
+                               .format(credentials_type))
 
-    return ofn
+        if name in tried:
+            if tried[name] > 3:
+                break
+            tried[name] += 1
+            continue
+        else:
+            tried[name] = 0
+
+        try:
+            retrieve(credentials = credentials,
+                     what = what,
+                     args = args,
+                     ofn = ofn)
+            return ofn
+        except Exception as e:
+            logging.warning("""retrieve_source
+            exception = {}
+            trying another credentials...
+            """.format(e))
+            continue
+
+    raise RuntimeError("retrieve_source failed")
 
 
 def _save_tsv(df):
