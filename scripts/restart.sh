@@ -40,6 +40,8 @@ if [ "${worker}" = "yes" ]
 then
     docker kill pvgrip-worker
     ./pvgrip.sh --what=worker
+    docker kill pvgrip-worker_requests
+    ./pvgrip.sh --what=worker_requests
 fi
 
 if [ "${webserver}" = "yes" ]
