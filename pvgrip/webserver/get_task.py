@@ -88,6 +88,7 @@ def get_task(method, args):
         run = reanalysis_route
     else:
         raise RuntimeError\
-            ('method is not implemented')
+            ('method={} is not implemented'\
+             .format(method))
 
     return run
