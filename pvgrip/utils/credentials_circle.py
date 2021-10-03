@@ -71,7 +71,8 @@ class Credentials_Circle:
 
             self._circle.add(name)
             self._limits[name] = \
-                self._form_limits(name,
+                self._form_limits("{}::{}"\
+                                  .format(self.config_fn, name),
                                   item['circle_limit'])
             del item['circle_limit']
             self._data[name] = item
