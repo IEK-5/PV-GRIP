@@ -2,6 +2,8 @@ import logging
 import geohash
 import functools
 
+from collections import defaultdict
+
 from pvgrip.globals \
     import COPERNICUS_ADS_CREDENTIALS, \
     COPERNICUS_CDS_CREDENTIALS, \
@@ -43,7 +45,7 @@ def retrieve_source(credentials_type, what, args, ofn):
     logging.debug("retrieve_source\n{}"\
                   .format(format_dictionary(locals())))
 
-    tried = dict()
+    tried = defaultdict(lambda: 0)
     while True:
         if 'cds' == credentials_type:
             name, credentials = COPERNICUS_CDS_CREDENTIALS()
@@ -53,13 +55,10 @@ def retrieve_source(credentials_type, what, args, ofn):
             raise RuntimeError("unknown credentials_type = {}"\
                                .format(credentials_type))
 
-        if name in tried:
-            if tried[name] > 3:
+        if tried[name] > 2:
+            if min(tried.values()) > 2:
                 break
-            tried[name] += 1
             continue
-        else:
-            tried[name] = 0
 
         try:
             retrieve(credentials = credentials,
@@ -72,6 +71,7 @@ def retrieve_source(credentials_type, what, args, ofn):
             exception = {}
             trying another credentials...
             """.format(e))
+            tried[name] += 1
             continue
 
     raise RuntimeError("retrieve_source failed")

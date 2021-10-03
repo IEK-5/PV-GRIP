@@ -3,6 +3,8 @@ import time
 import random
 import logging
 
+from collections import defaultdict
+
 from datetime import datetime
 
 from pvgrip.utils.limittime_counter \
@@ -105,15 +107,17 @@ class Credentials_Circle:
 
 
     def __call__(self):
-        first = None
-        name = self._circle()
+        tried = defaultdict(lambda: 0)
+        while True:
+            name = self._circle()
 
-        while first != name:
-            if first is None:
-                first = name
+            if tried[name] > 0:
+                if min(tried.values()) > 0:
+                    break
+                continue
 
             if not self._check_limits(name):
-                name = self._circle()
+                tried[name] = 1
                 continue
 
             with self._locks[name]:
@@ -123,7 +127,6 @@ class Credentials_Circle:
                 except FullQueue:
                     logging.debug("credential_circle: {} hit the limit!"\
                                   .format(name))
-                    name = self._circle()
                     continue
 
             logging.info("""
