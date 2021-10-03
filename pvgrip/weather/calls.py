@@ -26,6 +26,9 @@ from pvgrip.weather.copernicus \
     import cams_solar_radiation_timeseries, \
     reanalysis_era5_land
 
+from pvgrip.route.split_route \
+    import split_route_calls
+
 
 def _get_sources_tasks(calls):
     res = []
@@ -80,6 +83,11 @@ def irradiance_bbox(box, time_range, time_step, what):
     return jobs
 
 
+@split_route_calls(
+    fn_arg = 'tsvfn_uploaded',
+    hows = ("region_hash","month","week","date"),
+    hash_length = min(4,COPERNICUS_CDS_HASH_LENGTH),
+    maxnrows = 3000)
 def irradiance_route(tsvfn_uploaded, what):
     tsvfn_uploaded = searchandget_locally(tsvfn_uploaded)
     tl = route_tl(route_fn = tsvfn_uploaded,
@@ -95,6 +103,11 @@ def irradiance_route(tsvfn_uploaded, what):
     return jobs
 
 
+@split_route_calls(
+    fn_arg = 'tsvfn_uploaded',
+    hows = ("region_hash","month","week","date"),
+    hash_length = min(4,COPERNICUS_ADS_HASH_LENGTH),
+    maxnrows = 3000)
 def reanalysis_route(tsvfn_uploaded, what):
     tsvfn_uploaded = searchandget_locally(tsvfn_uploaded)
     tl = route_tl(route_fn = tsvfn_uploaded,

@@ -19,7 +19,15 @@ from pvgrip.ssdp.utils \
 from pvgrip.storage.remotestorage_path \
     import searchandget_locally
 
+from pvgrip.route.split_route \
+    import split_route_calls
 
+
+@split_route_calls(
+    fn_arg = 'tsvfn_uploaded',
+    hows = ("region_hash","month","week","date"),
+    hash_length = 4,
+    maxnrows = 3000)
 def ssdp_route(tsvfn_uploaded, box, box_delta,
                dhi, ghi, albedo, timestr, nsky, **kwargs):
     kwargs['output_type'] = 'pickle'
