@@ -282,9 +282,12 @@ git submodule update --init --recursive
 
 ### Setting up network
 
-It is recommended to set up a [Wireguard](https://www.wireguard.com/)
-network for communications between storage/worker nodes. For our setup
-we utilise [innernet](https://github.com/tonarino/innernet).
+It is recommended to set up an isolated network for communications
+between services. For our setup we utilise
+[innernet](https://github.com/tonarino/innernet) based on the
+[Wireguard](https://www.wireguard.com/), or
+[hyprspace](https://github.com/hyprspace/hyprspace) based on the
+[libp2p](https://libp2p.io/).
 
 Below it is assumed that each node has a network interface `pvgrip`
 set up, such that each node can reach another one within this
