@@ -16,6 +16,9 @@ from pvgrip.storage.upload \
 from pvgrip.route.tasks \
     import merge_tsv
 
+from pvgrip.storage.remotestorage_path \
+    import searchandget_locally
+
 
 class _saveas_request_data:
     """just a dummy class that has .save method
@@ -98,6 +101,8 @@ def split_route(route_fn,
     :maxnrows: defines when to try to split the file on chunk
 
     """
+    route_fn = searchandget_locally(route_fn)
+
     route = _read_route(route_fn, hows = hows,
                         hash_length = hash_length)
     chunks = _split_route(route,
