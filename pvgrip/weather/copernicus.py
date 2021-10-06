@@ -30,10 +30,14 @@ timeperiod_re = re.compile('^' + timeperiod_re + '$')
 
 # see: https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land?tab=overview
 reanalysis_era5_variables = {
-    '10m_u_component_of_wind': 'u10',
-    '10m_v_component_of_wind': 'v10',
-    '2m_dewpoint_temperature': '2dm',
-    '2m_temperature': 't2m',
+    '10m_u_component_of_wind': {'netcdf': 'u10',
+                                'grib': '10u'},
+    '10m_v_component_of_wind': {'netcdf': 'v10',
+                                'grib': '10v'},
+    '2m_dewpoint_temperature': {'netcdf': '2dm',
+                                'grib': '2d'},
+    '2m_temperature': {'netcdf': 't2m',
+                       'grib': '2t'},
     'evaporation_from_bare_soil': 'evabs',
     'evaporation_from_open_water_surfaces_excluding_oceans': 'evaow',
     'evaporation_from_the_top_of_canopy': 'evatc',
@@ -81,6 +85,20 @@ reanalysis_era5_variables = {
     'volumetric_soil_water_layer_3': 'swvl3',
     'volumetric_soil_water_layer_4': 'swvl4',
 }
+
+
+def _get_shortname(item, frmt='netcdf'):
+    value = reanalysis_era5_variables[item]
+
+    if not isinstance(value, dict):
+        return value
+
+    if frmt not in value:
+        raise RuntimeError\
+            ("""{} format shortname is not specified
+            in reanalysis_era5_variables""".format(frmt))
+
+    return value[frmt]
 
 
 @limit_concurrent(maxtimes = 2, keys = ['credentials'])
@@ -316,7 +334,7 @@ def sample_reanalysis(time_location, source_fn, what):
          lons=src['longitude'][:].data)
 
     for item in what:
-        src_item = reanalysis_era5_variables[item]
+        src_item = _get_shortname(item, frmt='netcdf')
         if src_item not in list(src.variables):
             raise RuntimeError("{}={} not in src!"\
                                .format(item,src_item))
@@ -328,3 +346,7 @@ def sample_reanalysis(time_location, source_fn, what):
                    axis = 1)
 
     return time_location[list(what)]
+
+
+def sample_reanalysis_grib(time_location, source_fn, what):
+    src = pygrib.open(source_fn)

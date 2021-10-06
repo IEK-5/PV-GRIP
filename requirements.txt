@@ -11,6 +11,7 @@ netcdf4
 numpy
 opencv-python
 pandas
+pygrib
 pyproj
 pytest
 python-geohash
