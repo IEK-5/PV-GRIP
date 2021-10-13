@@ -393,9 +393,9 @@ starts a processing node.
 
 ## Data
 
-The server utilises [Cassandra](https://cassandra.apache.org/) and
-[IPFS](https://ipfs.io/) that stores distributed data and spatial
-index.
+The server utilises [Cassandra](https://cassandra.apache.org/),
+[IPFS](https://ipfs.io/) and [IPFS Cluster](https://cluster.ipfs.io/)
+that stores distributed data and spatial index.
 
 ### Uploading data
 

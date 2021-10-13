@@ -33,8 +33,6 @@ RESULTS_PATH = os.path.join(GIT_ROOT,'data','results_cache')
 
 _CASSANDRA_STORAGE_IP = \
     PVGRIP_CONFIGS['cassandra']['ip']
-_CASSANDRA_STORAGE_CHUNKSIZE = \
-    int(PVGRIP_CONFIGS['cassandra']['chunksize'])
 _CASSANDRA_STORAGE_KEYSPACE_SUFFIX = \
     PVGRIP_CONFIGS['cassandra']['keyspace_suffix']
 _CASSANDRA_REPLICATION = \
@@ -107,19 +105,6 @@ def get_RESULTS_CACHE():
          maxsize = int(PVGRIP_CONFIGS['cache']['limit_worker']))
 
 
-def get_CASSANDRA_STORAGE():
-    return  Cassandra_Files\
-        (cluster_ips = [_CASSANDRA_STORAGE_IP],
-         keyspace_suffix = _CASSANDRA_STORAGE_KEYSPACE_SUFFIX,
-         chunk_size = _CASSANDRA_STORAGE_CHUNKSIZE,
-         replication = _CASSANDRA_REPLICATION,
-         replication_args = _CASSANDRA_REPLICATION_ARGS,
-         protocol_version = 4,
-         connect_timeout = 60,
-         idle_heartbeat_timeout = 300,
-         control_connection_timeout = 30)
-
-
 def get_IPFS_STORAGE():
     return IPFS_Files\
         (ipfs_ip = _IPFS_STORAGE_IP,
@@ -136,8 +121,6 @@ def get_IPFS_STORAGE():
 def get_SPATIAL_DATA():
     if 'ipfs_path' == DEFAULT_REMOTE:
         storage = get_IPFS_STORAGE()
-    elif 'cassandra_path' == DEFAULT_REMOTE:
-        storage = get_CASSANDRA_STORAGE()
     else:
         raise RuntimeError("unknown storage type")
 

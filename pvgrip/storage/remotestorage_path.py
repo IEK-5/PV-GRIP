@@ -98,11 +98,6 @@ class RemoteStoragePath:
 
     @property
     def _storage(self):
-        if self.remotetype == 'cassandra_path':
-            from pvgrip.globals \
-                import get_CASSANDRA_STORAGE
-            return get_CASSANDRA_STORAGE()
-
         if self.remotetype == 'ipfs_path':
             from pvgrip.globals \
                 import get_IPFS_STORAGE
