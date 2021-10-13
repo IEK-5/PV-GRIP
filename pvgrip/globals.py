@@ -154,4 +154,5 @@ def get_SPATIAL_DATA():
 
 def get_Tasks_Queues():
     return Redis_Dictionary(name = 'pvgrip_tasks_queue',
-                            redis_url = REDIS_URL)
+                            redis_url = REDIS_URL,
+                            expire_time = 86400)
