@@ -1,7 +1,9 @@
 import re
 
 from pvgrip.globals \
-    import ALLOWED_REMOTE
+    import ALLOWED_REMOTE, RESULTS_PATH
+from pvgrip.utils.locallock \
+    import LocalLock
 
 REGEX = re.compile(r'^(.*)://(.*)')
 
@@ -139,26 +141,28 @@ class RemoteStoragePath:
 
 
     def get_locally(self):
-        if self.path in self._localcache:
+        with LocalLock(key = self.path,
+                       path = RESULTS_PATH):
+            if self.path in self._localcache:
+                return self.path
+
+            if self.path not in self._storage:
+                raise RuntimeError\
+                    ("{path} not a {remotetype}!"\
+                     .format(path=self.path,
+                             remotetype=self.remotetype))
+
+            try:
+                self._storage.download(self.path, self.path)
+            except Exception as e:
+                raise RuntimeError\
+                    ("""Failed to download file: {}
+                    error: {}
+                    remotetype: {}
+                    """.format(self.path,str(e),self.remotetype))
+
+            self._localcache.add(self.path)
             return self.path
-
-        if self.path not in self._storage:
-            raise RuntimeError\
-                ("{path} not a {remotetype}!"\
-                 .format(path=self.path,
-                         remotetype=self.remotetype))
-
-        try:
-            self._storage.download(self.path, self.path)
-        except Exception as e:
-            raise RuntimeError\
-                ("""Failed to download file: {}
-                error: {}
-                remotetype: {}
-                """.format(self.path,str(e),self.remotetype))
-
-        self._localcache.add(self.path)
-        return self.path
 
 
     def upload(self):
