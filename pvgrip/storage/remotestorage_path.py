@@ -1,3 +1,4 @@
+import os
 import re
 
 from pvgrip.globals \
@@ -176,3 +177,20 @@ class RemoteStoragePath:
                 """.format(self.path,str(e),self.remotetype))
 
         self._localcache.add(self.path)
+
+
+    def link(self, src):
+        try:
+            self._storage.link(src, self.path)
+        except Exception as e:
+            raise RuntimeError\
+                ("""Failed to link file!
+                source: {}
+                destination: {}
+                error: {}
+                remotetype: {}
+                """.format(src, self.path,
+                           str(e),self.remotetype))
+
+        if os.path.exists(self.path):
+            self._localcache.add(self.path)
