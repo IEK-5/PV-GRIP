@@ -1,5 +1,6 @@
 import os
 import re
+import logging
 
 from pvgrip.globals \
     import ALLOWED_REMOTE, RESULTS_PATH
@@ -139,17 +140,22 @@ class RemoteStoragePath:
     def get_locally(self):
         with LocalLock(key = self.path,
                        path = RESULTS_PATH):
+            logging.debug("get_locally: got the lock")
             if self.path in self._localcache:
                 return self.path
 
+            logging.debug("get_locally: check local")
             if self.path not in self._storage:
                 raise RuntimeError\
                     ("{path} not a {remotetype}!"\
                      .format(path=self.path,
                              remotetype=self.remotetype))
 
+            logging.debug("get_locally: check remote")
             try:
+                logging.debug("get_locally: start downloading")
                 self._storage.download(self.path, self.path)
+                logging.debug("get_locally: finish downloading")
             except Exception as e:
                 raise RuntimeError\
                     ("""Failed to download file: {}
@@ -157,6 +163,7 @@ class RemoteStoragePath:
                     remotetype: {}
                     """.format(self.path,str(e),self.remotetype))
 
+            logging.debug("get_locally: add to localcache")
             self._localcache.add(self.path)
             return self.path
 
