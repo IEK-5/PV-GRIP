@@ -1,5 +1,6 @@
 import os
 import pickle
+import celery
 import logging
 
 from functools import wraps
@@ -15,6 +16,9 @@ from pvgrip.utils.float_hash \
 
 from pvgrip.utils.files \
     import get_tempfile, remove_file, move_file
+
+from pvgrip.utils.tasks \
+    import call_fn_cache
 
 
 def _get_locally_item(x):
@@ -190,6 +194,70 @@ def cache_fn_results(keys = None,
 
             ofn_rpath.upload()
             return str(ofn_rpath)
+        return wrap
+    return wrapper
+
+
+def call_cache_fn_results(keys = None,
+                          minage = None,
+                          storage_type = DEFAULT_REMOTE):
+    """Wraps tasks generation calls (*/calls.py)
+
+    This adds an additional task to the queue, that sets the result of
+    the call to the cache
+
+    :keys: list of arguments name to use for computing the unique name
+    for the cache item
+
+    :minage: unixtime, minage of acceptable stored cached value. if
+    None any cached value is accepted
+
+    :storage_type: type of remote storage. Either: 'cassandra_path' or 'ipfs_path'.
+
+    """
+    def wrapper(fun):
+        @wraps(fun)
+        def wrap(*args, **kwargs):
+            ofn = _compute_ofn(keys = keys,
+                               args = args,
+                               kwargs = kwargs,
+                               fname = fun.__name__,
+                               ofn_arg = None)
+            ofn_rpath = RemoteStoragePath\
+                (ofn, remotetype=storage_type)
+
+            if ofn_rpath.in_storage() and \
+               _ifpass_minage(minage,
+                              ofn_rpath.get_timestamp(),
+                              kwargs):
+                logging.debug("""
+                Result of the call function is in cache!
+                ofn = {}
+                fun = {}
+                args = {}
+                kwargs = {}
+                """.format(ofn, fun.__name__,
+                           args, kwargs))
+                return call_fn_cache.signature\
+                    (kwargs = {'result': None,
+                               'ofn': str(ofn_rpath),
+                               'storage_type': storage_type})
+
+            logging.debug("""
+            Result of the call function is NOT in cache!
+            ofn = {}
+            fun = {}
+            args = {}
+            kwargs = {}
+            """.format(ofn, fun.__name__,
+                       args, kwargs))
+
+            calls = fun(*args, **kwargs)
+            calls |= call_fn_cache.signature\
+                (kwargs = {'ofn': str(ofn_rpath),
+                           'storage_type': storage_type})
+
+            return calls
         return wrap
     return wrapper
 
