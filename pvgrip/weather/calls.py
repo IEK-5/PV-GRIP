@@ -4,6 +4,9 @@ import pandas as pd
 
 from datetime import datetime
 
+from pvgrip.utils.cache_fn_results \
+    import call_cache_fn_results
+
 from pvgrip.globals \
     import COPERNICUS_ADS_HASH_LENGTH, \
     COPERNICUS_CDS_HASH_LENGTH
@@ -65,6 +68,7 @@ def _reanalysis_source_jobs(tl):
     return _get_sources_tasks(calls)
 
 
+@call_cache_fn_results()
 def irradiance_bbox(box, time_range, time_step, what):
     tl = bbox_tl(box = box,
                  time_range = time_range,
@@ -88,6 +92,7 @@ def irradiance_bbox(box, time_range, time_step, what):
     hows = ("region_hash","month","week","date"),
     hash_length = min(4,COPERNICUS_CDS_HASH_LENGTH),
     maxnrows = 3000)
+@call_cache_fn_results()
 def irradiance_route(tsvfn_uploaded, what):
     tsvfn_uploaded = searchandget_locally(tsvfn_uploaded)
     tl = route_tl(route_fn = tsvfn_uploaded,
@@ -108,6 +113,7 @@ def irradiance_route(tsvfn_uploaded, what):
     hows = ("region_hash","month","week","date"),
     hash_length = min(4,COPERNICUS_ADS_HASH_LENGTH),
     maxnrows = 3000)
+@call_cache_fn_results()
 def reanalysis_route(tsvfn_uploaded, what):
     tsvfn_uploaded = searchandget_locally(tsvfn_uploaded)
     tl = route_tl(route_fn = tsvfn_uploaded,
@@ -123,6 +129,7 @@ def reanalysis_route(tsvfn_uploaded, what):
     return jobs
 
 
+@call_cache_fn_results()
 def reanalysis_bbox(box, time_range, time_step, what):
     tl = bbox_tl(box = box,
                  time_range = time_range,

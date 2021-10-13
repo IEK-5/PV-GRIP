@@ -1,5 +1,8 @@
 import celery
 
+from pvgrip.utils.cache_fn_results \
+    import call_cache_fn_results
+
 from pvgrip.storage.remotestorage_path \
     import searchif_instorage
 
@@ -83,6 +86,7 @@ def convert_from_to(tasks, from_type, to_type):
     return _convert_from_pickle(tasks, to_type)
 
 
+@call_cache_fn_results()
 def sample_raster(box, data_re, stat,
                   mesh_type, step, output_type):
     check_box_not_too_big(box = box, step = step,

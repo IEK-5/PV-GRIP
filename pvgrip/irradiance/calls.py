@@ -1,3 +1,6 @@
+from pvgrip.utils.cache_fn_results \
+    import call_cache_fn_results
+
 from pvgrip.raster.calls \
     import sample_raster, convert_from_to
 from pvgrip.irradiance.tasks \
@@ -7,6 +10,7 @@ from pvgrip.ssdp.utils \
     import timestr2utc_time, centre_of_box
 
 
+@call_cache_fn_results()
 def irradiance_ssdp(timestr, ghi, dhi, albedo, nsky,
                     **kwargs):
     """Start the irradiance
@@ -40,6 +44,7 @@ def irradiance_ssdp(timestr, ghi, dhi, albedo, nsky,
                            to_type = output_type)
 
 
+@call_cache_fn_results()
 def irradiance_grass(timestr, rsun_args, **kwargs):
     """Start irradiance job
 

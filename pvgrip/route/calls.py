@@ -1,6 +1,9 @@
 import celery
 import pickle
 
+from pvgrip.utils.cache_fn_results \
+    import call_cache_fn_results
+
 from pvgrip.route.cluster_route_boxes \
     import get_list_rasters
 from pvgrip.route.tasks \
@@ -28,6 +31,7 @@ from pvgrip.route.split_route \
     hows = ("region_hash","month","week","date"),
     hash_length = 4,
     maxnrows = 3000)
+@call_cache_fn_results()
 def ssdp_route(tsvfn_uploaded, box, box_delta,
                dhi, ghi, albedo, timestr, nsky, **kwargs):
     kwargs['output_type'] = 'pickle'

@@ -1,3 +1,6 @@
+from pvgrip.utils.cache_fn_results \
+    import call_cache_fn_results
+
 from pvgrip.raster.calls \
     import sample_raster, convert_from_to
 
@@ -8,6 +11,7 @@ from pvgrip.ssdp.utils \
     import centre_of_box
 
 
+@call_cache_fn_results()
 def ssdp_integrate(tsvfn_uploaded,
                    albedo, nsky, **kwargs):
     output_type = kwargs['output_type']

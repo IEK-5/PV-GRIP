@@ -1,5 +1,8 @@
 import celery
 
+from pvgrip.utils.cache_fn_results \
+    import call_cache_fn_results
+
 from pvgrip.osm.utils \
     import get_box_list, create_rules
 
@@ -13,6 +16,7 @@ from pvgrip.osm.tasks \
     merge_osm, render_osm_data, readpng_asarray
 
 
+@call_cache_fn_results()
 def osm_render(box, step, mesh_type, tag, output_type):
     width, _ = check_box_not_too_big\
         (box = box, step = step,

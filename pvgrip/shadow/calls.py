@@ -2,6 +2,9 @@ import celery
 
 import pandas as pd
 
+from pvgrip.utils.cache_fn_results \
+    import call_cache_fn_results
+
 from pvgrip.shadow.tasks \
     import compute_incidence, compute_shadow_map, \
     average_png
@@ -13,6 +16,7 @@ from pvgrip.storage.remotestorage_path \
     import searchandget_locally
 
 
+@call_cache_fn_results()
 def shadow(timestr, what='shadow',
            output_type='png', **kwargs):
     """Start the shadow job
@@ -44,6 +48,7 @@ def shadow(timestr, what='shadow',
                            to_type = output_type)
 
 
+@call_cache_fn_results()
 def average_shadow(timestrs_fn, output_type='png', **kwargs):
     """Compute a heatmap of shadows over some times
 
