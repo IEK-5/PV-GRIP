@@ -14,7 +14,7 @@ from pvgrip.utils.float_hash \
     import float_hash_fn
 
 from pvgrip.utils.files \
-    import get_tempfile, remove_file
+    import get_tempfile, remove_file, move_file
 
 
 def _get_locally_item(x):
@@ -46,16 +46,22 @@ def _get_locally(*args, **kwargs):
     return args, kwargs
 
 
-def _compute_ofn(keys, args, kwargs, fname):
-      if keys is not None:
-          uniq = (args,)
-          if kwargs:
-              uniq = {k:v for k,v in kwargs.items()
-                      if k in keys}
-      else:
-          uniq = (args, kwargs)
-      key = ("cache_results", fname, uniq)
-      return float_hash_fn(key), key
+def _compute_ofn(keys, args, kwargs, fname, ofn_arg):
+    """Compute ofn and key
+
+    """
+    if ofn_arg is not None and ofn_arg in kwargs:
+        return kwargs[ofn_arg]
+
+    if keys is not None:
+        uniq = (args,)
+        if kwargs:
+            uniq = {k:v for k,v in kwargs.items()
+                    if k in keys}
+    else:
+        uniq = (args, kwargs)
+    key = ("cache_results", fname, uniq)
+    return float_hash_fn(key)
 
 
 def _ifpass_minage(minage, fntime, kwargs):
@@ -131,54 +137,59 @@ def cache_fn_results(keys = None,
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
-            if not ofn_arg or ofn_arg not in kwargs:
-                ofn, key = _compute_ofn(keys = keys,
-                                   args = args,
-                                   kwargs = kwargs,
-                                   fname = fun.__name__)
-            else:
-                ofn, key = kwargs[ofn_arg], 'NA'
-            rpath = RemoteStoragePath\
+            ofn = _compute_ofn(keys = keys,
+                               args = args,
+                               kwargs = kwargs,
+                               fname = fun.__name__,
+                               ofn_arg = ofn_arg)
+            ofn_rpath = RemoteStoragePath\
                 (ofn, remotetype=storage_type)
-            _rpath = search_determineremote\
-                (ofn, ignore_remote = storage_type)
 
-            if rpath.in_storage() or _rpath is not None:
-                if _rpath is not None:
-                    rpath = _rpath
-
+            if ofn_rpath.in_storage() and \
+               _ifpass_minage(minage,
+                              ofn_rpath.get_timestamp(),
+                              kwargs):
                 logging.debug("""
                 File is in cache!
-                key = %s
-                ofn = %s
-                """ % (str(key), str(ofn)))
-                if _ifpass_minage(minage,
-                                  rpath.get_timestamp(),
-                                  kwargs):
-                    return str(rpath)
+                ofn = {}
+                fun = {}
+                args = {}
+                kwargs = {}
+                """.format(ofn, fun.__name__,
+                           args, kwargs))
+                return str(ofn_rpath)
 
             logging.debug("""
                 File is NOT in cache!
-                key = %s
-                ofn = %s
-                """ % (str(key), ofn))
+                ofn = {}
+                fun = {}
+                args = {}
+                kwargs = {}
+                """.format(ofn, fun.__name__,
+                           args, kwargs))
 
+            # make all filenames in arguments available locally
             args, kwargs = _get_locally(*args, **kwargs)
             tfn = fun(*args, **kwargs)
+
+            # check ignore condition
             if ignore(tfn):
                 return tfn
 
-            if is_remote_path(tfn):
-                tfn = searchandget_locally(tfn)
+            tfn_rpath = RemoteStoragePath\
+                (tfn, remotetype=storage_type)
+            tfn_lpath = tfn_rpath.path
 
-            if link:
-                if os.path.exists(ofn):
-                    os.remove(ofn)
-                os.link(tfn, ofn)
-            else:
-                os.replace(tfn, ofn)
-            rpath.upload()
-            return str(rpath)
+            if os.path.exists(tfn_lpath):
+                move_file(tfn_lpath, ofn, link)
+
+            # in case output is the remote path
+            if is_remote_path(tfn):
+                ofn_rpath.link(tfn_lpath)
+                return str(ofn_rpath)
+
+            ofn_rpath.upload()
+            return str(ofn_rpath)
         return wrap
     return wrapper
 

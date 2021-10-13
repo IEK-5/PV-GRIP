@@ -30,6 +30,16 @@ def remove_file(fn):
         pass
 
 
+def move_file(src, dst, link = False):
+    if link:
+        if os.path.exists(dst):
+            os.remove(dst)
+        os.link(src, dst)
+        return
+
+    os.replace(src, dst)
+
+
 def list_files(path, regex):
     r = re.compile(regex)
     return [os.path.join(dp, f) \
