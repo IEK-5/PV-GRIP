@@ -70,7 +70,7 @@ def _compute_ofn(keys, args, kwargs, fname, ofn_arg):
 
 def _ifpass_minage(minage, fntime, kwargs):
     if not minage:
-        return False
+        return True
 
     if isinstance(minage, (int, float)):
         return fntime > minage
