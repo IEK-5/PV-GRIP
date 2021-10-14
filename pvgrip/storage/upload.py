@@ -21,7 +21,7 @@ def _hash_file(fn, chunk_size = 4096):
     return h.hexdigest()
 
 
-@cache_fn_results(keys = None, link = True, ofn_arg = 'name')
+@cache_fn_results(keys = ['name'], link = True, ofn_arg = 'name')
 def _upload_file(fn, name):
     return fn
 
