@@ -1,11 +1,10 @@
 import os
 import re
 import logging
+import filelock
 
 from pvgrip.globals \
     import ALLOWED_REMOTE, RESULTS_PATH
-from pvgrip.utils.locallock \
-    import LocalLock
 
 REGEX = re.compile(r'^(.*)://(.*)')
 
@@ -138,8 +137,9 @@ class RemoteStoragePath:
 
 
     def get_locally(self):
-        with LocalLock(key = self.path,
-                       path = RESULTS_PATH):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+
+        with filelock.FileLock(self.path + ".lock"):
             logging.debug("get_locally: got the lock")
             if self.path in self._localcache:
                 return self.path

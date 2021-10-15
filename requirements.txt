@@ -3,6 +3,7 @@ cachetools
 cdsapi
 celery[redis]
 diskcache
+filelock
 gunicorn
 lazy
 netcdf4
