@@ -30,10 +30,10 @@ from pvgrip.utils.format_dictionary \
     import format_dictionary
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 10)
-def find_osm_data_online(bbox, tag):
+def find_osm_data_online(self, bbox, tag):
     logging.debug("find_osm_data_online\n{}"\
                   .format(format_dictionary(locals())))
     query = form_query(bbox, tag)
@@ -54,10 +54,10 @@ def find_osm_data_online(bbox, tag):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 10)
-def readpng_asarray(png_fn, box, step, mesh_type):
+def readpng_asarray(self, png_fn, box, step, mesh_type):
     logging.debug("readpng_asarray\n{}"\
                   .format(format_dictionary(locals())))
     grid = mesh(box = box, step = step,
@@ -76,10 +76,10 @@ def readpng_asarray(png_fn, box, step, mesh_type):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 10)
-def merge_osm(osm_files):
+def merge_osm(self, osm_files):
     logging.debug("merge_osm\n{}"\
                   .format(format_dictionary(locals())))
     wdir = get_tempdir()
@@ -97,10 +97,10 @@ def merge_osm(osm_files):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 10)
-def render_osm_data(osm_fn, rules_fn, box, width):
+def render_osm_data(self, osm_fn, rules_fn, box, width):
     logging.debug("render_osm_data\n{}"\
                   .format(format_dictionary(locals())))
     wdir = get_tempdir()

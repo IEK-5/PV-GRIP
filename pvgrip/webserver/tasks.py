@@ -7,9 +7,9 @@ from pvgrip.webserver.get_task \
     import get_task
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @one_instance(expire = 3600)
-def generate_task_queue(method, args):
+def generate_task_queue(self, method, args):
     """Generate processing queue
 
     :method, args: see webserver/utils.py::call_method

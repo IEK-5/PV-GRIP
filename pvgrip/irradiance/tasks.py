@@ -33,10 +33,10 @@ from pvgrip.raster.gdalinterface \
     import GDALInterface
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 60*10)
-def compute_irradiance_ssdp(ifn,
+def compute_irradiance_ssdp(self, ifn,
                             utc_time, lat, lon,
                             ghi, dhi, albedo,
                             nsky):
@@ -68,10 +68,10 @@ def compute_irradiance_ssdp(ifn,
         remove_file(ssdp_ofn)
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results(minage = 1626846910)
 @one_instance(expire = 60*10)
-def compute_irradiance_grass(elevation_fn, timestr,
+def compute_irradiance_grass(self, elevation_fn, timestr,
                              aspect_fn = None, aspect_value = None,
                              slope_fn = None, slope_value = None,
                              linke_fn = None, linke_value = None,

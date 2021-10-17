@@ -54,7 +54,8 @@ function _start_celery_string {
                                       max_memory_worker) \
          -l $(python3 scripts/get_config.py \
                       server logging_level) \
-         --logfile="data/celery/logs/%n$1%I.log"
+         --logfile="data/celery/logs/%n$1%I.log" \
+         --events
 }
 
 

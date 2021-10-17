@@ -24,10 +24,10 @@ from pvgrip.integrate.utils \
     import write_irrtimes
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 60*10)
-def integrate_irradiance(ifn, times_fn,
+def integrate_irradiance(self, ifn, times_fn,
                          lat, lon,
                          albedo, nsky):
     logging.debug("integrate_irradiance\n{}"\

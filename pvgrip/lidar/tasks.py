@@ -22,10 +22,10 @@ from pvgrip.utils.format_dictionary \
     import format_dictionary
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 60*5)
-def download_laz(url):
+def download_laz(self, url):
     logging.debug("download_laz\n{}"\
                   .format(format_dictionary(locals())))
     r = requests.get(url, allow_redirects=True)
@@ -42,10 +42,10 @@ def download_laz(url):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results(ofn_arg = 'ofn')
 @one_instance(expire = 60*20)
-def run_pdal(laz_fn, resolution, what, ofn):
+def run_pdal(self, laz_fn, resolution, what, ofn):
     logging.debug("run_pdal\n{}"\
                   .format(format_dictionary(locals())))
     wdir = get_tempdir()
@@ -62,10 +62,10 @@ def run_pdal(laz_fn, resolution, what, ofn):
         shutil.rmtree(wdir)
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results(ofn_arg = 'ofn')
 @one_instance(expire = 5)
-def link_ofn(ifn, ofn):
+def link_ofn(self, ifn, ofn):
     logging.debug("link_ofn\n{}"\
                   .format(format_dictionary(locals())))
     os.link(ifn, ofn)

@@ -27,10 +27,10 @@ from pvgrip.utils.format_dictionary \
     import format_dictionary
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 400)
-def merge_tsv(tsv_files):
+def merge_tsv(self, tsv_files):
     logging.debug("merge_tsv\n{}"\
                   .format(format_dictionary(locals())))
     ofn = get_tempfile()
@@ -46,10 +46,10 @@ def merge_tsv(tsv_files):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 60*10)
-def compute_route(ifn, route, lat, lon,
+def compute_route(self, ifn, route, lat, lon,
                   ghi_default, dhi_default,
                   time_default, albedo, nsky):
     logging.debug("compute_route\n{}"\

@@ -31,10 +31,10 @@ from pvgrip.utils.format_dictionary \
     import format_dictionary
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 10)
-def save_geotiff(pickle_fn):
+def save_geotiff(self, pickle_fn):
     logging.debug("save_geotiff\n{}"\
                   .format(format_dictionary(locals())))
     with open(pickle_fn, 'rb') as f:
@@ -48,10 +48,10 @@ def save_geotiff(pickle_fn):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire=10)
-def save_png(pickle_fn, normalize = False):
+def save_png(self, pickle_fn, normalize = False):
     logging.debug("save_png\n{}"\
                   .format(format_dictionary(locals())))
     with open(pickle_fn, 'rb') as f:
@@ -67,10 +67,10 @@ def save_png(pickle_fn, normalize = False):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 10)
-def save_pnghillshade(geotiff_fn):
+def save_pnghillshade(self, geotiff_fn):
     logging.debug("save_pnghillshade\n{}"\
                   .format(format_dictionary(locals())))
     ofn = get_tempfile()
@@ -82,10 +82,10 @@ def save_pnghillshade(geotiff_fn):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 30)
-def save_pickle(geotiff_fn):
+def save_pickle(self, geotiff_fn):
     logging.debug("save_pickle\n{}"\
                   .format(format_dictionary(locals())))
     ofn = get_tempfile()
@@ -97,10 +97,10 @@ def save_pickle(geotiff_fn):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 60*10)
-def sample_from_box(box, data_re, stat,
+def sample_from_box(self, box, data_re, stat,
                     mesh_type = 'metric', step = 1):
     logging.debug("sample_from_box\n{}"\
                   .format(format_dictionary(locals())))

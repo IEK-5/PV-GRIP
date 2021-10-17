@@ -38,10 +38,10 @@ from pvgrip.weather.utils \
     import bbox_tl, route_tl
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results(ofn_arg = 'ofn')
 @one_instance(expire = 600)
-def retrieve_source(credentials_type, what, args, ofn):
+def retrieve_source(self, credentials_type, what, args, ofn):
     logging.debug("retrieve_source\n{}"\
                   .format(format_dictionary(locals())))
 
@@ -101,10 +101,10 @@ def _sample(tl, what, how, drop):
     return _save_tsv(res)
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
-def sample_irradiance_route(route_fn, what):
+def sample_irradiance_route(self, route_fn, what):
     logging.debug("sample_irradiance_route\n{}"\
                   .format(format_dictionary(locals())))
 
@@ -121,10 +121,10 @@ def sample_irradiance_route(route_fn, what):
                    drop = ['datetime','date','year','week','source_fn'])
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
-def sample_irradiance_bbox(bbox, time_range, time_step, what):
+def sample_irradiance_bbox(self, bbox, time_range, time_step, what):
     logging.debug("sample_irradiance_bbox\n{}"\
                   .format(format_dictionary(locals())))
 
@@ -143,10 +143,10 @@ def sample_irradiance_bbox(bbox, time_range, time_step, what):
                    drop = ['datetime','date','year','week','source_fn'])
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
-def sample_reanalysis_route(route_fn, what):
+def sample_reanalysis_route(self, route_fn, what):
     logging.debug("sample_reanalysis_route\n{}"\
                   .format(format_dictionary(locals())))
 
@@ -164,10 +164,10 @@ def sample_reanalysis_route(route_fn, what):
                            'dtimes','dlats','dlons','region_bbox'])
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
-def sample_reanalysis_bbox(bbox, time_range, time_step, what):
+def sample_reanalysis_bbox(self, bbox, time_range, time_step, what):
     logging.debug("sample_reanalsysis_bbox\n{}"\
                   .format(format_dictionary(locals())))
 

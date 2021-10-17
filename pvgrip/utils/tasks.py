@@ -14,9 +14,9 @@ from pvgrip.utils.files \
 
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @one_instance()
-def call_fn_cache(result, ofn, storage_type):
+def call_fn_cache(self, result, ofn, storage_type):
     if result is None:
         return ofn
 
@@ -36,8 +36,8 @@ def call_fn_cache(result, ofn, storage_type):
     return str(ofn)
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @one_instance()
-def task_test_queueonce(sleep = 5, dummy = 1):
+def task_test_queueonce(self, sleep = 5, dummy = 1):
     time.sleep(sleep)
     return True

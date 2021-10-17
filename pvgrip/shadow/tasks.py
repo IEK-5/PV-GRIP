@@ -33,10 +33,10 @@ from pvgrip.utils.format_dictionary \
     import format_dictionary
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results()
 @one_instance(expire = 10)
-def compute_shadow_map(ifn):
+def compute_shadow_map(self, ifn):
     """convert incidence geotiff to binary shadow map
 
     :ifn: geotiff with incidence angle. nan are shadows
@@ -60,10 +60,10 @@ def compute_shadow_map(ifn):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results(minage = 1626846910)
 @one_instance(expire = 60*10)
-def compute_incidence(tif_fn, timestr):
+def compute_incidence(self, tif_fn, timestr):
     """compute sun incidence angle
 
     :tif_fn: elevation geotiff
@@ -99,10 +99,10 @@ def compute_incidence(tif_fn, timestr):
     return ofn
 
 
-@CELERY_APP.task()
+@CELERY_APP.task(bind=True)
 @cache_fn_results(minage = 1626846910)
 @one_instance(expire = 60*10)
-def average_png(png_files):
+def average_png(self, png_files):
     """Compute average
 
     :png_files: a list of binary png files (with 0 or 1 values)
