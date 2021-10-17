@@ -37,7 +37,7 @@ function print_help {
     echo "  -d,--dry          just echo command, do not execute"
     echo
     echo "  --what            action: start \"webserver\", \"worker\", \"worker_requests\","
-    echo "                    \"broker\", \"storage_ipfs\", \"flower\""
+    echo "                    \"broker\", \"flower\""
     echo "                    \"build\", \"tag\", \"push\", \"pull\", \"prune\" image."
     echo "                    Default: \"${what}\""
     echo
@@ -303,10 +303,6 @@ case "${what}" in
     flower)
         prune_byname "${name_prefix}-${what}" || exit 1
         docommand=$(start_flower)
-        ;;
-    storage_ipfs)
-        prune_byname "${name_prefix}-${what}" || exit 1
-        docommand=$(echo ./pvgrip/storage/ipfs_io/ipfs_io.sh --network="${network_interface}")
         ;;
     build)
         docommand=$(echo "git submodule update --init --recursive; docker build -t ${name_prefix} .")
