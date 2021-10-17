@@ -11,6 +11,7 @@ function set_defaults {
     what="webserver"
     webserver_hostport=$(python3 scripts/get_config.py \
                                  webserver hostport)
+    flower_hostport="55555"
     ifrestart="yes"
     mnt_data="$(pwd)/data"
     mnt_configs="$(pwd)/configs"
@@ -80,6 +81,11 @@ function print_help {
     echo
     echo "  --webserver-hostport"
     echo "                    port to bind webserver to."
+    echo "                    Leave empty to bind to --network."
+    echo "                    Default: \"${webserver_hostport}\""
+    echo
+    echo "  --flower-hostport"
+    echo "                    port to bind flower to."
     echo "                    Leave empty to bind to --network."
     echo "                    Default: \"${webserver_hostport}\""
     echo
@@ -272,10 +278,13 @@ function start_broker {
 
 
 function start_flower {
+    bind="$(get_binding 5555:5555)"
+    bind+=" -p ${flower_hostport}:5555"
+
     $(start_preamble) \
         -v "${mnt_configs}:/code/configs" \
         -v "${mnt_docs}:/data" \
-        "$(get_binding 5555:5555)" \
+        "${bind}" \
         "${registry}${name_prefix}:${image_tag}" \
         ./scripts/start.sh --what="${what}"
 }
