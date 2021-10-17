@@ -4,8 +4,8 @@ cd $(git rev-parse --show-toplevel)
 
 
 function set_defaults {
-    network_interface=$(python3 scripts/get_config.py \
-                                server interface)
+    network_interfaces=$(python3 scripts/get_config.py \
+                                 server interfaces)
     docker_maxmemory=$(echo "scale=2; $(grep MemTotal /proc/meminfo | awk '{print $2}')/1024/1024*0.9" \
                            | bc | awk '{printf "%.2f", $0}')"g"
     what="webserver"
@@ -60,7 +60,9 @@ function print_help {
     echo "                    Default: ${docker_maxmemory}"
     echo
     echo "  --network         network interface where to bind ports"
-    echo "                    Empty for all. Default: \"${network_interface}\""
+    echo "                    Empty for all. A comma separeted list."
+    echo "                    Use - for global bind."
+    echo "                    Default: \"${network_interfaces}\""
     echo
     echo "  --ifrestart       enable restart on docker restart."
     echo "                    Default: \"${ifrestart}\""
@@ -93,7 +95,7 @@ function parse_args {
 		        shift
 		        ;;
             --network=*)
-                network_interface="${i#*=}"
+                network_interfaces="${i#*=}"
                 shift
                 ;;
             --what=*)
@@ -222,16 +224,33 @@ function mount_volumes {
 }
 
 
+function get_binding {
+    ports="$1"
+    res=""
+    for interface in $(echo "${network_interfaces}" | tr "," " ")
+    do
+        if [ "-" = "${interface}" ]
+        then
+            res+=" -p ${ports}"
+            continue
+        fi
+        res+=" -p $(get_ip ${interface}):${ports}"
+    done
+
+    echo "${res}"
+}
+
+
 function start_webserver {
-    bind="-p $(get_ip "${network_interface}"):8080:8080"
+    bind="$(get_binding 8080:8080)"
     if [ ! -z "${webserver_hostport}" ]
     then
-        bind+=" -p ${webserver_hostport}"
+        bind+=" -p ${webserver_hostport}:8080"
     fi
 
     $(start_preamble) \
         $(mount_volumes) \
-        "${bind}:8080" \
+        "${bind}" \
         "${registry}${name_prefix}:${image_tag}" \
         ./scripts/start.sh --what="${what}"
 }
@@ -247,7 +266,7 @@ function start_worker {
 
 function start_broker {
     $(start_preamble) \
-        -p "$(get_ip "${network_interface}"):6379:6379" \
+        "$(get_binding 6379:6379)" \
         redis
 }
 
@@ -256,7 +275,7 @@ function start_flower {
     $(start_preamble) \
         -v "${mnt_configs}:/code/configs" \
         -v "${mnt_docs}:/data" \
-        -p "$(get_ip "${network_interface}"):5555:5555" \
+        "$(get_binding 5555:5555)" \
         "${registry}${name_prefix}:${image_tag}" \
         ./scripts/start.sh --what="${what}"
 }
