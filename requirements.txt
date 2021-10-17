@@ -4,6 +4,7 @@ cdsapi
 celery[redis]
 diskcache
 filelock
+flower
 gunicorn
 lazy
 netcdf4

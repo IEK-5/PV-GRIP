@@ -4,6 +4,7 @@ cd $(git rev-parse --show-toplevel)
 
 webserver="no"
 worker="no"
+flower="no"
 
 for i in "$@"
 do
@@ -13,6 +14,9 @@ do
             ;;
         worker)
             worker="yes"
+            ;;
+        flower)
+            flower="yes"
             ;;
         *)
             echo "unknown argument!"
@@ -50,4 +54,10 @@ if [ "${webserver}" = "yes" ]
 then
     docker kill pvgrip-webserver
     ./pvgrip.sh --what=webserver
+fi
+
+if [ "${flower}" = "yes" ]
+then
+    docker kill pvgrip-flower
+    ./pvgrip.sh --what=flower
 fi

@@ -14,6 +14,7 @@ function set_defaults {
     ifrestart="yes"
     mnt_data="$(pwd)/data"
     mnt_configs="$(pwd)/configs"
+    mnt_docs="$(pwd)/docs"
     ifmntcode="no"
     name_prefix="pvgrip"
     registry=$(python3 scripts/get_config.py \
@@ -35,8 +36,9 @@ function print_help {
     echo
     echo "  -d,--dry          just echo command, do not execute"
     echo
-    echo "  --what            action: start \"webserver\", \"worker\", \"broker\" or \"storage_ipfs\";"
-    echo "                    or \"build\", \"tag\", \"push\", \"pull\", \"prune\" image."
+    echo "  --what            action: start \"webserver\", \"worker\", \"worker_requests\","
+    echo "                    \"broker\", \"storage_ipfs\", \"flower\""
+    echo "                    \"build\", \"tag\", \"push\", \"pull\", \"prune\" image."
     echo "                    Default: \"${what}\""
     echo
     echo "  --mnt-data        mount point of the data directory"
@@ -250,6 +252,16 @@ function start_broker {
 }
 
 
+function start_flower {
+    $(start_preamble) \
+        -v "${mnt_configs}:/code/configs" \
+        -v "${mnt_docs}:/data" \
+        -p "$(get_ip "${network_interface}"):5555:5555" \
+        "${registry}${name_prefix}:${image_tag}" \
+        ./scripts/start.sh --what="${what}"
+}
+
+
 function prune_old_local {
     images=$(docker images | \
                  grep "${registry}${name_prefix}" | \
@@ -287,6 +299,10 @@ case "${what}" in
     broker)
         prune_byname "${name_prefix}-${what}" || exit 1
         docommand=$(start_broker)
+        ;;
+    flower)
+        prune_byname "${name_prefix}-${what}" || exit 1
+        docommand=$(start_flower)
         ;;
     storage_ipfs)
         prune_byname "${name_prefix}-${what}" || exit 1
