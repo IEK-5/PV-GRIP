@@ -21,8 +21,14 @@ from pvgrip.utils.files \
 from pvgrip.utils.format_dictionary \
     import format_dictionary
 
+from pvgrip.utils.exceptions \
+    import TASK_RUNNING
 
-@CELERY_APP.task(bind=True)
+
+@CELERY_APP.task(bind=True,
+                 autoretry_for=(TASK_RUNNING,),
+                 retry_kwargs = {'max_retries': 10},
+                 retry_backoff = True)
 @cache_fn_results()
 @one_instance(expire = 60*5)
 def download_laz(self, url):
@@ -42,7 +48,10 @@ def download_laz(self, url):
     return ofn
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True,
+                 autoretry_for=(TASK_RUNNING,),
+                 retry_kwargs = {'max_retries': 10},
+                 retry_backoff = True)
 @cache_fn_results(ofn_arg = 'ofn')
 @one_instance(expire = 60*20)
 def run_pdal(self, laz_fn, resolution, what, ofn):
