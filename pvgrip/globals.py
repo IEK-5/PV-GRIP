@@ -51,6 +51,7 @@ _IPFS_STORAGE_KEYSPACE_SUFFIX = \
 
 REDIS_URL = 'redis://{ip}:{port}/{db}'.format\
     (ip=PVGRIP_CONFIGS['redis']['ip'],port=6379,db=0)
+REDIS_EXPIRES = int(PVGRIP_CONFIGS['redis']['expires'])
 
 ALLOWED_REMOTE = \
     json.loads(PVGRIP_CONFIGS['storage']['use_remotes'])
@@ -138,4 +139,4 @@ def get_SPATIAL_DATA():
 def get_Tasks_Queues():
     return Redis_Dictionary(name = 'pvgrip_tasks_queue',
                             redis_url = REDIS_URL,
-                            expire_time = 86400)
+                            expire_time = REDIS_EXPIRES)
