@@ -98,7 +98,9 @@ def get_job_results(job_id, key, timeout):
         state = job.state
         if 'SUCCESS' == state:
             fn = job.result
-        elif 'PENDING' == state:
+        elif 'PENDING' == state \
+             or 'STARTED' == state \
+             or 'RETRY' == state:
             fn = job.wait(timeout = timeout)
         elif 'FAILURE' == state:
             res = job.result
@@ -107,6 +109,10 @@ def get_job_results(job_id, key, timeout):
                     ("""FAILURE state is not an exception!..
                     job.result = {}""".format(res))
             raise res
+        elif 'REVOKED' == state:
+            raise RuntimeError\
+                ("""job_id = {} is REVOKED!"""\
+                 .format(job_id))
         else:
             return {'results': {'message': 'task is running',
                                 'state': state}}
