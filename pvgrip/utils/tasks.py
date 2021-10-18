@@ -5,6 +5,8 @@ from pvgrip \
     import CELERY_APP
 from pvgrip.utils.celery_one_instance \
     import one_instance
+from pvgrip.utils.basetask \
+    import WithRetry
 
 from pvgrip.storage.remotestorage_path \
     import RemoteStoragePath, is_remote_path
@@ -14,7 +16,7 @@ from pvgrip.utils.files \
 
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @one_instance()
 def call_fn_cache(self, result, ofn, storage_type):
     if result is None:
@@ -36,7 +38,7 @@ def call_fn_cache(self, result, ofn, storage_type):
     return str(ofn)
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @one_instance()
 def task_test_queueonce(self, sleep = 5, dummy = 1):
     time.sleep(sleep)

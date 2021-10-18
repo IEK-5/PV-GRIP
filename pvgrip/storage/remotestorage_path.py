@@ -157,11 +157,11 @@ class RemoteStoragePath:
                 self._storage.download(self.path, self.path)
                 logging.debug("get_locally: finish downloading")
             except Exception as e:
-                raise RuntimeError\
-                    ("""Failed to download file: {}
-                    error: {}
-                    remotetype: {}
-                    """.format(self.path,str(e),self.remotetype))
+                logging.error("""Failed to download file: {}
+                error: {}
+                remotetype: {}
+                """.format(self.path,str(e),self.remotetype))
+                raise e
 
             logging.debug("get_locally: add to localcache")
             self._localcache.add(self.path)
@@ -172,11 +172,11 @@ class RemoteStoragePath:
         try:
             self._storage.upload(self.path, self.path)
         except Exception as e:
-            raise RuntimeError\
-                ("""Failed to upload file: {}
-                error: {}
-                remotetype: {}
-                """.format(self.path,str(e),self.remotetype))
+            logging.error("""Failed to upload file: {}
+            error: {}
+            remotetype: {}
+            """.format(self.path,str(e),self.remotetype))
+            raise e
 
         self._localcache.add(self.path)
 
@@ -185,14 +185,14 @@ class RemoteStoragePath:
         try:
             self._storage.link(src, self.path)
         except Exception as e:
-            raise RuntimeError\
-                ("""Failed to link file!
-                source: {}
-                destination: {}
-                error: {}
-                remotetype: {}
-                """.format(src, self.path,
-                           str(e),self.remotetype))
+            logging.error("""Failed to link file!
+            source: {}
+            destination: {}
+            error: {}
+            remotetype: {}
+            """.format(src, self.path,
+                       str(e),self.remotetype))
+            raise e
 
         if os.path.exists(self.path):
             self._localcache.add(self.path)

@@ -18,6 +18,8 @@ from pvgrip.utils.cache_fn_results \
     import cache_fn_results
 from pvgrip.utils.celery_one_instance \
     import one_instance
+from pvgrip.utils.basetask \
+    import WithRetry
 
 from pvgrip.utils.files \
     import get_tempfile, remove_file, get_tempdir
@@ -38,7 +40,7 @@ from pvgrip.weather.utils \
     import bbox_tl, route_tl
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(ofn_arg = 'ofn')
 @one_instance(expire = 600)
 def retrieve_source(self, credentials_type, what, args, ofn):
@@ -101,7 +103,7 @@ def _sample(tl, what, how, drop):
     return _save_tsv(res)
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
 def sample_irradiance_route(self, route_fn, what):
@@ -121,7 +123,7 @@ def sample_irradiance_route(self, route_fn, what):
                    drop = ['datetime','date','year','week','source_fn'])
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
 def sample_irradiance_bbox(self, bbox, time_range, time_step, what):
@@ -143,7 +145,7 @@ def sample_irradiance_bbox(self, bbox, time_range, time_step, what):
                    drop = ['datetime','date','year','week','source_fn'])
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
 def sample_reanalysis_route(self, route_fn, what):
@@ -164,7 +166,7 @@ def sample_reanalysis_route(self, route_fn, what):
                            'dtimes','dlats','dlons','region_bbox'])
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(minage = 1632547215)
 @one_instance(expire = 600)
 def sample_reanalysis_bbox(self, bbox, time_range, time_step, what):

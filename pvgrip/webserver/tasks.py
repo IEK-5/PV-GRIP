@@ -2,12 +2,14 @@ from pvgrip \
     import CELERY_APP
 from pvgrip.utils.celery_one_instance \
     import one_instance
+from pvgrip.utils.basetask \
+    import WithRetry
 
 from pvgrip.webserver.get_task \
     import get_task
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @one_instance(expire = 3600)
 def generate_task_queue(self, method, args):
     """Generate processing queue

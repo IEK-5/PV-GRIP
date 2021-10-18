@@ -21,6 +21,8 @@ from pvgrip.utils.cache_fn_results \
     import cache_fn_results
 from pvgrip.utils.celery_one_instance \
     import one_instance
+from pvgrip.utils.basetask \
+    import WithRetry
 
 from pvgrip.utils.files \
     import get_tempfile, remove_file, get_tempdir
@@ -30,7 +32,7 @@ from pvgrip.utils.format_dictionary \
     import format_dictionary
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results()
 @one_instance(expire = 10)
 def find_osm_data_online(self, bbox, tag):
@@ -54,7 +56,7 @@ def find_osm_data_online(self, bbox, tag):
     return ofn
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results()
 @one_instance(expire = 10)
 def readpng_asarray(self, png_fn, box, step, mesh_type):
@@ -76,7 +78,7 @@ def readpng_asarray(self, png_fn, box, step, mesh_type):
     return ofn
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results()
 @one_instance(expire = 10)
 def merge_osm(self, osm_files):
@@ -97,7 +99,7 @@ def merge_osm(self, osm_files):
     return ofn
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results()
 @one_instance(expire = 10)
 def render_osm_data(self, osm_fn, rules_fn, box, width):

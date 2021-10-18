@@ -9,6 +9,8 @@ from pvgrip.utils.cache_fn_results \
     import cache_fn_results
 from pvgrip.utils.celery_one_instance \
     import one_instance
+from pvgrip.utils.basetask \
+    import WithRetry
 
 from pvgrip.utils.files \
     import get_tempfile, remove_file, get_tempdir
@@ -33,7 +35,7 @@ from pvgrip.raster.gdalinterface \
     import GDALInterface
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results()
 @one_instance(expire = 60*10)
 def compute_irradiance_ssdp(self, ifn,
@@ -68,7 +70,7 @@ def compute_irradiance_ssdp(self, ifn,
         remove_file(ssdp_ofn)
 
 
-@CELERY_APP.task(bind=True)
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(minage = 1626846910)
 @one_instance(expire = 60*10)
 def compute_irradiance_grass(self, elevation_fn, timestr,
