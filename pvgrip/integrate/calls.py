@@ -11,7 +11,7 @@ from pvgrip.ssdp.utils \
     import centre_of_box
 
 
-@call_cache_fn_results()
+@call_cache_fn_results(minage=1634666356)
 def ssdp_integrate(tsvfn_uploaded,
                    albedo, nsky, **kwargs):
     output_type = kwargs['output_type']

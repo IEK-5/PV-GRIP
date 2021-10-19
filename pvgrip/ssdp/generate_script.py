@@ -76,11 +76,11 @@ def _config_location_time_irradiance(locations_fn, albedo):
 
     # sample the topography to obtain the z values and the surface normal
     # corresponding to our mesh coordinates
-    sample_topo C=C x=LAT y=LON z=Z azimuth=azi zenith=zen
+    sample_topo C=C y=LAT x=LON z=Z azimuth=azi zenith=zen
 
     # setup the locations in the configuration variable
     # (note the POA is the topography surface)
-    config_locations C=C x=LAT y=LON z=Z azimuth=azi zenith=zen albedo={albedo}
+    config_locations C=C y=LAT x=LON z=Z azimuth=azi zenith=zen albedo={albedo}
     """.format(fn = locations_fn, albedo = albedo)
 
 

@@ -175,6 +175,10 @@ def _method_results(method, args):
                     ('weather/reanalysis',1632547215),
                     ('weather/reanalysis/route',1632547215),
                     ('weather/reanalysis/box',1632547215),
+                    ('route',1634666356),
+                    ('irradiance',1634666356),
+                    ('irradiance/ssdp',1634666356),
+                    ('intergrate',1634666356),
                     ]})
 def call_method(method, args):
     tasks_queues = get_Tasks_Queues()
