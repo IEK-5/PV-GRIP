@@ -65,9 +65,26 @@ def _read_route(route_fn, hows, hash_length):
     return route
 
 
+def _drop_columns(route, hows):
+    drop = []
+
+    if 'region_hash' in hows:
+        drop += ['region_hash']
+
+    if 'month' in hows or \
+       'week' in hows or \
+       'date' in hows:
+        drop += ['month','week','datetime',
+                 'date','year','week']
+
+    route = route.drop(drop, axis=1)
+
+    return route
+
+
 def _split_route(route, hows, maxnrows):
     if hows == ():
-        return [route]
+        return [_drop_columns(route, hows = hows)]
     car, cdr = hows[0], hows[1:]
 
     res = []
@@ -75,7 +92,7 @@ def _split_route(route, hows, maxnrows):
 
     for chunk in chunks:
         if chunk.shape[0] < maxnrows:
-            res += [chunk]
+            res += [_drop_columns(chunk, hows = hows)]
             continue
 
         res += _split_route(chunk, cdr, maxnrows)
