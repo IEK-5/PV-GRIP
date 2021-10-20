@@ -30,7 +30,7 @@ from pvgrip.route.split_route \
     fn_arg = 'tsvfn_uploaded',
     hows = ("region_hash","month","week","date"),
     hash_length = 4,
-    maxnrows = 3000)
+    maxnrows = 10000)
 @call_cache_fn_results(minage=1634666356)
 def ssdp_route(tsvfn_uploaded, box, box_delta,
                dhi, ghi, albedo, timestr, nsky, **kwargs):
