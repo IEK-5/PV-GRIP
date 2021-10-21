@@ -48,6 +48,7 @@ _IPFS_STORAGE_IP = \
     PVGRIP_CONFIGS['ipfs']['ip']
 _IPFS_STORAGE_KEYSPACE_SUFFIX = \
     PVGRIP_CONFIGS['ipfs']['keyspace_suffix']
+_IPFS_TIMEOUT = int(PVGRIP_CONFIGS['ipfs']['ipfs_timeout'])
 
 REDIS_URL = 'redis://{ip}:{port}/{db}'.format\
     (ip=PVGRIP_CONFIGS['redis']['ip'],port=6379,db=0)
@@ -109,6 +110,7 @@ def get_RESULTS_CACHE():
 def get_IPFS_STORAGE():
     return IPFS_Files\
         (ipfs_ip = _IPFS_STORAGE_IP,
+         ipfs_timeout = _IPFS_TIMEOUT,
          cluster_ips = [_CASSANDRA_STORAGE_IP],
          keyspace_suffix = _IPFS_STORAGE_KEYSPACE_SUFFIX,
          replication = _CASSANDRA_REPLICATION,
