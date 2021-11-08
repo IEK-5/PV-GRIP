@@ -222,11 +222,11 @@ function start_preamble {
 function mount_volumes {
     if [ "yes" = "${ifmntcode}" ]
     then
-        echo -v "$(pwd):/code"
+        echo -v "$(pwd):/code" $(scripts/get_mounts.py)
         return
     fi
 
-    echo -v "${mnt_data}:/code/data" -v "${mnt_configs}:/code/configs"
+    echo -v "${mnt_data}:/code/data" -v "${mnt_configs}:/code/configs" $(scripts/get_mounts.py)
 }
 
 

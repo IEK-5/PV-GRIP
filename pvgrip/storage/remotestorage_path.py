@@ -102,6 +102,13 @@ class RemoteStoragePath:
             from pvgrip.globals \
                 import get_IPFS_STORAGE
             return get_IPFS_STORAGE()
+        elif re.match(r'localmount_.*',self.remotetype):
+            from pvgrip.globals \
+                import get_LOCAL_STORAGE
+            return get_LOCAL_STORAGE(self.remotetype)
+        else:
+            raise RuntimeError\
+                ("unknown remotetype = {}".format(self.remotetype))
 
 
     @property
