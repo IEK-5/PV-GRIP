@@ -5,6 +5,7 @@ cd $(git rev-parse --show-toplevel)
 webserver="no"
 worker="no"
 flower="no"
+broker="no"
 
 for i in "$@"
 do
@@ -17,6 +18,9 @@ do
             ;;
         flower)
             flower="yes"
+            ;;
+        broker)
+            broker="yes"
             ;;
         *)
             echo "unknown argument!"
@@ -60,4 +64,10 @@ if [ "${flower}" = "yes" ]
 then
     docker kill pvgrip-flower
     ./pvgrip.sh --what=flower
+fi
+
+if [ "${broker}" = "yes" ]
+then
+    docker kill pvgrip-broker
+    ./pvgrip.sh --what=broker
 fi
