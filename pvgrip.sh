@@ -293,12 +293,18 @@ function start_flower {
 function prune_old_local {
     images=$(docker images | \
                  grep "${registry}${name_prefix}" | \
+                 grep '<none>' | \
+                 awk '{print $3}' | \
+                 xargs)
+    images+=" "$(docker images | \
+                 grep "${registry}${name_prefix}" | \
+                 grep -v '<none>' | \
                  grep -v latest | \
-                 sort -V | head -n -${prunekeep} \
-                 | awk '{print $1":"$2}' \
-                 | xargs)
+                 sort -V | head -n -${prunekeep} | \
+                 awk '{print $3}' | \
+                 xargs)
 
-    if [ ! -z "${images}" ]
+    if [ "${images}" != " " ]
     then
         echo docker rmi "${images}"
         return 0
