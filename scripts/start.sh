@@ -83,7 +83,9 @@ function start_flower {
     redis_ip=$(python3 scripts/get_config.py redis ip)
     celery -A pvgrip \
            --broker="redis://${redis_ip}:6379/0" \
-           flower
+           flower \
+           --persistent=True \
+           --db="/code/data/flower"
 }
 
 

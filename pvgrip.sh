@@ -282,7 +282,7 @@ function start_flower {
     bind+=" -p ${flower_hostport}:5555"
 
     $(start_preamble) \
-        -v "${mnt_configs}:/code/configs" \
+        $(mount_volumes) \
         -v "${mnt_docs}:/data" \
         "${bind}" \
         "${registry}${name_prefix}:${image_tag}" \
