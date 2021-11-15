@@ -95,9 +95,11 @@ class Spatial_Data:
         self.index = Cassandra_Spatial_Index\
             (cluster_ips = self._cassandra_ips,
              **index_args, **base_args)
+        logging.debug("Spatial_Data: after self.index = ")
         self.datasets = Datasets\
             (cluster_ips = self._cassandra_ips,
              **base_args)
+        logging.debug("Spatial_Data: after self.datasets = ")
 
 
     def _get_index_data(self, fn):
@@ -201,10 +203,12 @@ class Spatial_Data:
         :return: Polygon_File_Index
 
         """
+        logging.debug("Spatial_Data: begin subset")
         if rasters:
             pg = _polygon_from_list_rasters(rasters)
         else:
             pg = _polygon_from_box(box)
+        logging.debug("Spatial_Data: after _polygon_from_box")
 
         index = self.index.intersect(polygons = pg)
         index = index.filter\
@@ -215,6 +219,7 @@ class Spatial_Data:
             raise RuntimeError\
                 ("no data available for the selected location")
 
+        logging.debug("Spatial_Data: begin subset")
         return index
 
 
