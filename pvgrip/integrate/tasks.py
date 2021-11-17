@@ -31,8 +31,8 @@ from pvgrip.integrate.utils \
 @cache_fn_results(minage=1634666356)
 @one_instance(expire = 60*10)
 def integrate_irradiance(self, ifn, times_fn,
-                         lat, lon,
-                         albedo, nsky):
+                         lat, lon, albedo,
+                         offset, azimuth, zenith, nsky):
     logging.debug("integrate_irradiance\n{}"\
                   .format(format_dictionary(locals())))
     wdir = get_tempdir()
@@ -52,6 +52,9 @@ def integrate_irradiance(self, ifn, times_fn,
         call = poa_integrate\
             (topography_fname = ssdp_ifn,
              albedo = albedo,
+             offset = offset,
+             azimuth = azimuth,
+             zenith = zenith,
              nsky = nsky,
              ofn = ssdp_ofn,
              irrtimes = time_ghi_dhi,

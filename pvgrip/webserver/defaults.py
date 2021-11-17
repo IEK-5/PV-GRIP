@@ -221,6 +221,26 @@ def ssdp_defaults():
                 'albedo':
                 (0.5,
                  "albedo value between 0-1"),
+                'offset':
+                (0,
+                 "offset in meters in the direction of the surface normal"),
+                'azimuth':
+                (0,
+                 """azimuth angle in degrees of the tilted surface.
+                 The azimuth angle is set wrt the surface normal.
+
+                 North:   0 degrees
+                 South: 180 degrees
+                 East:   90 degrees
+                 West:  270 degrees
+                 """),
+                'zenith':
+                (0,
+                 """zenith angle in degrees of the tilted surface
+                 The zenith angle is set wrt the surface normal.
+
+                 Zenith angle of 0 degrees corresponds to the vertical direction.
+                 """),
                 'nsky':
                 (10,
                  """The  number  of  zenith  discretizations.

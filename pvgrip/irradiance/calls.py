@@ -10,9 +10,10 @@ from pvgrip.ssdp.utils \
     import timestr2utc_time, centre_of_box
 
 
-@call_cache_fn_results(minage=1634666356)
-def irradiance_ssdp(timestr, ghi, dhi, albedo, nsky,
-                    **kwargs):
+@call_cache_fn_results(minage=1637232422)
+def irradiance_ssdp(timestr, ghi, dhi, albedo,
+                    offset, azimuth, zenith,
+                    nsky, **kwargs):
     """Start the irradiance
 
     :timestr: time string, format: %Y-%m-%d_%H:%M:%S
@@ -20,6 +21,10 @@ def irradiance_ssdp(timestr, ghi, dhi, albedo, nsky,
     :ghi: global horizontal irradiance
 
     :dhi: diffused horizontal irradiance
+
+    :albedo: albedo coefficient
+
+    :offset,azimuth,zenith: position of a tilted surface
 
     :nsky: number of zenith discretizations (see `man ssdp`)
 
@@ -37,6 +42,8 @@ def irradiance_ssdp(timestr, ghi, dhi, albedo, nsky,
     tasks |= compute_irradiance_ssdp.signature\
         ((),{'ghi':ghi,'dhi':dhi,'nsky':nsky,
              'lon':lon,'lat':lat,'albedo':albedo,
+             'offset':offset,
+             'azimuth':azimuth,'zenith':zenith,
              'utc_time':utc_time})
 
     return convert_from_to(tasks,

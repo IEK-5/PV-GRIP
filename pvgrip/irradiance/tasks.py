@@ -41,6 +41,7 @@ from pvgrip.raster.gdalinterface \
 def compute_irradiance_ssdp(self, ifn,
                             utc_time, lat, lon,
                             ghi, dhi, albedo,
+                            offset, azimuth, zenith,
                             nsky):
     logging.debug("compute_irradiance_ssdp\n{}"\
                   .format(format_dictionary(locals())))
@@ -55,6 +56,9 @@ def compute_irradiance_ssdp(self, ifn,
             (topography_fname = ssdp_ifn,
              utc_time = utc_time,
              albedo = albedo,
+             offset = offset,
+             azimuth = azimuth,
+             zenith = zenith,
              lat = lat, lon = lon,
              ghi = ghi, dhi = dhi,
              nsky = nsky, ofn = ssdp_ofn,

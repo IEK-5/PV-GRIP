@@ -53,7 +53,9 @@ def merge_tsv(self, tsv_files):
 @one_instance(expire = 60*10)
 def compute_route(self, ifn, route, lat, lon,
                   ghi_default, dhi_default,
-                  time_default, albedo, nsky):
+                  time_default,
+                  offset, azimuth_default, zenith_default,
+                  albedo, nsky):
     logging.debug("compute_route\n{}"\
                   .format(format_dictionary(locals())))
     wdir = get_tempdir()
@@ -72,11 +74,14 @@ def compute_route(self, ifn, route, lat, lon,
                                 ghi_default = ghi_default,
                                 dhi_default = dhi_default,
                                 time_default = time_default,
+                                azimuth_default = azimuth_default,
+                                zenith_default = zenith_default,
                                 locations_fn = locations_fn)
 
         call = poa_route\
             (topography_fname = ssdp_ifn,
              albedo = albedo,
+             offset = offset,
              nsky = nsky,
              ofn = ssdp_ofn,
              locations_fn = locations_fn,

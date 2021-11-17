@@ -11,9 +11,10 @@ from pvgrip.ssdp.utils \
     import centre_of_box
 
 
-@call_cache_fn_results(minage=1634666356)
-def ssdp_integrate(tsvfn_uploaded,
-                   albedo, nsky, **kwargs):
+@call_cache_fn_results(minage=1637232422)
+def ssdp_integrate(tsvfn_uploaded, albedo,
+                   offset, azimuth, zenith,
+                   nsky, **kwargs):
     output_type = kwargs['output_type']
     kwargs['output_type'] = 'pickle'
     kwargs['mesh_type'] = 'metric'
@@ -24,6 +25,9 @@ def ssdp_integrate(tsvfn_uploaded,
     tasks |= integrate_irradiance.signature\
         ((),{'times_fn': tsvfn_uploaded,
              'albedo': albedo,
+             'offset': offset,
+             'azimuth': azimuth,
+             'zenith': zenith,
              'nsky': nsky,
              'lon': lon,
              'lat': lat})

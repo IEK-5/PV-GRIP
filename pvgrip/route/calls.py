@@ -31,9 +31,10 @@ from pvgrip.route.split_route \
     hows = ("region_hash","month","week","date"),
     hash_length = 4,
     maxnrows = 10000)
-@call_cache_fn_results(minage=1634666356)
+@call_cache_fn_results(minage=1637232422)
 def ssdp_route(tsvfn_uploaded, box, box_delta,
-               dhi, ghi, albedo, timestr, nsky, **kwargs):
+               dhi, ghi, albedo, timestr,
+               offset, azimuth, zenith, nsky, **kwargs):
     kwargs['output_type'] = 'pickle'
     kwargs['mesh_type'] = 'metric'
 
@@ -71,6 +72,9 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
                'ghi_default': ghi,
                'dhi_default': dhi,
                'time_default': timestr,
+               'offset': offset,
+               'azimuth_default': azimuth,
+               'zenith_default': zenith,
                'albedo': albedo,
                'nsky': nsky})]
     tasks |= celery.group(group)

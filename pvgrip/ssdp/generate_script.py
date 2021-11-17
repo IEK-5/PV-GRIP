@@ -68,20 +68,29 @@ def _import_topography(topography_fname, grid):
                lat2 = lat2, lon2 = lon2)
 
 
-def _config_location_time_irradiance(locations_fn, albedo):
+def _config_location_time_irradiance(locations_fn, albedo, offset):
     return """
 
     # read locations / time
-    read_array a0=LAT a1=LON a2=GHI a3=DHI a4=TIME file={fn}
+    read_array a0=LAT a1=LON a2=GHI a3=DHI a4=AZI a5=ZEN a6=TIME file={fn}
+
+    deg2rad x=AZI
+    deg2rad x=ZEN
 
     # sample the topography to obtain the z values and the surface normal
     # corresponding to our mesh coordinates
     sample_topo C=C y=LAT x=LON z=Z azimuth=azi zenith=zen
 
+    # offset topography
+    offset_topo C=C o={offset} x=LON y=LAT xoff=offLON yoff=offLAT zoff=offZ
+
+    # rotate POA to surface
+    rotate_POA_to_surface surf_a=azi surf_z=zen poa_a=AZI poa_z=ZEN out_a=offAZI out_z=offZEN
+
     # setup the locations in the configuration variable
     # (note the POA is the topography surface)
-    config_locations C=C y=LAT x=LON z=Z azimuth=azi zenith=zen albedo={albedo}
-    """.format(fn = locations_fn, albedo = albedo)
+    config_locations C=C y=offLAT x=offLON z=offZ azimuth=offAZI zenith=offZEN albedo={albedo}
+    """.format(fn = locations_fn, albedo = albedo, offset = offset)
 
 
 def _sim_static(ofn):
@@ -119,20 +128,31 @@ def _sim_static_integral(ofn):
     """.format(ofn = ofn)
 
 
-def _sample_topogrid_locations(albedo):
+def _sample_topogrid_locations(albedo, offset, azimuth, zenith):
     return """
 
     # get coordinates from config_topogrid
     get_grid C=C x=X y=Y
 
+    make_scalar x=AZI val={azimuth}
+    make_scalar x=ZEN val={zenith}
+    deg2rad x=AZI
+    deg2rad x=ZEN
+
     # sample the topography to obtain the z values and the surface normal
     # corresponding to our mesh coordinates
     sample_topo C=C x=X y=Y z=Z azimuth=azi zenith=zen
 
+    # offset topography
+    offset_topo C=C o={offset} x=X y=Y xoff=offX yoff=offY zoff=offZ
+
+    # rotate POA to surface
+    rotate_POA_to_surface surf_a=azi surf_z=zen poa_a=AZI poa_z=ZEN out_a=offAZI out_z=offZEN
+
     # setup the locations in the configuration variable
     # (note the POA is the topography surface)
-    config_locations C=C x=X y=Y z=Z azimuth=azi zenith=zen albedo={albedo}
-    """.format(albedo=albedo)
+    config_locations C=C x=offX y=offY z=offZ azimuth=offAZI zenith=offZEN albedo={albedo}
+    """.format(albedo=albedo, offset=offset, azimuth=azimuth, zenith=zenith)
 
 
 def _init_config():
