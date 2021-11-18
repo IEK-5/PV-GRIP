@@ -179,8 +179,8 @@ def irradiance_defaults():
     del res['output_type']
     res.update({
         'rsun_args': \
-        ({'aspect_value': 270,
-          'slope_value': 0},
+        ({'aspect_value': float(270),
+          'slope_value': float(0)},
          """Arguments passed to r.sun.
 
          Raster arguments are not currently supported""")
@@ -213,19 +213,19 @@ def download_defaults():
 def ssdp_defaults():
     res = raster_defaults()
     res.update({'ghi': \
-                (1000,
+                (float(1000),
                  "Global horizontal irradiance"),
                 'dhi': \
-                (100,
+                (float(100),
                  "Diffused horizontal irradiance"),
                 'albedo':
                 (0.5,
                  "albedo value between 0-1"),
                 'offset':
-                (0,
+                (float(0),
                  "offset in meters in the direction of the surface normal"),
                 'azimuth':
-                (0,
+                (float(0),
                  """azimuth angle in degrees of the tilted surface.
                  The azimuth angle is set wrt the surface normal.
 
@@ -235,7 +235,7 @@ def ssdp_defaults():
                  West:  270 degrees
                  """),
                 'zenith':
-                (0,
+                (float(0),
                  """zenith angle in degrees of the tilted surface
                  The zenith angle is set wrt the surface normal.
 
