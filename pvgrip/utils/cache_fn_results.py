@@ -6,13 +6,13 @@ import logging
 from functools import wraps
 
 from pvgrip.globals \
-    import DEFAULT_REMOTE
+    import DEFAULT_REMOTE, RESULTS_PATH
 
 from pvgrip.storage.remotestorage_path \
     import RemoteStoragePath, is_remote_path, \
     searchandget_locally, search_determineremote
 from pvgrip.utils.float_hash \
-    import float_hash_fn
+    import float_hash
 
 from pvgrip.utils.files \
     import get_tempfile, remove_file, move_file
@@ -50,12 +50,22 @@ def _get_locally(*args, **kwargs):
     return args, kwargs
 
 
-def _compute_ofn(keys, args, kwargs, fname, ofn_arg):
+def _compute_ofn(fun, args, kwargs, keys, ofn_arg,
+                 prefix = None):
     """Compute ofn and key
 
     """
+
+    # in tasks with bind=True, the first argument is self,
+    # which has a string representation dependent on the library version.
+    # Hence, I ignore the first argument in that scenario
+    if len(args) and isinstance(args[0], celery.Task):
+            args = args[1:]
+
     if ofn_arg is not None and ofn_arg in kwargs:
-        return kwargs[ofn_arg]
+        ofn = kwargs[ofn_arg]
+        os.makedirs(os.path.dirname(ofn), exist_ok = True)
+        return ofn, None
 
     if keys is not None:
         uniq = (args,)
@@ -64,8 +74,15 @@ def _compute_ofn(keys, args, kwargs, fname, ofn_arg):
                     if k in keys}
     else:
         uniq = (args, kwargs)
-    key = ("cache_results", fname, uniq)
-    return float_hash_fn(key)
+    key = float_hash(("cache_results", fun.__name__, uniq))
+
+    ofn = RESULTS_PATH
+    if prefix is not None:
+        ofn = os.path.join(ofn, prefix)
+    ofn = os.path.join(ofn, fun.__name__)
+    os.makedirs(ofn, exist_ok = True)
+    ofn = os.path.join(ofn, key)
+    return ofn, os.path.join(RESULTS_PATH, "tmp_" + key)
 
 
 def _ifpass_minage(minage, fntime, kwargs):
@@ -118,6 +135,7 @@ def cache_fn_results(keys = None,
                      ignore = lambda x: False,
                      ofn_arg = None,
                      minage = None,
+                     path_prefix = None,
                      storage_type = DEFAULT_REMOTE):
     """Cache results of a function that returns a file
 
@@ -135,19 +153,31 @@ def cache_fn_results(keys = None,
     :minage: unixtime, minage of acceptable stored cached value. if
     None any cached value is accepted
 
+    :path_prefix: how to prefix path of the file
+
     :storage_type: type of remote storage. Either: 'cassandra_path' or 'ipfs_path'.
 
     """
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
-            ofn = _compute_ofn(keys = keys,
-                               args = args,
-                               kwargs = kwargs,
-                               fname = fun.__name__,
-                               ofn_arg = ofn_arg)
+            ofn, oldfn = _compute_ofn(fun = fun,
+                                      args = args,
+                                      kwargs = kwargs,
+                                      keys = keys,
+                                      ofn_arg = ofn_arg,
+                                      prefix = path_prefix)
             ofn_rpath = RemoteStoragePath\
                 (ofn, remotetype=storage_type)
+
+            if oldfn is not None:
+                oldfn_rpath = RemoteStoragePath\
+                    (oldfn, remotetype=storage_type)
+                if oldfn_rpath.in_storage():
+                    logging.info("""old cache hit!
+                    linking: {} -> {}
+                    """.format(oldfn, ofn))
+                    oldfn_rpath.link(ofn, timestamp = -1)
 
             if ofn_rpath.in_storage() and \
                _ifpass_minage(minage,
@@ -200,6 +230,7 @@ def cache_fn_results(keys = None,
 
 def call_cache_fn_results(keys = None,
                           minage = None,
+                          path_prefix = None,
                           storage_type = DEFAULT_REMOTE):
     """Wraps tasks generation calls (*/calls.py)
 
@@ -212,19 +243,31 @@ def call_cache_fn_results(keys = None,
     :minage: unixtime, minage of acceptable stored cached value. if
     None any cached value is accepted
 
+    :path_prefix: how to prefix path of the file
+
     :storage_type: type of remote storage. Either: 'cassandra_path' or 'ipfs_path'.
 
     """
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
-            ofn = _compute_ofn(keys = keys,
-                               args = args,
-                               kwargs = kwargs,
-                               fname = fun.__name__,
-                               ofn_arg = None)
+            ofn, oldfn = _compute_ofn(fun = fun,
+                                      args = args,
+                                      kwargs = kwargs,
+                                      keys = keys,
+                                      prefix = path_prefix,
+                                      ofn_arg = None)
             ofn_rpath = RemoteStoragePath\
                 (ofn, remotetype=storage_type)
+
+            if oldfn is not None:
+                oldfn_rpath = RemoteStoragePath\
+                    (oldfn, remotetype=storage_type)
+                if oldfn_rpath.in_storage():
+                    logging.info("""old cache hit!
+                    linking: {} -> {}
+                    """.format(oldfn, ofn))
+                    oldfn_rpath.link(ofn, timestamp = -1)
 
             if ofn_rpath.in_storage() and \
                _ifpass_minage(minage,

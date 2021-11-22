@@ -33,7 +33,7 @@ from pvgrip.utils.format_dictionary \
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results()
+@cache_fn_results(path_prefix='osm')
 @one_instance(expire = 10)
 def find_osm_data_online(self, bbox, tag):
     logging.debug("find_osm_data_online\n{}"\
@@ -57,7 +57,7 @@ def find_osm_data_online(self, bbox, tag):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results()
+@cache_fn_results(path_prefix='osm')
 @one_instance(expire = 10)
 def readpng_asarray(self, png_fn, box, step, mesh_type):
     logging.debug("readpng_asarray\n{}"\
@@ -79,7 +79,7 @@ def readpng_asarray(self, png_fn, box, step, mesh_type):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results()
+@cache_fn_results(path_prefix='osm')
 @one_instance(expire = 10)
 def merge_osm(self, osm_files):
     logging.debug("merge_osm\n{}"\
@@ -100,7 +100,7 @@ def merge_osm(self, osm_files):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results()
+@cache_fn_results(path_prefix='osm')
 @one_instance(expire = 10)
 def render_osm_data(self, osm_fn, rules_fn, box, width):
     logging.debug("render_osm_data\n{}"\

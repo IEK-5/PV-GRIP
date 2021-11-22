@@ -36,7 +36,7 @@ from pvgrip.utils.format_dictionary \
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results()
+@cache_fn_results(path_prefix='shadow')
 @one_instance(expire = 10)
 def compute_shadow_map(self, ifn):
     """convert incidence geotiff to binary shadow map
@@ -63,7 +63,7 @@ def compute_shadow_map(self, ifn):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage = 1626846910)
+@cache_fn_results(minage=1626846910, path_prefix='shadow')
 @one_instance(expire = 60*10)
 def compute_incidence(self, tif_fn, timestr):
     """compute sun incidence angle
@@ -102,7 +102,7 @@ def compute_incidence(self, tif_fn, timestr):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage = 1626846910)
+@cache_fn_results(minage=1626846910, path_prefix='shadow')
 @one_instance(expire = 60*10)
 def average_png(self, png_files):
     """Compute average

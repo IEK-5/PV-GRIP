@@ -30,7 +30,7 @@ from pvgrip.utils.format_dictionary \
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results()
+@cache_fn_results(path_prefix='route')
 @one_instance(expire = 400)
 def merge_tsv(self, tsv_files):
     logging.debug("merge_tsv\n{}"\
@@ -49,7 +49,7 @@ def merge_tsv(self, tsv_files):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage=1637566124)
+@cache_fn_results(minage=1637566124, path_prefix='route')
 @one_instance(expire = 60*10)
 def compute_route(self, ifn, route, lat, lon,
                   ghi_default, dhi_default,

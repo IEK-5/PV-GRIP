@@ -6,7 +6,7 @@ import pyproj
 import requests
 
 from pvgrip.utils.float_hash \
-    import float_hash_fn
+    import float_hash
 
 
 class NRWData:
@@ -59,7 +59,7 @@ class NRWData:
         resolution = self._meta['box_resolution']
 
         key = ("nrw_las", self.path, lat, lon, what)
-        res['file'] = float_hash_fn(key)
+        res['file'] = os.path.join(self.path,'data',float_hash(key))
 
         p0 = self._proj_from.transform\
             (lon*step,lat*step)

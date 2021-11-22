@@ -28,7 +28,7 @@ from pvgrip.utils.exceptions \
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results()
+@cache_fn_results(prefix='lidar')
 @one_instance(expire = 60*5)
 def download_laz(self, url):
     logging.debug("download_laz\n{}"\
@@ -48,7 +48,7 @@ def download_laz(self, url):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(ofn_arg = 'ofn')
+@cache_fn_results(ofn_arg='ofn')
 @one_instance(expire = 60*20)
 def run_pdal(self, laz_fn, resolution, what, ofn):
     logging.debug("run_pdal\n{}"\
@@ -68,7 +68,7 @@ def run_pdal(self, laz_fn, resolution, what, ofn):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(ofn_arg = 'ofn')
+@cache_fn_results(ofn_arg = 'ofn', prefix='lidar', link=True)
 @one_instance(expire = 5)
 def link_ofn(self, ifn, ofn):
     logging.debug("link_ofn\n{}"\

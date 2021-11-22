@@ -41,7 +41,7 @@ from pvgrip.weather.utils \
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(ofn_arg = 'ofn')
+@cache_fn_results(ofn_arg='ofn')
 @one_instance(expire = 600)
 def retrieve_source(self, credentials_type, what, args, ofn):
     logging.debug("retrieve_source\n{}"\
@@ -104,7 +104,7 @@ def _sample(tl, what, how, drop):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage = 1632547215)
+@cache_fn_results(minage=1632547215, path_prefix='weather')
 @one_instance(expire = 600)
 def sample_irradiance_route(self, route_fn, what):
     logging.debug("sample_irradiance_route\n{}"\
@@ -124,7 +124,7 @@ def sample_irradiance_route(self, route_fn, what):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage = 1632547215)
+@cache_fn_results(minage=1632547215, path_prefix='weather')
 @one_instance(expire = 600)
 def sample_irradiance_bbox(self, bbox, time_range, time_step, what):
     logging.debug("sample_irradiance_bbox\n{}"\
@@ -146,7 +146,7 @@ def sample_irradiance_bbox(self, bbox, time_range, time_step, what):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage = 1632547215)
+@cache_fn_results(minage=1632547215, path_prefix='weather')
 @one_instance(expire = 600)
 def sample_reanalysis_route(self, route_fn, what):
     logging.debug("sample_reanalysis_route\n{}"\
@@ -167,7 +167,7 @@ def sample_reanalysis_route(self, route_fn, what):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage = 1632547215)
+@cache_fn_results(minage=1632547215, path_prefix='weather')
 @one_instance(expire = 600)
 def sample_reanalysis_bbox(self, bbox, time_range, time_step, what):
     logging.debug("sample_reanalsysis_bbox\n{}"\

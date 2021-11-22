@@ -28,7 +28,7 @@ from pvgrip.integrate.utils \
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage=1637566124)
+@cache_fn_results(minage=1637566124, path_prefix='integrate')
 @one_instance(expire = 60*10)
 def integrate_irradiance(self, ifn, times_fn,
                          lat, lon, albedo,

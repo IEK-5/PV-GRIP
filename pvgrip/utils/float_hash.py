@@ -20,13 +20,3 @@ def float_hash(key, digits = 8):
 
     h.update(str(key).encode('utf-8'))
     return h.hexdigest()
-
-
-def float_hash_fn(key, digits = 8):
-    from pvgrip.globals \
-        import RESULTS_PATH
-    return os.path.join\
-        (RESULTS_PATH,
-         "tmp_" + \
-         float_hash(key,
-                    digits = digits))
