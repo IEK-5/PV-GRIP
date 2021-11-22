@@ -7,6 +7,10 @@ with open('README.md', 'r') as f:
     long_description = f.read()
 
 
+with open('requirements.txt','r') as f:
+    requirements = [x.strip() for x in f.readlines()]
+
+
 def find_executable(path):
     executable = stat.S_IEXEC | stat.S_IXGRP | \
                  stat.S_IXOTH | (not stat.S_ISLNK)
@@ -35,5 +39,5 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url='git@github.com:esovetkin/open-elevation',
     packages=setuptools.find_packages(),
-    scripts=find_executable('scripts/')
-)
+    scripts=find_executable('scripts/'),
+    install_requires=requirements)
