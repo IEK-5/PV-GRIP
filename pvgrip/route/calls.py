@@ -51,8 +51,7 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
 
     tasks = check_all_data_available\
         (rasters = rasters,
-         data_re = kwargs['data_re'],
-         stat = kwargs['stat'])
+         data_re = kwargs['data_re'])
     group = []
     for x in rasters:
         lon, lat = centre_of_box(x['box'])
@@ -62,7 +61,8 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
                         'data_re': kwargs['data_re'],
                         'stat': kwargs['stat'],
                         'mesh_type': kwargs['mesh_type'],
-                        'step': kwargs['step']},
+                        'step': kwargs['step'],
+                        'pdal_resolution': kwargs['pdal_resolution']},
               immutable = True) | \
              compute_route.signature\
              (kwargs = \

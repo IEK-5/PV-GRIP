@@ -17,24 +17,30 @@ from pvgrip.raster.tasks \
     save_pnghillshade, save_pickle, \
     sample_from_box
 from pvgrip.raster.utils \
-    import check_box_not_too_big
+    import check_box_not_too_big, index2fn
 
 
-def check_all_data_available(*args, **kwargs):
+def check_all_data_available(**kwargs):
     SPATIAL_DATA = get_SPATIAL_DATA()
-    index = SPATIAL_DATA.subset(*args, **kwargs)
+    index = SPATIAL_DATA.subset\
+        (**{k:v for k,v in kwargs.items()
+            if k in ('data_re','box','rasters')})
 
     tasks = []
     for x in index.iterate():
-        if searchif_instorage(x['file']):
+        fn = index2fn\
+            (x, stat = kwargs['stat'],
+             pdal_resolution = kwargs['pdal_resolution'])
+
+        if searchif_instorage(fn):
             continue
 
         if 'remote_meta' in x:
             tasks += [process_laz\
                       (url = x['url'],
                        ofn = x['file'],
-                       resolution = x['pdal_resolution'],
-                       what = x['stat'],
+                       resolution = kwargs['pdal_resolution'],
+                       what = kwargs['stat'],
                        if_compute_las = x['if_compute_las'])]
             continue
 
@@ -88,20 +94,33 @@ def convert_from_to(tasks, from_type, to_type):
 
 @call_cache_fn_results()
 def sample_raster(box, data_re, stat,
-                  mesh_type, step, output_type):
+                  mesh_type, step, output_type,
+                  pdal_resolution):
     check_box_not_too_big(box = box, step = step,
                           mesh_type = mesh_type)
 
+    if stat not in ("max","min","count","mean","idw","stdev"):
+        raise RuntimeError("""invalid stat = {}
+        allowed values: ("max","min","count","mean","idw","stdev")
+        """.format(stat))
+
+    if pdal_resolution <= 0:
+        raise RuntimeError("invalid pdal_resolution = {}"\
+                           .format(pdal_resolution))
+
     tasks = celery.chain\
-        (check_all_data_available(box = box,
-                                  data_re = data_re,
-                                  stat = stat),\
+        (check_all_data_available\
+         (box = box,
+          data_re = data_re,
+          stat = stat,
+          pdal_resolution = pdal_resolution),\
          sample_from_box.signature\
          (kwargs = {'box': box,
                     'data_re': data_re,
                     'stat': stat,
                     'mesh_type': mesh_type,
-                    'step': step},
+                    'step': step,
+                    'pdal_resolution': pdal_resolution},
           immutable = True))
 
     return convert_from_to(tasks,

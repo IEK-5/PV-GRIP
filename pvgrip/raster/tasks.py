@@ -7,7 +7,7 @@ import numpy as np
 import pvgrip.raster.io as io
 
 from pvgrip.raster.utils \
-    import fill_missing
+    import fill_missing, index2fn
 from pvgrip.raster.mesh \
     import mesh
 from pvgrip.raster.gdalinterface \
@@ -103,21 +103,20 @@ def save_pickle(self, geotiff_fn):
 @cache_fn_results(path_prefix='raster')
 @one_instance(expire = 60*10)
 def sample_from_box(self, box, data_re, stat,
-                    mesh_type = 'metric', step = 1):
+                    mesh_type = 'metric', step = 1,
+                    pdal_resolution = 0.3):
     logging.debug("sample_from_box\n{}"\
                   .format(format_dictionary(locals())))
     SPATIAL_DATA = get_SPATIAL_DATA()
-    index = SPATIAL_DATA.subset(box = box,
-                                data_re = data_re,
-                                stat = stat)
+    index = SPATIAL_DATA.subset(box = box, data_re = data_re)
 
-    grid = mesh(box = box, step = step,
-                which = mesh_type)
-
+    grid = mesh(box = box, step = step, which = mesh_type)
     points = list(itertools.product(*grid['mesh']))
 
     res = None
-    for fn in index.files():
+    for fn_idx in index.iterate():
+        fn = index2fn(fn_idx, stat = stat,
+                      pdal_resolution = pdal_resolution)
         fn = searchandget_locally(fn)
         interface = GDALInterface(fn)
         x = np.array(interface.lookup(points = points,

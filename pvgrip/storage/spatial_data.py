@@ -56,19 +56,10 @@ def _polygon_from_list_rasters(rasters):
     return polygon
 
 
-def _subset_filter_how(x, data_re, stat):
+def _subset_filter_how(x, data_re):
     data_re = re.compile(data_re)
 
-    if 'stat' not in x and \
-       not data_re.match(x['file']):
-        return False
-
-    if 'stat' in x and \
-       not data_re.match(x['remote_meta']):
-        return False
-
-    if 'stat' in x and \
-       stat != x['stat']:
+    if not data_re.match(x['file']):
         return False
 
     return True
@@ -181,45 +172,35 @@ class Spatial_Data:
         self._upload_raster_data(path, las_dirs.keys())
 
 
-    def subset(self, data_re, stat,
-               box=None, rasters = None,
-               raise_on_empty = True):
+    def subset(self, data_re, box=None, rasters = None):
         """Generate a subset index containing required data
+
+        :data_re: regular expression to match filenames
 
         :box: a box describing coordinates of a box, if route is not
         None box gives positions of a box relative to each coordinate
         in a route
 
-        :data_re: regular expression to match filenames
-
-        :stat: statistic to match (lidar data)
-
         :rasters: a list of dictionaries containing 'box' field. If
         not None, 'box' argument is ignored, and a polygon is formed
         using the provided list of boxes in the 'rasters' list
 
-        :raise_on_empty: raise an exception if no data available
-
         :return: Polygon_File_Index
-
         """
-        logging.debug("Spatial_Data: begin subset")
         if rasters:
             pg = _polygon_from_list_rasters(rasters)
         else:
             pg = _polygon_from_box(box)
-        logging.debug("Spatial_Data: after _polygon_from_box")
 
         index = self.index.intersect(polygons = pg)
         index = index.filter\
             (how = lambda x:
-             _subset_filter_how(x, data_re, stat))
+             _subset_filter_how(x, data_re))
 
-        if raise_on_empty and 0 == index.size():
+        if 0 == index.size():
             raise RuntimeError\
                 ("no data available for the selected location")
 
-        logging.debug("Spatial_Data: begin subset")
         return index
 
 

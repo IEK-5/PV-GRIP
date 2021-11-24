@@ -19,18 +19,15 @@ from pvgrip.utils.basetask \
     import WithRetry
 
 from pvgrip.utils.files \
-    import get_tempfile, remove_file, get_tempdir
+    import remove_file, get_tempdir
 from pvgrip.utils.format_dictionary \
     import format_dictionary
 
-from pvgrip.utils.exceptions \
-    import TASK_RUNNING
-
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(prefix='lidar')
+@cache_fn_results(ofn_arg='ofn')
 @one_instance(expire = 60*5)
-def download_laz(self, url):
+def download_laz(self, url, ofn):
     logging.debug("download_laz\n{}"\
                   .format(format_dictionary(locals())))
     r = requests.get(url, allow_redirects=True)
@@ -41,10 +38,13 @@ def download_laz(self, url):
         url: %s
         """ % url)
 
-    ofn = get_tempfile()
-    with open(ofn, 'wb') as f:
-        f.write(r.content)
-    return ofn
+    try:
+        with open(ofn, 'wb') as f:
+            f.write(r.content)
+        return ofn
+    except Exception as e:
+        logging.error("error on writing! {}".format(e))
+        remove_file(ofn)
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
@@ -63,15 +63,8 @@ def run_pdal(self, laz_fn, resolution, what, ofn):
             (what = ['pdal','pipeline',pdalfn],
              cwd = wdir)
         return ofn
+    except Exception as e:
+        logging.error("error on writing! {}".format(e))
+        remove_file(ofn)
     finally:
         shutil.rmtree(wdir)
-
-
-@CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(ofn_arg = 'ofn', prefix='lidar', link=True)
-@one_instance(expire = 5)
-def link_ofn(self, ifn, ofn):
-    logging.debug("link_ofn\n{}"\
-                  .format(format_dictionary(locals())))
-    os.link(ifn, ofn)
-    return ofn

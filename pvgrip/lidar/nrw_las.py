@@ -33,14 +33,6 @@ class NRWData:
         self._if_compute_las = \
             'yes' == self._meta['if_compute_las']
 
-        if self._if_compute_las:
-            self._las_whats = self._meta['las_stats']
-            self._pdal_resolution = \
-                self._meta['pdal_resolution']
-        else:
-            self._las_whats = ('',)
-            self._pdal_resolution = 0
-
         self._proj_from = pyproj\
             .Transformer.from_crs(self._meta['epsg'], 4326,
                                   always_xy=True)
@@ -52,14 +44,11 @@ class NRWData:
             return json.load(f)
 
 
-    def _coord_to_index_data(self, lat, lon, what):
+    def _coord_to_index_data(self, lat, lon):
         res = {}
         step = self._meta['step']
         box_step = self._meta['box_step']
         resolution = self._meta['box_resolution']
-
-        key = ("nrw_las", self.path, lat, lon, what)
-        res['file'] = os.path.join(self.path,'data',float_hash(key))
 
         p0 = self._proj_from.transform\
             (lon*step,lat*step)
@@ -122,16 +111,13 @@ class NRWData:
 
             lon = int(regex.sub(r'\1', fn))
             lat = int(regex.sub(r'\2', fn))
-            for what in self._las_whats:
-                data = self._coord_to_index_data\
-                    (lat=lat, lon=lon, what = what)
-                data.update({
-                    'url': self._meta['root_url'] \
-                    % (lon, lat),
-                    'stat': what,
-                    'remote_meta': self.path,
-                    'if_compute_las': \
-                    self._if_compute_las,
-                    'pdal_resolution': \
-                    self._pdal_resolution})
-                yield data
+            url = self._meta['root_url'] % (lon, lat)
+
+            data = self._coord_to_index_data(lat=lat, lon=lon)
+            data.update({
+                'file': os.path.join(self.path,'data',
+                                     float_hash(("nrw_las", url, lon, lat))),
+                'url': url,
+                'remote_meta': self.path,
+                'if_compute_las': self._if_compute_las})
+            yield data

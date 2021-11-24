@@ -79,7 +79,12 @@ def lookup_defaults():
                  """
                  statistic to compute for LAS files
 
-                 choice: ("max","min","mean","idw","count","stdev")""")})
+                 choice: ("max","min","mean","idw","count","stdev")"""),
+                'pdal_resolution': \
+                (0.3,
+                 """
+                 resolution with what to sample LAS files
+                 """)})
     return res
 
 

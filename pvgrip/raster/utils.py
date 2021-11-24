@@ -1,3 +1,5 @@
+import os
+
 from scipy import ndimage as nd
 
 from pvgrip.raster.mesh \
@@ -33,3 +35,26 @@ def check_box_not_too_big(box, step, mesh_type,
             ("either box or resolution is too high!")
 
     return len(grid['mesh'][0]), len(grid['mesh'][1])
+
+
+def index2fn(x, stat, pdal_resolution):
+    """Convert whatever dictionary given in the index to the proper
+filenames
+
+    Why? One index entry may point to many file, for example, in the
+    case of the lidar data. one region points to source lidar data,
+    and a bunch of various sampled statistics.
+
+    :x: a dictionary
+
+    :return: a string
+    """
+    if 'remote_meta' not in x:
+        return x['file']
+
+    if x['if_compute_las']:
+        return os.path.join\
+            (x['file'],
+             '{}_{:.8f}'.format(stat, pdal_resolution))
+
+    return os.path.join(x['file'],'src')
