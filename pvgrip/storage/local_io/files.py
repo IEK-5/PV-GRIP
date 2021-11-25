@@ -188,7 +188,7 @@ class LOCALIO_Files:
             sdst = self._storage_fn(dst)
             if os.path.isfile(sdst):
                 _unlink(sdst)
-            os.link(self._storage_fn(src), sdst)
+            _copy_or_link(self._storage_fn(src), sdst)
             self._set_timestamp(dst, timestamp)
 
             _unlink(chck)
