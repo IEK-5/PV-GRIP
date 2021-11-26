@@ -46,6 +46,11 @@ def calls_help():
         /api/weather/reanalysis/{route,box}
                          get various reanalysis data
 
+    /api/filter          apply various filters with raster data
+
+        /api/filter/lidar_stdev
+                         compute stdev of lidar points in any window
+
     /api/status          print current active and scheduled jobs
 
     """
@@ -460,6 +465,19 @@ def weather_reanalysis_box():
     return res
 
 
+def filter_lidar_stdev():
+    res = raster_defaults()
+    del res['mesh_type']
+    del res['stat']
+    res.update({'filter_size': \
+                ([20,20],
+                 """
+                 arguments defines width and heihgt
+                 (in meters) of the area variance is computed
+                 """)})
+    return res
+
+
 def call_defaults(method):
     if 'raster' == method:
         res = raster_defaults()
@@ -497,6 +515,8 @@ def call_defaults(method):
         res = weather_reanalysis_box()
     elif 'weather/reanalysis/route' == method:
         res = weather_reanalysis_route()
+    elif 'filter/lidar_stdev' == method:
+        res = filter_lidar_stdev()
     else:
         return None
 
