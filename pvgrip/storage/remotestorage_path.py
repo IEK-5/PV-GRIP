@@ -92,6 +92,14 @@ class RemoteStoragePath:
 
 
     @property
+    def _lock_fn(self):
+        fn = os.path.join(RESULTS_PATH, 'locks',
+                          self.path.lstrip(os.path.sep))
+        os.makedirs(os.path.dirname(fn), exist_ok = True)
+        return fn
+
+
+    @property
     def remotetype(self):
         return REGEX.match(self._path).groups()[0]
 
@@ -146,7 +154,7 @@ class RemoteStoragePath:
     def get_locally(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
 
-        with filelock.FileLock(self.path + ".lock"):
+        with filelock.FileLock(self._lock_fn):
             logging.debug("get_locally: got the lock")
             if self.path in self._localcache:
                 return self.path
@@ -172,6 +180,7 @@ class RemoteStoragePath:
 
             logging.debug("get_locally: add to localcache")
             self._localcache.add(self.path)
+            self._localcache.add(self._lock_fn)
             return self.path
 
 
