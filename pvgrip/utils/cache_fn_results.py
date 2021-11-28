@@ -136,6 +136,7 @@ def cache_fn_results(keys = None,
                      ofn_arg = None,
                      minage = None,
                      path_prefix = None,
+                     update_timestamp = True,
                      storage_type = DEFAULT_REMOTE):
     """Cache results of a function that returns a file
 
@@ -155,7 +156,9 @@ def cache_fn_results(keys = None,
 
     :path_prefix: how to prefix path of the file
 
-    :storage_type: type of remote storage. Either: 'cassandra_path' or 'ipfs_path'.
+    :update_timestamp: if update timestamp on cache hit
+
+    :storage_type: type of remote storage.
 
     """
     def wrapper(fun):
@@ -191,6 +194,8 @@ def cache_fn_results(keys = None,
                 kwargs = {}
                 """.format(ofn, fun.__name__,
                            args, kwargs))
+                if update_timestamp:
+                    ofn_rpath.update_timestamp()
                 return str(ofn_rpath)
 
             logging.debug("""
@@ -231,6 +236,7 @@ def cache_fn_results(keys = None,
 def call_cache_fn_results(keys = None,
                           minage = None,
                           path_prefix = None,
+                          update_timestamp = True,
                           storage_type = DEFAULT_REMOTE):
     """Wraps tasks generation calls (*/calls.py)
 
@@ -281,6 +287,8 @@ def call_cache_fn_results(keys = None,
                 kwargs = {}
                 """.format(ofn, fun.__name__,
                            args, kwargs))
+                if update_timestamp:
+                    ofn_rpath.update_timestamp()
                 return call_fn_cache.signature\
                     (kwargs = {'result': None,
                                'ofn': str(ofn_rpath),
