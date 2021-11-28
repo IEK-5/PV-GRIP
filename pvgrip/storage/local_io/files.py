@@ -154,7 +154,8 @@ class LOCALIO_Files:
 
         :storage_fn: path relative to the storage root
 
-        :timestamp: optionally set specific timestamp
+        :timestamp: optionally set specific timestamp. If None,
+        timestamp is not set (actual time is used)
 
         """
         with self._lock(storage_fn):
@@ -174,12 +175,17 @@ class LOCALIO_Files:
 
         :src,dst: path relative to the storage root
 
-        :timestamp: optionally set specific timestamp
+        :timestamp: optionally set specific timestamp. If None,
+        timestamp is not set. If '-1' timestamp of the source is
+        set
 
         """
         if src not in self:
             raise RuntimeError('{} not in storage!'\
                                .format(src))
+
+        if -1 == timestamp:
+            timestamp = self.get_timestamp(src)
 
         with self._lock(src) and self._lock(dst):
             chck = self._check_fn(dst)

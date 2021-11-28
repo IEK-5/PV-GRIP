@@ -197,9 +197,9 @@ class RemoteStoragePath:
         self._localcache.add(self.path)
 
 
-    def link(self, src):
+    def link(self, src, timestamp = None):
         try:
-            self._storage.link(src, self.path)
+            self._storage.link(src, self.path, timestamp)
         except Exception as e:
             logging.error("""Failed to link file!
             source: {}
