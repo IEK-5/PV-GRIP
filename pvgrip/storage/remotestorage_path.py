@@ -151,6 +151,10 @@ class RemoteStoragePath:
         return self._storage.get_timestamp(self.path)
 
 
+    def update_timestamp(self):
+        return self._storage.update_timestamp(self.path)
+
+
     def get_locally(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
 

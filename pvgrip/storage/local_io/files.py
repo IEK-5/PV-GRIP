@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 import logging
 
@@ -129,6 +130,13 @@ class LOCALIO_Files:
             return None
 
         return os.stat(self._storage_fn(storage_fn)).st_mtime
+
+
+    def update_timestamp(self, storage_fn):
+        if storage_fn not in self:
+            return None
+
+        self._set_timestamp(storage_fn, time.time())
 
 
     def download(self, storage_fn, ofn):
