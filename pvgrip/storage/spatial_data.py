@@ -18,10 +18,11 @@ from pvgrip.raster.gdalinterface \
 from pvgrip.storage.cassandra_datasets \
     import Datasets
 
-from cassandra_io.files \
-    import Cassandra_Files
 from cassandra_io.spatial_index \
     import Cassandra_Spatial_Index
+
+from pvgrip.utils.iterate_csv \
+    import iterate_csv
 
 
 def _in_directory(fn, paths):
@@ -120,6 +121,30 @@ class Spatial_Data:
 
                 if fn not in self.storage:
                     self.storage.upload(fn, fn)
+                self.index.insert(data = data)
+                self.datasets.add(os.path.dirname(fn))
+            except Exception as e:
+                logging.error("""
+                Could not process file: %s
+                Error: %s
+                Skipping...
+                """% (fn, str(e)))
+                continue
+
+
+    def upload_from_csv(self, csvfn):
+        from pvgrip.storage.remotestorage_path \
+            import RemoteStoragePath, is_remote_path
+
+        for row in tqdm(iterate_csv(csvfn, header=None)):
+            fn = row[0]
+            try:
+                if not is_remote_path(fn):
+                    logging.warning("{} is not a remote_path")
+                    continue
+
+                fn = RemoteStoragePath(fn).get_locally()
+                data = self._get_index_data(fn)
                 self.index.insert(data = data)
                 self.datasets.add(os.path.dirname(fn))
             except Exception as e:
