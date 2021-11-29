@@ -23,6 +23,9 @@ from pvgrip.utils.files \
 from pvgrip.utils.format_dictionary \
     import format_dictionary
 
+from pvgrip.globals \
+    import OPENGEODATA_CREDENTIALS
+
 
 @CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(ofn_arg='ofn')
@@ -30,6 +33,8 @@ from pvgrip.utils.format_dictionary \
 def download_laz(self, url, ofn):
     logging.debug("download_laz\n{}"\
                   .format(format_dictionary(locals())))
+    _ = OPENGEODATA_CREDENTIALS()
+
     r = requests.get(url, allow_redirects=True)
 
     if 200 != r.status_code:

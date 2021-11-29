@@ -99,6 +99,10 @@ COPERNICUS_CDS_HASH_LENGTH = \
 COPERNICUS_ADS_HASH_LENGTH = \
     int(PVGRIP_CONFIGS['copernicus']['ads_hash_length'])
 
+OPENGEODATA_CREDENTIALS = Credentials_Circle\
+    (config_fn=PVGRIP_CONFIGS['opengeodata']['limits_fn'],
+     redis_url = REDIS_URL)
+
 _LOGGING = {'INFO': logging.INFO,
             'DEBUG': logging.DEBUG,
             'WARNING': logging.WARNING,
