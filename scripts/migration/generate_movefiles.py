@@ -24,6 +24,9 @@ from pvgrip.utils.files \
 from pvgrip.utils.run_command \
     import run_command
 
+from pvgrip.utils.iterate_csv \
+    import iterate_csv
+
 from pvgrip.globals \
    import get_LOCAL_STORAGE
 
@@ -86,13 +89,6 @@ def _process_laz(row):
     return {'src': src, 'dst': dst}
 
 
-def iterate(fn, chunksize=10000):
-    for chunk in tqdm(pd.read_csv(fn, chunksize=chunksize,
-                                  escapechar='\\')):
-        for _, row in tqdm(chunk.iterrows()):
-            yield row
-
-
 def process(how, ifn, ofn='movefiles.csv.gz', header=True, chunksize=10000):
     res = []
 
@@ -102,7 +98,7 @@ def process(how, ifn, ofn='movefiles.csv.gz', header=True, chunksize=10000):
         except:
             pass
 
-    for row in iterate(ifn):
+    for row in tqdm(iterate_csv(ifn)):
         try:
             x = how(row)
         except Exception as e:
