@@ -1,4 +1,6 @@
+import os
 import pickle
+import shutil
 import logging
 import itertools
 
@@ -9,7 +11,7 @@ import pvgrip.raster.io as io
 from pvgrip.raster.utils \
     import fill_missing, index2fn
 from pvgrip.raster.mesh \
-    import mesh
+    import mesh, mesh2box
 from pvgrip.raster.gdalinterface \
     import GDALInterface
 
@@ -28,7 +30,7 @@ from pvgrip.utils.basetask \
     import WithRetry
 
 from pvgrip.utils.files \
-    import get_tempfile, remove_file
+    import get_tempfile, remove_file, get_tempdir
 from pvgrip.utils.format_dictionary \
     import format_dictionary
 
@@ -99,6 +101,24 @@ def save_pickle(self, geotiff_fn):
     return ofn
 
 
+def _process_lookup(arr, grid):
+    arr = np.array(arr).reshape(len(grid['mesh'][0]),
+                                len(grid['mesh'][1]),
+                                arr.shape[1])
+    arr = fill_missing(arr)
+    arr = np.transpose(np.flip(arr, axis = 1),
+                       axes=(1,0,2))
+
+    ofn = get_tempfile()
+    try:
+        with open(ofn, 'wb') as f:
+            pickle.dump({'raster': arr, 'mesh': grid}, f)
+    except Exception as e:
+        remove_file(ofn)
+        raise e
+    return ofn
+
+
 @CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(path_prefix='raster')
 @one_instance(expire = 60*10)
@@ -131,19 +151,34 @@ def sample_from_box(self, box, data_re, stat,
             raise RuntimeError\
                 ("cannot join data sources of different shape")
 
+        # take maximum among multiple data sources!
         res = np.array((res,x)).max(axis=0)
-    res = np.array(res).reshape(len(grid['mesh'][0]),
-                                len(grid['mesh'][1]),
-                                res.shape[1])
-    res = fill_missing(res)
-    res = np.transpose(np.flip(res, axis = 1),
-                       axes=(1,0,2))
 
-    ofn = get_tempfile()
+    return _process_lookup(arr = res, grid = grid)
+
+
+@CELERY_APP.task(bind=True, base=WithRetry)
+@cache_fn_results(path_prefix='raster')
+@one_instance(expire = 60*10)
+def resample_from_pickle(self, pickle_fn, new_step):
+    logging.debug("resample_from_pickle\n{}"\
+                  .format(format_dictionary(locals())))
+    with open(pickle_fn,'rb') as f:
+        src = pickle.load(f)
+
+    if src['mesh']['step'] == new_step:
+        return pickle_fn
+
+    wdir = get_tempdir()
     try:
-        with open(ofn, 'wb') as f:
-            pickle.dump({'raster': res, 'mesh': grid}, f)
-    except Exception as e:
-        remove_file(ofn)
-        raise e
-    return ofn
+        box, mesh_type = mesh2box(src['mesh'])
+        grid = mesh(box = box, step = new_step, which = mesh_type)
+        points = list(itertools.product(*grid['mesh']))
+        tifffn = os.path.join(wdir, 'geotiff')
+        io.save_geotiff(src, tifffn)
+        interface = GDALInterface(tifffn)
+        res = np.array(interface.lookup(points = points,
+                                        box = box))
+        return _process_lookup(arr = res, grid = grid)
+    finally:
+        shutil.rmtree(wdir)

@@ -57,3 +57,17 @@ def mesh(box, step, which = 'metric'):
 
     if which == 'wgs84':
         return _mesh_wgs84(box = box, step = step)
+
+
+def mesh2box(mesh):
+    if 4326 == mesh['epsg']:
+        return mesh['raster_box'], 'wgs84'
+
+    if 3857 != mesh['epsg']:
+        raise RuntimeError("unsupported mesh['epsg'] = {}"\
+                           .format(mesh['epsg']))
+
+    boxmt = mesh['raster_box']
+    box = _T2LL.transform(boxmt[0], boxmt[1]) + \
+        _T2LL.transform(boxmt[2], boxmt[3])
+    return (box[1],box[0],box[3],box[2]), 'metric'
