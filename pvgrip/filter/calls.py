@@ -9,7 +9,7 @@ from pvgrip.raster.tasks \
     import resample_from_pickle
 
 from pvgrip.filter.tasks \
-    import stdev
+    import stdev, apply_filter
 
 
 @call_cache_fn_results()
@@ -29,6 +29,22 @@ def lidar_stdev(filter_size, **kwargs):
         (kwargs = {'filter_size': filter_size})
     tasks |= resample_from_pickle.signature\
         (kwargs = {'new_step': step})
+
+    return convert_from_to(tasks,
+                           from_type='pickle',
+                           to_type = output_type)
+
+
+@call_cache_fn_results()
+def filter_raster(filter_type, filter_size, **kwargs):
+    output_type = kwargs['output_type']
+    kwargs['output_type'] = 'pickle'
+    kwargs['mesh_type'] = 'metric'
+
+    tasks = sample_raster(**kwargs)
+    tasks |= apply_filter.signature\
+        (kwargs = {'filter_type': filter_type,
+                   'filter_size': filter_size})
 
     return convert_from_to(tasks,
                            from_type='pickle',

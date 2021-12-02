@@ -23,3 +23,7 @@ def const_weights(filter_size, step):
 def sum_convolve(raster, filter_size, step):
     return convolve(raster,
                     const_weights(filter_size, step))
+
+
+def average_per_sqm(filter_size, step):
+    return const_weights(filter_size, step)/np.prod(filter_size)

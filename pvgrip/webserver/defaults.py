@@ -48,6 +48,9 @@ def calls_help():
 
     /api/filter          apply various filters with raster data
 
+        /api/filter/raster
+                         sample raster and apply a filter
+
         /api/filter/lidar_stdev
                          compute stdev of lidar points in any window
 
@@ -478,6 +481,25 @@ def filter_lidar_stdev():
     return res
 
 
+def filter_raster():
+    res = raster_defaults()
+    del res['mesh_type']
+    res.update({'filter_size': \
+                ([20,20],
+                 """
+                 arguments defines width and heihgt
+                 (in meters) of the area variance is computed
+                 """),
+                'filter_type': \
+                ('average',
+                 """type of filter to apply. options:
+
+                 - average (average per m^2)
+                 - sum
+                 """)})
+    return res
+
+
 def call_defaults(method):
     if 'raster' == method:
         res = raster_defaults()
@@ -517,6 +539,8 @@ def call_defaults(method):
         res = weather_reanalysis_route()
     elif 'filter/lidar_stdev' == method:
         res = filter_lidar_stdev()
+    elif 'filter/raster' == method:
+        res = filter_raster()
     else:
         return None
 

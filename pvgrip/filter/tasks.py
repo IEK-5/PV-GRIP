@@ -22,11 +22,25 @@ from pvgrip.utils.files \
 
 from pvgrip.filter.variance \
     import variance
+from pvgrip.filter.filters \
+    import const_weights, average_per_sqm, convolve
 
 
 def _read_pickle(fn):
     with open(fn, 'rb') as f:
         return pickle.load(f)
+
+
+def _write_pickle(raster, mesh):
+    ofn = get_tempfile()
+    try:
+        with open(ofn, 'wb') as f:
+            pickle.dump({'raster': raster,
+                         'mesh': mesh}, f)
+    except Exception as e:
+        remove_file(ofn)
+        raise e
+    return ofn
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
@@ -46,12 +60,28 @@ def stdev(self, fns, filter_size):
                    filter_size = filter_size)
     res = np.power(res,0.5)
 
-    ofn = get_tempfile()
-    try:
-        with open(ofn, 'wb') as f:
-            pickle.dump({'raster': res,
-                         'mesh': stdev['mesh']}, f)
-    except Exception as e:
-        remove_file(ofn)
-        raise e
-    return ofn
+    return _write_pickle(raster = res, mesh = stdev['mesh'])
+
+
+@CELERY_APP.task(bind=True, base=WithRetry)
+@cache_fn_results(path_prefix='filter')
+@one_instance(expire = 10)
+def apply_filter(self, fn, filter_type, filter_size):
+    logging.debug("apply_filter\n{}"\
+                  .format(format_dictionary(locals())))
+    raster = _read_pickle(fn)
+
+    if 'average' == filter_type:
+        weights = average_per_sqm\
+            (filter_size = filter_size,
+             step = raster['mesh']['step'])
+    elif 'sum' == filter_type:
+        weights = const_weights\
+            (filter_size = filter_size,
+             step = raster['mesh']['step'])
+    else:
+        raise RuntimeError("unknown filter_type = {}"\
+                           .format(filter_type))
+
+    res = convolve(raster = raster['raster'], weights = weights)
+    return _write_pickle(raster = res, mesh = raster['mesh'])
