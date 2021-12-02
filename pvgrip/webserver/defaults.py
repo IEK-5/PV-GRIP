@@ -217,6 +217,8 @@ def download_defaults():
 
 def ssdp_defaults():
     res = raster_defaults()
+    del res['mesh_type']
+
     res.update({'ghi': \
                 (float(1000),
                  "Global horizontal irradiance"),
@@ -296,7 +298,6 @@ def route_defaults():
 
                  """)})
     del res['output_type']
-    del res['mesh_type']
     return res
 
 
@@ -314,7 +315,6 @@ def integrate_defaults():
     del res['ghi']
     del res['dhi']
     del res['timestr']
-    del res['mesh_type']
     return res
 
 
