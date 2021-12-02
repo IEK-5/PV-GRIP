@@ -26,11 +26,15 @@ def check_all_data_available(**kwargs):
         (**{k:v for k,v in kwargs.items()
             if k in ('data_re','box','rasters')})
 
+    if 'ensure_las' not in kwargs:
+        kwargs['ensure_las'] = False
+
     tasks = []
     for x in index.iterate():
         fn = index2fn\
             (x, stat = kwargs['stat'],
-             pdal_resolution = kwargs['pdal_resolution'])
+             pdal_resolution = kwargs['pdal_resolution'],
+             ensure_las = kwargs['ensure_las'])
 
         if searchif_instorage(fn):
             continue
@@ -95,7 +99,7 @@ def convert_from_to(tasks, from_type, to_type):
 @call_cache_fn_results()
 def sample_raster(box, data_re, stat,
                   mesh_type, step, output_type,
-                  pdal_resolution):
+                  pdal_resolution, ensure_las = False):
     check_box_not_too_big(box = box, step = step,
                           mesh_type = mesh_type)
 
@@ -110,7 +114,8 @@ def sample_raster(box, data_re, stat,
 
     tasks = celery.chain\
         (check_all_data_available\
-         (box = box,
+         (ensure_las = ensure_las,
+          box = box,
           data_re = data_re,
           stat = stat,
           pdal_resolution = pdal_resolution),\
@@ -120,7 +125,8 @@ def sample_raster(box, data_re, stat,
                     'stat': stat,
                     'mesh_type': mesh_type,
                     'step': step,
-                    'pdal_resolution': pdal_resolution},
+                    'pdal_resolution': pdal_resolution,
+                    'ensure_las': ensure_las},
           immutable = True))
 
     return convert_from_to(tasks,

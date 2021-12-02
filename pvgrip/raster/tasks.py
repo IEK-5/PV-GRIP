@@ -104,7 +104,7 @@ def save_pickle(self, geotiff_fn):
 @one_instance(expire = 60*10)
 def sample_from_box(self, box, data_re, stat,
                     mesh_type = 'metric', step = 1,
-                    pdal_resolution = 0.3):
+                    pdal_resolution = 0.3, ensure_las = False):
     logging.debug("sample_from_box\n{}"\
                   .format(format_dictionary(locals())))
     SPATIAL_DATA = get_SPATIAL_DATA()
@@ -116,7 +116,8 @@ def sample_from_box(self, box, data_re, stat,
     res = None
     for fn_idx in index.iterate():
         fn = index2fn(fn_idx, stat = stat,
-                      pdal_resolution = pdal_resolution)
+                      pdal_resolution = pdal_resolution,
+                      ensure_las = ensure_las)
         fn = searchandget_locally(fn)
         interface = GDALInterface(fn)
         x = np.array(interface.lookup(points = points,

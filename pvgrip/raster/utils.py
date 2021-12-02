@@ -37,7 +37,7 @@ def check_box_not_too_big(box, step, mesh_type,
     return len(grid['mesh'][0]), len(grid['mesh'][1])
 
 
-def index2fn(x, stat, pdal_resolution):
+def index2fn(x, stat, pdal_resolution, ensure_las):
     """Convert whatever dictionary given in the index to the proper
 filenames
 
@@ -49,6 +49,12 @@ filenames
 
     :return: a string
     """
+    if ensure_las and ('remote_meta' not in x or \
+                       not x['if_compute_las']):
+        raise RuntimeError("""data is not LIDAR data!
+        It seems that here the LIDAR data is explicitly needed.
+        Check what you query!""")
+
     if 'remote_meta' not in x:
         return x['file']
 
