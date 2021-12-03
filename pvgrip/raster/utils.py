@@ -1,9 +1,19 @@
 import os
+import pyproj
+import itertools
+
+import numpy as np
 
 from scipy import ndimage as nd
 
 from pvgrip.raster.mesh \
     import mesh
+
+
+_T2MT = pyproj.Transformer.from_crs(4326, 3857,
+                                    always_xy=True)
+_T2LL = pyproj.Transformer.from_crs(3857, 4326,
+                                    always_xy=True)
 
 
 def fill_missing(data, missing_value = -9999):
@@ -64,3 +74,54 @@ filenames
              '{}_{:.8f}'.format(stat, pdal_resolution))
 
     return os.path.join(x['file'],'src')
+
+
+def _rotate(arr, centre, azimuth):
+    azimuth = np.deg2rad(azimuth)
+    cos = np.cos(azimuth)
+    sin = np.sin(azimuth)
+    arr -= centre
+    return np.transpose((arr[:,0]*cos - arr[:,1]*sin,
+                         arr[:,0]*sin + arr[:,1]*cos)) + centre
+
+
+def _neighbours(coords, neighbour_step):
+    if len(neighbour_step) != 2:
+        raise RuntimeError\
+            ("neighbour_step.shape = {} != 2"\
+             .format(neighbour_step))
+
+    names=[''.join(x) \
+           for x in itertools.product\
+           (('c','s','n'),('c','e','w'))]
+
+    res = []
+    for lon_step, lat_step in itertools.product\
+        ((0,neighbour_step[0],-neighbour_step[0]),
+         (0,neighbour_step[1],-neighbour_step[1])):
+        t = coords.copy()
+        t[:,:2] += np.array((lat_step, lon_step))
+        res += [t]
+
+    return np.concatenate(res), names
+
+
+def route_neighbours(route, azimuth_default, neighbour_step):
+    coords = []
+    for x in route:
+        if 'longitude' not in x or 'latitude' not in x:
+            raise RuntimeError\
+                ("longitude or latitude is missing!")
+
+        lon_met, lat_met = \
+            _T2MT.transform(x['longitude'], x['latitude'])
+
+        if 'azimuth' not in x:
+            x['azimuth'] = azimuth_default
+
+        coords += [(lat_met, lon_met, lat_met, lon_met, x['azimuth'])]
+
+    res, names = _neighbours(np.array(coords), neighbour_step)
+    res = _rotate(res[:,:2], res[:,2:4], res[:,4])
+    res = _T2LL.transform(res[:,1],res[:,0])
+    return np.transpose(res).tolist(), names

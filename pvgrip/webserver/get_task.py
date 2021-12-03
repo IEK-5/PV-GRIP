@@ -16,7 +16,8 @@ from pvgrip.weather.calls \
     import irradiance_route, irradiance_bbox, \
     reanalysis_route, reanalysis_bbox
 from pvgrip.filter.calls \
-    import lidar_stdev, filter_raster
+    import lidar_stdev, filter_raster, \
+    filter_raster_route, lidar_stdev_route
 
 from pvgrip.status.utils \
     import status
@@ -90,8 +91,16 @@ def get_task(method, args):
         run = reanalysis_route
     elif 'filter/lidar_stdev' == method:
         run = lidar_stdev
+    elif 'filter/lidar_stdev/box' == method:
+        run = lidar_stdev
+    elif 'filter/lidar_stdev/route' == method:
+        run = lidar_stdev_route
     elif 'filter/raster' == method:
         run = filter_raster
+    elif 'filter/raster/box' == method:
+        run = filter_raster
+    elif 'filter/raster/route' == method:
+        run = filter_raster_route
     else:
         raise RuntimeError\
             ('method={} is not implemented'\

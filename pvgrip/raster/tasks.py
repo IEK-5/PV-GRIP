@@ -1,3 +1,4 @@
+import re
 import os
 import pickle
 import shutil
@@ -5,15 +6,19 @@ import logging
 import itertools
 
 import numpy as np
+import pandas as pd
 
 import pvgrip.raster.io as io
 
 from pvgrip.raster.utils \
-    import fill_missing, index2fn
+    import fill_missing, index2fn, \
+    route_neighbours
 from pvgrip.raster.mesh \
     import mesh, mesh2box
 from pvgrip.raster.gdalinterface \
     import GDALInterface
+from pvgrip.raster.pickle_lookup \
+    import pickle_lookup
 
 from pvgrip.storage.remotestorage_path \
     import searchandget_locally
@@ -35,14 +40,36 @@ from pvgrip.utils.format_dictionary \
     import format_dictionary
 
 
+def _read_pickle(fn):
+    with open(fn, 'rb') as f:
+        return pickle.load(f)
+
+
+def _process_lookup(arr, grid):
+    arr = np.array(arr).reshape(len(grid['mesh'][0]),
+                                len(grid['mesh'][1]),
+                                arr.shape[1])
+    arr = fill_missing(arr)
+    arr = np.transpose(np.flip(arr, axis = 1),
+                       axes=(1,0,2))
+
+    ofn = get_tempfile()
+    try:
+        with open(ofn, 'wb') as f:
+            pickle.dump({'raster': arr, 'mesh': grid}, f)
+    except Exception as e:
+        remove_file(ofn)
+        raise e
+    return ofn
+
+
 @CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(path_prefix='raster')
 @one_instance(expire = 10)
 def save_geotiff(self, pickle_fn):
     logging.debug("save_geotiff\n{}"\
                   .format(format_dictionary(locals())))
-    with open(pickle_fn, 'rb') as f:
-        data = pickle.load(f)
+    data = _read_pickle(pickle_fn)
     ofn = get_tempfile()
     try:
         io.save_geotiff(data, ofn)
@@ -58,8 +85,7 @@ def save_geotiff(self, pickle_fn):
 def save_png(self, pickle_fn, normalize = False):
     logging.debug("save_png\n{}"\
                   .format(format_dictionary(locals())))
-    with open(pickle_fn, 'rb') as f:
-        data = pickle.load(f)
+    data = _read_pickle(pickle_fn)
 
     ofn = get_tempfile()
     try:
@@ -95,24 +121,6 @@ def save_pickle(self, geotiff_fn):
     ofn = get_tempfile()
     try:
         io.save_pickle(geotiff_fn, ofn)
-    except Exception as e:
-        remove_file(ofn)
-        raise e
-    return ofn
-
-
-def _process_lookup(arr, grid):
-    arr = np.array(arr).reshape(len(grid['mesh'][0]),
-                                len(grid['mesh'][1]),
-                                arr.shape[1])
-    arr = fill_missing(arr)
-    arr = np.transpose(np.flip(arr, axis = 1),
-                       axes=(1,0,2))
-
-    ofn = get_tempfile()
-    try:
-        with open(ofn, 'wb') as f:
-            pickle.dump({'raster': arr, 'mesh': grid}, f)
     except Exception as e:
         remove_file(ofn)
         raise e
@@ -165,22 +173,47 @@ def sample_from_box(self, box, data_re, stat,
 def resample_from_pickle(self, pickle_fn, new_step):
     logging.debug("resample_from_pickle\n{}"\
                   .format(format_dictionary(locals())))
-    with open(pickle_fn,'rb') as f:
-        src = pickle.load(f)
+    src = _read_pickle(pickle_fn)
 
     if src['mesh']['step'] == new_step:
         return pickle_fn
 
-    wdir = get_tempdir()
+    box, mesh_type = mesh2box(src['mesh'])
+    grid = mesh(box = box, step = new_step, which = mesh_type)
+    points = list(itertools.product(*grid['mesh']))
+    return _process_lookup(arr = pickle_lookup(src,points,box),
+                           grid = grid)
+
+
+@CELERY_APP.task(bind=True, base=WithRetry)
+@cache_fn_results(path_prefix='raster')
+@one_instance(expire = 10)
+def sample_route_neighbour(self, pickle_fn, route,
+                           azimuth_default, neighbour_step,
+                           prefix):
+    logging.debug("sample_route_neighbour\n{}"\
+                  .format(format_dictionary(locals())))
+    src = _read_pickle(pickle_fn)
+
+    box, mesh_type = mesh2box(src['mesh'])
+    points, names = route_neighbours\
+        (route, azimuth_default, neighbour_step)
+
+    reg = re.compile(r'[\[,\]\s\*]')
+    names = [reg.sub('.','{}_{}'.format(prefix, x)) for x in names]
+
+    res = pickle_lookup(src, points, box)
+    res = pd.DataFrame\
+        (np.transpose(np.array(res).reshape(9,len(route))),
+         columns=names)
+    res = pd.concat\
+        ([pd.DataFrame(route).reset_index(drop=True), res],
+         axis=1)
+
+    ofn = get_tempfile()
     try:
-        box, mesh_type = mesh2box(src['mesh'])
-        grid = mesh(box = box, step = new_step, which = mesh_type)
-        points = list(itertools.product(*grid['mesh']))
-        tifffn = os.path.join(wdir, 'geotiff')
-        io.save_geotiff(src, tifffn)
-        interface = GDALInterface(tifffn)
-        res = np.array(interface.lookup(points = points,
-                                        box = box))
-        return _process_lookup(arr = res, grid = grid)
-    finally:
-        shutil.rmtree(wdir)
+        res.to_csv(ofn, sep='\t', index=False)
+        return ofn
+    except Exception as e:
+        remove_file(ofn)
+        raise e

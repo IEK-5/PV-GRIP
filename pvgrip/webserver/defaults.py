@@ -48,10 +48,10 @@ def calls_help():
 
     /api/filter          apply various filters with raster data
 
-        /api/filter/raster
+        /api/filter/raster/{route,box}
                          sample raster and apply a filter
 
-        /api/filter/lidar_stdev
+        /api/filter/lidar_stdev/{route,box}
                          compute stdev of lidar points in any window
 
     /api/status          print current active and scheduled jobs
@@ -272,8 +272,9 @@ def ssdp_defaults():
     return res
 
 
-def route_defaults():
-    res = ssdp_defaults()
+def _route():
+    res = raster_defaults()
+    del res['output_type']
     res.update({'box': \
                 ([-50,-50,50,50],
                  """
@@ -299,13 +300,25 @@ def route_defaults():
 
                  The tsv file must contain a header with at least
                  'latitude' and 'longitude' columns.
+                 """)})
+    return res
+
+
+def route_defaults():
+    res = ssdp_defaults()
+    res.update(_route())
+    res.update({'tsvfn_uploaded': \
+                ('NA',
+                 """a pvgrip path resulted from /api/upload
+
+                 The tsv file must contain a header with at least
+                 'latitude' and 'longitude' columns.
 
                  The following columns are optional: 'ghi', 'dhi',
                  'timestr'. In case some of the columns are missing, a
                  constant value for all locations is used.
 
                  """)})
-    del res['output_type']
     return res
 
 
@@ -468,35 +481,76 @@ def weather_reanalysis_box():
     return res
 
 
-def filter_lidar_stdev():
-    res = raster_defaults()
-    del res['mesh_type']
-    del res['stat']
-    res.update({'filter_size': \
-                ([20,20],
-                 """
-                 arguments defines width and heihgt
-                 (in meters) of the area variance is computed
-                 """)})
-    return res
+def _filter():
+    return {'filter_size': \
+            ([20,20],
+             """
+             arguments defines width and heihgt
+             (in meters) of the area variance is computed
+             """)}
 
 
-def filter_raster():
-    res = raster_defaults()
-    del res['mesh_type']
-    res.update({'filter_size': \
-                ([20,20],
-                 """
-                 arguments defines width and heihgt
-                 (in meters) of the area variance is computed
-                 """),
-                'filter_type': \
+def _filter_type():
+    res = _filter()
+    res.update({'filter_type': \
                 ('average',
                  """type of filter to apply. options:
 
                  - average (average per m^2)
                  - sum
                  """)})
+    return res
+
+
+def filter_lidar_stdev():
+    res = raster_defaults()
+    del res['mesh_type']
+    del res['stat']
+    res.update(_filter())
+    return res
+
+
+def filter_raster():
+    res = raster_defaults()
+    del res['mesh_type']
+    res.update(_filter_type())
+    return res
+
+
+def _filter_route():
+    return {'neighbour_step':
+            ([30,30],
+             """step at each neigbours in the route point are selected
+
+             9 neighbours are selected:
+             nw, nc, ne
+             cw, cc, ce
+             sw, sc, se
+
+             """),
+            'azimuth':
+            (0,
+             """
+             angle at which neighbours are selected
+
+             azimuth zero, then 'nc' neighbour is truly 'nc'
+             """)}
+
+
+def filter_lidar_stdev_route():
+    res = _route()
+    del res['mesh_type']
+    del res['stat']
+    res.update(_filter())
+    res.update(_filter_route())
+    return res
+
+
+def filter_raster_route():
+    res = _route()
+    del res['mesh_type']
+    res.update(_filter_type())
+    res.update(_filter_route())
     return res
 
 
@@ -539,8 +593,16 @@ def call_defaults(method):
         res = weather_reanalysis_route()
     elif 'filter/lidar_stdev' == method:
         res = filter_lidar_stdev()
+    elif 'filter/lidar_stdev/box' == method:
+        res = filter_lidar_stdev()
+    elif 'filter/lidar_stdev/route' == method:
+        res = filter_lidar_stdev_route()
     elif 'filter/raster' == method:
         res = filter_raster()
+    elif 'filter/raster/box' == method:
+        res = filter_raster()
+    elif 'filter/raster/route' == method:
+        res = filter_raster_route()
     else:
         return None
 
