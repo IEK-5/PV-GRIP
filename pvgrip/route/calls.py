@@ -26,6 +26,21 @@ from pvgrip.route.split_route \
     import split_route_calls
 
 
+def route_rasters(tsvfn_uploaded, box, box_delta, **kwargs):
+    rasters_fn = get_list_rasters\
+        (route_fn = searchandget_locally(tsvfn_uploaded),
+         box = box, box_delta = box_delta)
+    with open(searchandget_locally(rasters_fn),'rb') as f:
+        rasters = pickle.load(f)
+
+    check_box_not_too_big(box = rasters[0]['box'],
+                          step = kwargs['step'],
+                          mesh_type = kwargs['mesh_type'])
+
+    return check_all_data_available\
+        (rasters = rasters, **kwargs), rasters
+
+
 @split_route_calls(
     fn_arg = 'tsvfn_uploaded',
     hows = ("region_hash","month","week","date"),
@@ -35,23 +50,11 @@ from pvgrip.route.split_route \
 def ssdp_route(tsvfn_uploaded, box, box_delta,
                dhi, ghi, albedo, timestr,
                offset, azimuth, zenith, nsky, **kwargs):
-    kwargs['output_type'] = 'pickle'
     kwargs['mesh_type'] = 'metric'
 
-    rasters_fn = get_list_rasters\
-        (route_fn = searchandget_locally(tsvfn_uploaded),
-         box = box,
-         box_delta = box_delta)
-    with open(searchandget_locally(rasters_fn),'rb') as f:
-        rasters = pickle.load(f)
-
-    check_box_not_too_big(box = rasters[0]['box'],
-                          step = kwargs['step'],
-                          mesh_type = kwargs['mesh_type'])
-
-    tasks = check_all_data_available\
-        (rasters = rasters,
-         data_re = kwargs['data_re'])
+    tasks, rasters = route_rasters\
+        (tsvfn_uploaded = tsvfn_uploaded, box = box,
+         box_delta = box_delta, **kwargs)
     group = []
     for x in rasters:
         lon, lat = centre_of_box(x['box'])
