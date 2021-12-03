@@ -10,3 +10,6 @@
 [submodule "configs/secret"]
 	path = configs/secret
 	url = gitolite-ipfsio:albus/juelich/pvgrip/secret
+[submodule "pvgrip/filter/savitzky-golay/savitzky-golay"]
+	path = pvgrip/filter/savitzky-golay/savitzky-golay
+	url = https://github.com/IEK-5/FilterImage.git
