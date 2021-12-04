@@ -149,7 +149,9 @@ def sample_from_box(self, box, data_re, stat,
 
         if x.shape != res.shape:
             raise RuntimeError\
-                ("cannot join data sources of different shape")
+                ("""cannot join data sources of different shape!
+                data_re matches data sources with shapes:
+                {} and {}""".format(x.shape, res.shape))
 
         # take maximum among multiple data sources!
         res = np.array((res,x)).max(axis=0)
