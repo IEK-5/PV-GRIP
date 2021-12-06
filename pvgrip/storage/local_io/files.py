@@ -102,7 +102,8 @@ class LOCALIO_Files:
     def _lock(self, storage_fn):
         return RedisLock(redis_url = self._redis_url,
                          key = "localio_files_{}".format(storage_fn),
-                         timeout = self._lock_expire)
+                         timeout = self._lock_expire,
+                         sleep = self._lock_sleep)
 
 
     def __contains__(self, storage_fn):
