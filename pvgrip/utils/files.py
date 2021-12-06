@@ -31,6 +31,8 @@ def remove_file(fn):
 
 
 def move_file(src, dst, link = False):
+    os.makedirs(os.path.dirname(dst), exist_ok = True)
+
     if link:
         if os.path.exists(dst):
             os.remove(dst)
