@@ -5,8 +5,6 @@ import numpy as np
 
 from pvgrip \
         import CELERY_APP
-from pvgrip.globals \
-        import get_SPATIAL_DATA
 from pvgrip.utils.cache_fn_results \
         import cache_fn_results
 from pvgrip.utils.celery_one_instance \

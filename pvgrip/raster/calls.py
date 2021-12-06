@@ -3,6 +3,9 @@ import celery
 from pvgrip.utils.cache_fn_results \
     import call_cache_fn_results
 
+from pvgrip.utils.timeout \
+    import Timeout
+
 from pvgrip.storage.remotestorage_path \
     import searchif_instorage
 
@@ -21,10 +24,11 @@ from pvgrip.raster.utils \
 
 
 def check_all_data_available(**kwargs):
-    SPATIAL_DATA = get_SPATIAL_DATA()
-    index = SPATIAL_DATA.subset\
-        (**{k:v for k,v in kwargs.items()
-            if k in ('data_re','box','rasters')})
+    with Timeout(600):
+        SPATIAL_DATA = get_SPATIAL_DATA()
+        index = SPATIAL_DATA.subset\
+            (**{k:v for k,v in kwargs.items()
+                if k in ('data_re','box','rasters')})
 
     if 'ensure_las' not in kwargs:
         kwargs['ensure_las'] = False

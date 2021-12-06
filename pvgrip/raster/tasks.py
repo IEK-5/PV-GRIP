@@ -39,6 +39,9 @@ from pvgrip.utils.files \
 from pvgrip.utils.format_dictionary \
     import format_dictionary
 
+from pvgrip.utils.timeout \
+    import Timeout
+
 
 def _read_pickle(fn):
     with open(fn, 'rb') as f:
@@ -135,8 +138,9 @@ def sample_from_box(self, box, data_re, stat,
                     pdal_resolution = 0.3, ensure_las = False):
     logging.debug("sample_from_box\n{}"\
                   .format(format_dictionary(locals())))
-    SPATIAL_DATA = get_SPATIAL_DATA()
-    index = SPATIAL_DATA.subset(box = box, data_re = data_re)
+    with Timeout(600):
+        SPATIAL_DATA = get_SPATIAL_DATA()
+        index = SPATIAL_DATA.subset(box = box, data_re = data_re)
 
     grid = mesh(box = box, step = step, which = mesh_type)
     points = list(itertools.product(*grid['mesh']))
