@@ -12,7 +12,7 @@ from pvgrip.raster.tasks \
     sample_route_neighbour
 
 from pvgrip.route.calls \
-    import route_rasters
+    import route_rasters, save_route
 from pvgrip.route.tasks \
     import merge_tsv
 from pvgrip.route.split_route \
@@ -119,6 +119,8 @@ def lidar_stdev_route(tsvfn_uploaded, filter_size,
         .format(filter_size, neighbour_step, azimuth)
     group = []
     for x in rasters:
+        route_fn = save_route(x['route'])
+
         sample = [sample_from_box.signature\
                   (kwargs = {'box': x['box'],
                              'data_re': kwargs['data_re'],
@@ -134,7 +136,7 @@ def lidar_stdev_route(tsvfn_uploaded, filter_size,
              stdev.signature\
              (kwargs = {'filter_size': filter_size}) | \
              sample_route_neighbour.signature\
-             (kwargs = {'route': x['route'],
+             (kwargs = {'route_fn': route_fn,
                         'azimuth_default': azimuth,
                         'neighbour_step': neighbour_step,
                         'prefix': prefix})]
@@ -167,6 +169,8 @@ def filter_raster_route(tsvfn_uploaded,
                 neighbour_step, azimuth)
     group = []
     for x in rasters:
+        route_fn = save_route(x['route'])
+
         group += \
             [sample_from_box.signature\
              (kwargs = {'box': x['box'],
@@ -180,7 +184,7 @@ def filter_raster_route(tsvfn_uploaded,
              (kwargs = {'filter_type': filter_type,
                         'filter_size': filter_size}) | \
              sample_route_neighbour.signature\
-             (kwargs = {'route': x['route'],
+             (kwargs = {'route_fn': route_fn,
                         'azimuth_default': azimuth,
                         'neighbour_step': neighbour_step,
                         'prefix': prefix})]

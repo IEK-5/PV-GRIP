@@ -3,6 +3,10 @@ import pickle
 
 from pvgrip.utils.cache_fn_results \
     import call_cache_fn_results
+from pvgrip.utils.cache_fn_results \
+    import cache_fn_results
+from pvgrip.utils.files \
+    import get_tempfile, remove_file
 
 from pvgrip.route.cluster_route_boxes \
     import get_list_rasters
@@ -41,6 +45,17 @@ def route_rasters(tsvfn_uploaded, box, box_delta, **kwargs):
         (rasters = rasters, **kwargs), rasters
 
 
+@cache_fn_results()
+def save_route(route):
+    ofn = get_tempfile()
+    try:
+        with open(ofn, 'wb') as f:
+            pickle.dump(route, f)
+        return ofn
+    except Exception as e:
+        remove_file(ofn)
+
+
 @split_route_calls(
     fn_arg = 'tsvfn_uploaded',
     hows = ("region_hash","month","week","date"),
@@ -57,6 +72,8 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
          box_delta = box_delta, **kwargs)
     group = []
     for x in rasters:
+        route_fn = save_route(x['route'])
+
         lon, lat = centre_of_box(x['box'])
         group += \
             [sample_from_box.signature\
@@ -69,7 +86,7 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
               immutable = True) | \
              compute_route.signature\
              (kwargs = \
-              {'route': x['route'],
+              {'route_fn': route_fn,
                'lat': lat,
                'lon': lon,
                'ghi_default': ghi,

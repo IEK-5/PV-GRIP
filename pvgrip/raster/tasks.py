@@ -192,11 +192,14 @@ def resample_from_pickle(self, pickle_fn, new_step):
 @CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(path_prefix='raster')
 @one_instance(expire = 10)
-def sample_route_neighbour(self, pickle_fn, route,
+def sample_route_neighbour(self, pickle_fn, route_fn,
                            azimuth_default, neighbour_step,
                            prefix):
     logging.debug("sample_route_neighbour\n{}"\
                   .format(format_dictionary(locals())))
+    with open(route_fn, 'rb') as f:
+        route = pickle.load(f)
+
     src = _read_pickle(pickle_fn)
 
     box, mesh_type = mesh2box(src['mesh'])
