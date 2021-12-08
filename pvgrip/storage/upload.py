@@ -31,8 +31,7 @@ def upload(request_data):
 
     request_data.save(ofn, overwrite = True)
     name = os.path.join\
-        (RESULTS_PATH,
-         "upload_" + _hash_file(ofn))
+        (RESULTS_PATH, "upload", _hash_file(ofn))
     name = _upload_file(fn = ofn, name = name)
 
     remove_file(ofn)
