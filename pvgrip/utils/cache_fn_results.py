@@ -70,7 +70,7 @@ def _compute_ofn(fun, args, kwargs, keys, ofn_arg,
     if ofn_arg is not None and ofn_arg in kwargs:
         ofn = kwargs[ofn_arg]
         os.makedirs(os.path.dirname(ofn), exist_ok = True)
-        return ofn, None
+        return ofn
 
     if keys is not None:
         uniq = (args,)
@@ -84,7 +84,7 @@ def _compute_ofn(fun, args, kwargs, keys, ofn_arg,
     ofn = os.path.join(RESULTS_PATH, prefix, fun.__name__)
     os.makedirs(ofn, exist_ok = True)
     ofn = os.path.join(ofn, key)
-    return ofn, os.path.join(RESULTS_PATH, "tmp_" + key)
+    return ofn
 
 
 def _ifpass_minage(minage, fntime, kwargs):
@@ -167,24 +167,15 @@ def cache_fn_results(keys = None,
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
-            ofn, oldfn = _compute_ofn(fun = fun,
-                                      args = args,
-                                      kwargs = kwargs,
-                                      keys = keys,
-                                      ofn_arg = ofn_arg,
-                                      prefix = path_prefix_arg,
-                                      prefix_arg = path_prefix_arg)
+            ofn = _compute_ofn(fun = fun,
+                               args = args,
+                               kwargs = kwargs,
+                               keys = keys,
+                               ofn_arg = ofn_arg,
+                               prefix = path_prefix_arg,
+                               prefix_arg = path_prefix_arg)
             ofn_rpath = RemoteStoragePath\
                 (ofn, remotetype=storage_type)
-
-            if oldfn is not None:
-                oldfn_rpath = RemoteStoragePath\
-                    (oldfn, remotetype=storage_type)
-                if oldfn_rpath.in_storage():
-                    logging.info("""old cache hit!
-                    linking: {} -> {}
-                    """.format(oldfn, ofn))
-                    oldfn_rpath.link(ofn, timestamp = -1)
 
             if ofn_rpath.in_storage() and \
                _ifpass_minage(minage,
@@ -273,24 +264,15 @@ def call_cache_fn_results(keys = None,
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
-            ofn, oldfn = _compute_ofn(fun = fun,
-                                      args = args,
-                                      kwargs = kwargs,
-                                      keys = keys,
-                                      prefix = path_prefix,
-                                      prefix_arg = path_prefix_arg,
-                                      ofn_arg = None)
+            ofn = _compute_ofn(fun = fun,
+                               args = args,
+                               kwargs = kwargs,
+                               keys = keys,
+                               prefix = path_prefix,
+                               prefix_arg = path_prefix_arg,
+                               ofn_arg = None)
             ofn_rpath = RemoteStoragePath\
                 (ofn, remotetype=storage_type)
-
-            if oldfn is not None:
-                oldfn_rpath = RemoteStoragePath\
-                    (oldfn, remotetype=storage_type)
-                if oldfn_rpath.in_storage():
-                    logging.info("""old cache hit!
-                    linking: {} -> {}
-                    """.format(oldfn, ofn))
-                    oldfn_rpath.link(ofn, timestamp = -1)
 
             if ofn_rpath.in_storage() and \
                _ifpass_minage(minage,
