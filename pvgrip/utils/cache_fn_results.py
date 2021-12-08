@@ -1,4 +1,5 @@
 import os
+import json
 import pickle
 import celery
 import logging
@@ -236,6 +237,17 @@ def cache_fn_results(keys = None,
     return wrapper
 
 
+@cache_fn_results(ofn_arg = 'ofn')
+def _save_calls(calls, ofn):
+    try:
+        with open(ofn, 'w') as f:
+            json.dump(calls, f)
+        return ofn
+    except Exception as e:
+        remove_file(ofn)
+        raise e
+
+
 def call_cache_fn_results(keys = None,
                           minage = None,
                           path_prefix = None,
@@ -308,11 +320,21 @@ def call_cache_fn_results(keys = None,
             """.format(ofn, fun.__name__,
                        args, kwargs))
 
-            calls = fun(*args, **kwargs)
+            call_fn = RemoteStoragePath\
+                (ofn + '_call.json',
+                 remotetype=storage_type)
+            if call_fn.in_storage() and \
+               _ifpass_minage(minage,
+                              call_fn.get_timestamp(),
+                              kwargs):
+                with open(call_fn.get_locally(), 'r') as f:
+                    return celery.signature(json.load(f))
+
+            calls = fun(*args, **kwargs) # this can be long
             calls |= call_fn_cache.signature\
                 (kwargs = {'ofn': str(ofn_rpath),
                            'storage_type': storage_type})
-
+            _save_calls(calls = calls, ofn = call_fn.path)
             return calls
         return wrap
     return wrapper

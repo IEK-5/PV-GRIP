@@ -1,4 +1,5 @@
 import os
+import types
 import hashlib
 
 
@@ -17,6 +18,9 @@ def float_hash(key, digits = 8):
 
     if isinstance(key, float):
         key = ('%.' + str(digits) + 'f') % key
+
+    if isinstance(key, types.FunctionType):
+        key = key.__name__
 
     h.update(str(key).encode('utf-8'))
     return h.hexdigest()
