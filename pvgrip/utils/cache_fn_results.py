@@ -51,10 +51,14 @@ def _get_locally(*args, **kwargs):
 
 
 def _compute_ofn(fun, args, kwargs, keys, ofn_arg,
-                 prefix = None):
+                 prefix = None, prefix_arg = None):
     """Compute ofn and key
 
     """
+    prefix = '' if prefix is None else prefix
+    if prefix_arg is not None and \
+       prefix_arg in kwargs:
+        prefix = os.path.join(prefix,kwargs[prefix_arg])
 
     # in tasks with bind=True, the first argument is self,
     # which has a string representation dependent on the library version.
@@ -76,10 +80,7 @@ def _compute_ofn(fun, args, kwargs, keys, ofn_arg,
         uniq = (args, kwargs)
     key = float_hash(("cache_results", fun.__name__, uniq))
 
-    ofn = RESULTS_PATH
-    if prefix is not None:
-        ofn = os.path.join(ofn, prefix)
-    ofn = os.path.join(ofn, fun.__name__)
+    ofn = os.path.join(RESULTS_PATH, prefix, fun.__name__)
     os.makedirs(ofn, exist_ok = True)
     ofn = os.path.join(ofn, key)
     return ofn, os.path.join(RESULTS_PATH, "tmp_" + key)
@@ -136,6 +137,7 @@ def cache_fn_results(keys = None,
                      ofn_arg = None,
                      minage = None,
                      path_prefix = None,
+                     path_prefix_arg = None,
                      update_timestamp = True,
                      storage_type = DEFAULT_REMOTE):
     """Cache results of a function that returns a file
@@ -154,7 +156,7 @@ def cache_fn_results(keys = None,
     :minage: unixtime, minage of acceptable stored cached value. if
     None any cached value is accepted
 
-    :path_prefix: how to prefix path of the file
+    :path_prefix, path_prefix_arg: how to prefix path of the file
 
     :update_timestamp: if update timestamp on cache hit
 
@@ -169,7 +171,8 @@ def cache_fn_results(keys = None,
                                       kwargs = kwargs,
                                       keys = keys,
                                       ofn_arg = ofn_arg,
-                                      prefix = path_prefix)
+                                      prefix = path_prefix_arg,
+                                      prefix_arg = path_prefix_arg)
             ofn_rpath = RemoteStoragePath\
                 (ofn, remotetype=storage_type)
 
@@ -236,6 +239,7 @@ def cache_fn_results(keys = None,
 def call_cache_fn_results(keys = None,
                           minage = None,
                           path_prefix = None,
+                          path_prefix_arg = None,
                           update_timestamp = True,
                           storage_type = DEFAULT_REMOTE):
     """Wraps tasks generation calls (*/calls.py)
@@ -262,6 +266,7 @@ def call_cache_fn_results(keys = None,
                                       kwargs = kwargs,
                                       keys = keys,
                                       prefix = path_prefix,
+                                      prefix_arg = path_prefix_arg,
                                       ofn_arg = None)
             ofn_rpath = RemoteStoragePath\
                 (ofn, remotetype=storage_type)

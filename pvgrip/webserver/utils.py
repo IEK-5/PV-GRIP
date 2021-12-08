@@ -179,7 +179,8 @@ def _method_results(method, args):
                     ('irradiance',1637566124),
                     ('irradiance/ssdp',1637566124),
                     ('intergrate',1637566124),
-                    ]})
+                    ]},
+                  path_prefix_arg='method')
 def call_method(method, args):
     tasks_queues = get_Tasks_Queues()
 
