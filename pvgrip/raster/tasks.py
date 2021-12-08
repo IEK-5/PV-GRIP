@@ -131,6 +131,11 @@ def save_pickle(self, geotiff_fn):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
+def dummy(self):
+    return None
+
+
+@CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(path_prefix='raster')
 @one_instance(expire = 60*10)
 def sample_from_box(self, box, data_re, stat,

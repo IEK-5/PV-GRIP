@@ -18,7 +18,7 @@ from pvgrip.lidar.calls \
 from pvgrip.raster.tasks \
     import save_png, save_geotiff, \
     save_pnghillshade, save_pickle, \
-    sample_from_box
+    sample_from_box, dummy
 from pvgrip.raster.utils \
     import check_box_not_too_big, index2fn
 
@@ -54,7 +54,10 @@ def check_all_data_available(**kwargs):
 
         raise RuntimeError('%s file is not available'\
                            % x['file'])
-    return celery.group(tasks)
+
+    if len(tasks):
+        return celery.group(tasks)
+    return dummy.signature()
 
 
 def _convert_from_pickle(tasks, output_type):
