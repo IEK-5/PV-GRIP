@@ -179,6 +179,7 @@ def _method_results(method, args):
                     ('irradiance',1637566124),
                     ('irradiance/ssdp',1637566124),
                     ('intergrate',1637566124),
+                    ('filter/lidar_stdev',1639299472),
                     ]},
                   path_prefix_arg='method')
 def call_method(method, args):

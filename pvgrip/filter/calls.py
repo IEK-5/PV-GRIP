@@ -22,7 +22,7 @@ from pvgrip.filter.tasks \
     import stdev, apply_filter
 
 
-@call_cache_fn_results()
+@call_cache_fn_results(minage=1639299472)
 def lidar_stdev(filter_size, **kwargs):
     output_type = kwargs['output_type']
     step = kwargs['step']

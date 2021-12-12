@@ -42,7 +42,7 @@ def _write_pickle(raster, mesh):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='filter')
+@cache_fn_results(path_prefix='filter',minage=1639299472)
 @one_instance(expire = 10)
 def stdev(self, fns, filter_size):
     logging.debug("stdev\n{}"\
@@ -57,6 +57,7 @@ def stdev(self, fns, filter_size):
                    step = stdev['mesh']['step'],
                    filter_size = filter_size)
     res = np.power(res,0.5)
+    res[np.isnan(res)] = 0
 
     return _write_pickle(raster = res, mesh = stdev['mesh'])
 
