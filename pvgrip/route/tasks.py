@@ -32,9 +32,14 @@ from pvgrip.utils.format_dictionary \
 @cache_fn_results(path_prefix='route')
 @one_instance(expire = 400)
 def merge_tsv(self, tsv_files):
-    logging.debug("merge_tsv\n{}"\
-                  .format(format_dictionary(locals())))
+    logging.info("merge_tsv\n{}"\
+                 .format(format_dictionary(locals())))
     ofn = get_tempfile()
+
+    if not isinstance(tsv_files, list):
+        logging.error("tsv_files = {} is not a list!"\
+                      .format(tsv_files))
+        tsv_files = [tsv_files]
 
     try:
          res = pd.concat([pd.read_csv(fn, sep=None, engine='python') \
