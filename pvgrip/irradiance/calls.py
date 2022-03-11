@@ -10,7 +10,7 @@ from pvgrip.ssdp.utils \
     import timestr2utc_time, centre_of_box
 
 
-@call_cache_fn_results(minage=1637232422)
+@call_cache_fn_results(minage=1647003564)
 def irradiance_ssdp(timestr, ghi, dhi, albedo,
                     offset, azimuth, zenith,
                     nsky, **kwargs):

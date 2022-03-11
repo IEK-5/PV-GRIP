@@ -61,7 +61,7 @@ def save_route(route):
     hows = ("region_hash","month","week","date"),
     hash_length = 4,
     maxnrows = 10000)
-@call_cache_fn_results(minage=1637232422)
+@call_cache_fn_results(minage=1647003564)
 def ssdp_route(tsvfn_uploaded, box, box_delta,
                dhi, ghi, albedo, timestr,
                offset, azimuth, zenith, nsky, **kwargs):

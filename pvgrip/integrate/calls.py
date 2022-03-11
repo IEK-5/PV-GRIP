@@ -11,7 +11,7 @@ from pvgrip.ssdp.utils \
     import centre_of_box
 
 
-@call_cache_fn_results(minage=1637232422)
+@call_cache_fn_results(minage=1647003564)
 def ssdp_integrate(tsvfn_uploaded, albedo,
                    offset, azimuth, zenith,
                    nsky, **kwargs):
