@@ -181,7 +181,8 @@ def _method_results(method, args):
                     ('intergrate',1637566124),
                     ('filter/lidar_stdev',1639299472),
                     ]},
-                  path_prefix_arg='method')
+                  path_prefix_arg='method',
+                  get_args_locally = False)
 def call_method(method, args):
     tasks_queues = get_Tasks_Queues()
 

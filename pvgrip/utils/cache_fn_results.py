@@ -140,7 +140,8 @@ def cache_fn_results(keys = None,
                      path_prefix = None,
                      path_prefix_arg = None,
                      update_timestamp = True,
-                     storage_type = DEFAULT_REMOTE):
+                     storage_type = DEFAULT_REMOTE,
+                     get_args_locally = True):
     """Cache results of a function that returns a file
 
     :keys: list of arguments name to use for computing the unique name
@@ -203,7 +204,8 @@ def cache_fn_results(keys = None,
                            args, kwargs))
 
             # make all filenames in arguments available locally
-            args, kwargs = _get_locally(*args, **kwargs)
+            if get_args_locally:
+                args, kwargs = _get_locally(*args, **kwargs)
             tfn = fun(*args, **kwargs)
 
             # check ignore condition
