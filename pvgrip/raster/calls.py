@@ -60,10 +60,11 @@ def check_all_data_available(**kwargs):
     return dummy.signature()
 
 
-def _convert_from_pickle(tasks, output_type):
+def _convert_from_pickle(tasks, output_type,
+                         scale_name = '', scale_constant = 1):
     if output_type not in ('geotiff', 'pickle',
                            'pnghillshade','png',
-                           'pngnormalize'):
+                           'pngnormalize', 'pngnormalize_scale'):
         raise RuntimeError("Invalid 'output_type' argument!")
 
     if output_type == 'png':
@@ -72,6 +73,14 @@ def _convert_from_pickle(tasks, output_type):
 
     if output_type == 'pngnormalize':
         tasks |= save_png.signature(kwargs = {'normalize': True})
+        return tasks
+
+    if output_type == 'pngnormalize_scale':
+        tasks |= save_png.signature\
+            (kwargs = {'normalize': True,
+                       'scale': True,
+                       'scale_constant': scale_constant,
+                       'scale_name': scale_name})
         return tasks
 
     if output_type in ('geotiff', 'pnghillshade'):
@@ -83,12 +92,12 @@ def _convert_from_pickle(tasks, output_type):
     return tasks
 
 
-def convert_from_to(tasks, from_type, to_type):
+def convert_from_to(tasks, from_type, to_type, **kwargs):
     if 'pickle' == from_type:
         if 'pickle' == to_type:
             return tasks
 
-        return _convert_from_pickle(tasks, to_type)
+        return _convert_from_pickle(tasks, to_type, **kwargs)
 
     if 'geotiff' == from_type:
         if 'geotiff' == to_type:
@@ -100,7 +109,7 @@ def convert_from_to(tasks, from_type, to_type):
         tasks = tasks | save_pickle.signature()
 
 
-    return _convert_from_pickle(tasks, to_type)
+    return _convert_from_pickle(tasks, to_type, **kwargs)
 
 
 @call_cache_fn_results()
@@ -138,4 +147,5 @@ def sample_raster(box, data_re, stat,
 
     return convert_from_to(tasks,
                            from_type = 'pickle',
-                           to_type = output_type)
+                           to_type = output_type,
+                           scale_name = 'm')

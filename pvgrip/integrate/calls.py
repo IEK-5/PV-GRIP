@@ -34,4 +34,6 @@ def ssdp_integrate(tsvfn_uploaded, albedo,
 
     return convert_from_to(tasks,
                            from_type = 'pickle',
-                           to_type = output_type)
+                           to_type = output_type,
+                           scale_name = 'Wh/m^2',
+                           scale_constant = 3600)

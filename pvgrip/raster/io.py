@@ -11,6 +11,8 @@ from osgeo import osr
 
 from pvgrip.raster.gdalinterface \
     import GDALInterface
+from pvgrip.raster.addscale \
+    import addscale
 from pvgrip.utils.files \
     import get_tempdir
 from pvgrip.utils.run_command \
@@ -99,7 +101,8 @@ def save_pickle(geotiff_fn, ofn):
                      'mesh': mesh}, f)
 
 
-def save_png(data, ofn, normalize):
+def save_png(data, ofn, normalize,
+             scale, scale_name, scale_constant):
     """Save png from raster pickle data
 
     :data: whatever sample_raster outputs
@@ -108,13 +111,25 @@ def save_png(data, ofn, normalize):
 
     :normalize: if normalize image
 
+    :scale, scale_name, scale_constant: legend arguments
+
     :return: ofn
     """
+    wdir = get_tempdir()
+
     arr = data['raster']
+
+    if scale:
+        arr_scale = addscale(img = arr, title = scale_name,
+                             constant = scale_constant,
+                             wdir = wdir)
+
     if normalize:
         arr = 255*(arr - arr.min())/(arr.max() - arr.min())
 
-    wdir = get_tempdir()
+    if scale:
+        arr = np.column_stack([arr, arr_scale])
+
     tmpfn = os.path.join(wdir,'save.png')
     try:
         cv2.imwrite(tmpfn, arr)

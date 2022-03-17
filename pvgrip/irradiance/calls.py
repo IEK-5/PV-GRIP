@@ -48,7 +48,8 @@ def irradiance_ssdp(timestr, ghi, dhi, albedo,
 
     return convert_from_to(tasks,
                            from_type = 'pickle',
-                           to_type = output_type)
+                           to_type = output_type,
+                           scale_name = 'W/m^2')
 
 
 @call_cache_fn_results()

@@ -83,9 +83,11 @@ def save_geotiff(self, pickle_fn):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='raster')
+@cache_fn_results(path_prefix='raster', minage=1647434114)
 @one_instance(expire=10)
-def save_png(self, pickle_fn, normalize = False):
+def save_png(self, pickle_fn, normalize = False,
+             scale = False, scale_name = '',
+             scale_constant = 1):
     logging.debug("save_png\n{}"\
                   .format(format_dictionary(locals())))
     data = _read_pickle(pickle_fn)
@@ -93,7 +95,10 @@ def save_png(self, pickle_fn, normalize = False):
     ofn = get_tempfile()
     try:
         io.save_png(data = data, ofn = ofn,
-                    normalize = normalize)
+                    normalize = normalize,
+                    scale = scale,
+                    scale_name = scale_name,
+                    scale_constant = scale_constant)
     except Exception as e:
         remove_file(ofn)
         raise e
