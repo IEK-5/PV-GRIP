@@ -20,17 +20,17 @@ WORKDIR /code
 FROM build-stage0 AS build-stage1
 ADD ./pvgrip/storage/ipfs_io/requirements.txt /code/pvgrip/storage/ipfs_io/requirements.txt
 WORKDIR /code/pvgrip/storage/ipfs_io
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r requirements.txt --upgrade
 
 FROM build-stage1 AS build-stage2
 ADD ./pvgrip/storage/cassandra_io/requirements.txt /code/pvgrip/storage/cassandra_io/requirements.txt
 WORKDIR /code/pvgrip/storage/cassandra_io
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r requirements.txt --upgrade
 
 FROM build-stage2 AS build-stage3
 WORKDIR /code
 ADD ./requirements.txt /code/requirements.txt
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r requirements.txt --upgrade
 
 FROM build-stage3 AS build-stage4
 ADD ./scripts/install_ipfs.sh /code/scripts/install_ipfs.sh
