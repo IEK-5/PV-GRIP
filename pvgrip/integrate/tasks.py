@@ -1,5 +1,6 @@
 import os
 import shutil
+import pickle
 import logging
 
 
@@ -69,3 +70,35 @@ def integrate_irradiance(self, ifn, times_fn,
         raise e
     finally:
         shutil.rmtree(wdir)
+
+
+@CELERY_APP.task(bind=True, base=WithRetry)
+@cache_fn_results(minage=1647003564, path_prefix='integrate')
+@one_instance(expire = 60*10)
+def sum_pickle(self, pickle_files):
+    logging.info("sum_pickle\n{}"\
+                 .format(format_dictionary(locals())))
+
+    if not isinstance(pickle_files, list):
+        logging.error("pickle_files = {} is not a list!"\
+                      .format(pickle_files))
+        pickle_files = [pickle_files]
+
+    if not len(pickle_files):
+        raise RuntimeError("pickle_files is an empty list!")
+
+    with open(pickle_files[0],'rb') as f:
+        res = pickle.load(f)
+    for fn in pickle_files[1:]:
+        with open(fn, 'rb') as f:
+            x = pickle.load(f)
+        res['raster'] += x['raster']
+
+    ofn = get_tempfile()
+    try:
+        with open(ofn, 'wb') as f:
+            pickle.dump(res, f)
+    except Exception as e:
+        remove_file(ofn)
+        raise e
+    return ofn

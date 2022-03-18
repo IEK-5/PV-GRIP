@@ -36,3 +36,16 @@ def upload(request_data):
 
     remove_file(ofn)
     return {'storage_fn': name}
+
+
+class Saveas_Requestdata:
+    """just a dummy class that has .save method
+
+    """
+
+    def __init__(self, df):
+        self._df = df
+
+
+    def save(self, ofn, overwrite):
+        self._df.to_csv(ofn, sep='\t', index = False)

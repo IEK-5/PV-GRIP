@@ -6,11 +6,18 @@ from pvgrip.raster.calls \
 
 from pvgrip.integrate.tasks \
     import integrate_irradiance
+from pvgrip.integrate.split_irrtimes \
+    import split_irrtimes_calls
 
 from pvgrip.ssdp.utils \
     import centre_of_box
 
 
+@split_irrtimes_calls(
+    fn_arg = 'tsvfn_uploaded',
+    maxnrows = 300000,
+    scale_name = 'Wh/m^2',
+    scale_constant = 3600)
 @call_cache_fn_results(minage=1647003564)
 def ssdp_integrate(tsvfn_uploaded, albedo,
                    offset, azimuth, zenith,
@@ -34,6 +41,4 @@ def ssdp_integrate(tsvfn_uploaded, albedo,
 
     return convert_from_to(tasks,
                            from_type = 'pickle',
-                           to_type = output_type,
-                           scale_name = 'Wh/m^2',
-                           scale_constant = 3600)
+                           to_type = output_type)

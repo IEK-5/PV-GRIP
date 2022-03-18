@@ -11,26 +11,13 @@ from pvgrip.weather.utils \
     timelocation_add_datetimes
 
 from pvgrip.storage.upload \
-    import upload
+    import upload, Saveas_Requestdata
 
 from pvgrip.route.tasks \
     import merge_tsv
 
 from pvgrip.storage.remotestorage_path \
     import searchandget_locally
-
-
-class _saveas_request_data:
-    """just a dummy class that has .save method
-
-    """
-
-    def __init__(self, df):
-        self._df = df
-
-
-    def save(self, ofn, overwrite):
-        self._df.to_csv(ofn, sep='\t', index = False)
 
 
 def _read_route(route_fn, hows, hash_length):
@@ -126,7 +113,7 @@ def split_route(route_fn,
                           hows = hows,
                           maxnrows = maxnrows)
 
-    return [upload(_saveas_request_data(x))['storage_fn']
+    return [upload(Saveas_Requestdata(x))['storage_fn']
             for x in chunks]
 
 
