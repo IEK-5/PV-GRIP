@@ -2,7 +2,7 @@ import logging
 import subprocess
 
 
-def run_command(what, cwd, ignore_exitcode = False, return_stdout = False):
+def run_command(what, cwd, ignore_exitcode = False, return_stdout = False, **kwargs):
     """Run a system command
 
     :what: same as subprocess.run argument
@@ -14,11 +14,14 @@ def run_command(what, cwd, ignore_exitcode = False, return_stdout = False):
 
     :return_stdout: if True return stdout output instead of nothing
 
+    :kwargs: pass those to subprocess.run
+
     """
     res = subprocess.run(what,
                          cwd = cwd,
                          stderr = subprocess.PIPE,
-                         stdout = subprocess.PIPE)
+                         stdout = subprocess.PIPE,
+                         **kwargs)
 
     if ignore_exitcode and return_stdout:
         return res.stdout.decode()

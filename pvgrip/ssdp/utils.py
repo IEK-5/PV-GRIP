@@ -33,7 +33,8 @@ def call_ssdp(what):
              [SSDP,
               '-n',str(SSDP_NJOBS),
               '-f',ifn],
-             cwd = wdir)
+             cwd = wdir,
+             env=dict(os.environ, OMP_SCHEDULE='dynamic,1'))
     finally:
         shutil.rmtree(wdir)
 
