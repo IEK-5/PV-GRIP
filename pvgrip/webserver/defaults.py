@@ -116,7 +116,7 @@ def raster_defaults():
                  """
                  type of output
 
-                 choices: "pickle","geotiff","pnghillshade","png","pngnormalize"
+                 choices: "pickle","geotiff","pnghillshade","png","pngnormalize","pngnormalize_scale"
 
                  "png" does not normalise data""")})
     return res
