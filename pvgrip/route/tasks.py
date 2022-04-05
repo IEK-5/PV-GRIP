@@ -56,9 +56,8 @@ def merge_tsv(self, tsv_files):
 @cache_fn_results(minage=1647003564, path_prefix='route')
 @one_instance(expire = 60*10)
 def compute_route(self, ifn, route_fn, lat, lon,
-                  ghi_default, dhi_default,
-                  time_default,
-                  offset, azimuth_default, zenith_default,
+                  ghi_default, dhi_default, time_default,
+                  offset_default, azimuth_default, zenith_default,
                   albedo, nsky):
     logging.debug("compute_route\n{}"\
                   .format(format_dictionary(locals())))
@@ -83,12 +82,12 @@ def compute_route(self, ifn, route_fn, lat, lon,
                                 time_default = time_default,
                                 azimuth_default = azimuth_default,
                                 zenith_default = zenith_default,
+                                offset_default = offset_default,
                                 locations_fn = locations_fn)
 
         call = poa_route\
             (topography_fname = ssdp_ifn,
              albedo = albedo,
-             offset = offset,
              nsky = nsky,
              ofn = ssdp_ofn,
              locations_fn = locations_fn,

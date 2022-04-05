@@ -14,8 +14,8 @@ def _convert_to_metric(lon, lat):
     return _T2MT.transform(lon, lat)
 
 
-def write_locations(route, ghi_default, dhi_default,
-                    time_default, azimuth_default, zenith_default,
+def write_locations(route, ghi_default, dhi_default, time_default,
+                    azimuth_default, zenith_default, offset_default,
                     locations_fn):
     with open(locations_fn, 'w') as f:
         for x in route:
@@ -38,6 +38,9 @@ def write_locations(route, ghi_default, dhi_default,
             if 'zenith' not in x:
                 x['zenith'] = zenith_default
 
+            if 'offset' not in x:
+                x['offset'] = offset_default
+
             if 'timestr' not in x:
                 x['utc_time'] = timestr2utc_time(time_default)
             else:
@@ -46,7 +49,8 @@ def write_locations(route, ghi_default, dhi_default,
             fmt = '\t'.join(('%.12f',)*6 + ('%d\n',))
 
             f.write(fmt %(lat_met, lon_met,
-                          x['ghi'],x['dhi'],x['azimuth'],x['zenith'],
+                          x['ghi'],x['dhi'],
+                          x['azimuth'],x['zenith'],x['offset'],
                           x['utc_time']))
 
     return route

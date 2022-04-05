@@ -24,16 +24,19 @@ def _set_time(utc_time):
     """.format(utc_time = utc_time)
 
 
-def _set_coord(lat, lon):
+def _set_coord(lat, lon, elevation=0):
     return """
 
     # set location
     make_scalar x=LAT val={lat}
     make_scalar x=LON val={lon}
+    make_scalar x=ELEVATION val={elevation}
+
     deg2rad x=LAT
     deg2rad x=LON
-    config_coord C=C lat=LAT lon=LON
-    """.format(lat = lat, lon = lon)
+    config_coord C=C lat=LAT lon=LON E=ELEVATION
+    """.format(lat = lat, lon = lon, elevation = elevation)
+
 
 def _set_irradiance(ghi, dhi):
     return """
@@ -68,11 +71,11 @@ def _import_topography(topography_fname, grid):
                lat2 = lat2, lon2 = lon2)
 
 
-def _config_location_time_irradiance(locations_fn, albedo, offset):
+def _config_location_time_irradiance(locations_fn, albedo):
     return """
 
     # read locations / time
-    read_array a0=LAT a1=LON a2=GHI a3=DHI a4=AZI a5=ZEN a6=TIME file={fn}
+    read_array a0=LAT a1=LON a2=GHI a3=DHI a4=AZI a5=ZEN a6=OFFSET a7=TIME file={fn}
 
     deg2rad x=AZI
     deg2rad x=ZEN
@@ -82,7 +85,7 @@ def _config_location_time_irradiance(locations_fn, albedo, offset):
     sample_topo C=C y=LAT x=LON z=Z azimuth=azi zenith=zen
 
     # offset topography
-    offset_topo C=C o={offset} x=LON y=LAT xoff=offLON yoff=offLAT zoff=offZ
+    offset_topo C=C o=OFFSET x=LON y=LAT xoff=offLON yoff=offLAT zoff=offZ
 
     # rotate POA to surface
     rotate_POA_to_surface surf_a=azi surf_z=zen poa_a=AZI poa_z=ZEN out_a=offAZI out_z=offZEN
@@ -90,23 +93,29 @@ def _config_location_time_irradiance(locations_fn, albedo, offset):
     # setup the locations in the configuration variable
     # (note the POA is the topography surface)
     config_locations C=C y=offLAT x=offLON z=offZ azimuth=offAZI zenith=offZEN albedo={albedo}
-    """.format(fn = locations_fn, albedo = albedo, offset = offset)
+    """.format(fn = locations_fn, albedo = albedo)
 
 
-def _sim_static(ofn):
+def _sim_static(ofn, pressure = 1010, temperature = 10):
     return """
+
+    make_scalar x=PRESSURE    val={pressure}
+    make_scalar x=TEMPERATURE val={temperature}
 
     # compute irradiance for the whole raster
-    sim_static C=C t=t GHI=GHI DHI=DHI POA=P
+    sim_static C=C t=t p=PRESSURE T=TEMPERATURE GHI=GHI DHI=DHI POA=P
     write_array a0=P file={ofn}
-    """.format(ofn = ofn)
+    """.format(ofn = ofn, pressure = pressure, temperature = temperature)
 
 
-def _sim_route(ofn):
+def _sim_route(ofn, pressure = 1010, temperature = 10):
     return """
 
+    make_scalar x=PRESSURE    val={pressure}
+    make_scalar x=TEMPERATURE val={temperature}
+
     # compute irradiance along a route
-    sim_route C=C t=TIME GHI=GHI DHI=DHI POA=P
+    sim_route C=C t=TIME p=PRESSURE T=TEMPERATURE GHI=GHI DHI=DHI POA=P
     write_array a0=P file={ofn}
     """.format(ofn = ofn)
 
@@ -119,13 +128,16 @@ def _config_time_irradiance(irrtimes):
     """.format(irrtimes = irrtimes)
 
 
-def _sim_static_integral(ofn):
+def _sim_static_integral(ofn, pressure = 1010, temperature = 10):
     return """
 
+    make_scalar x=PRESSURE    val={pressure}
+    make_scalar x=TEMPERATURE val={temperature}
+
     # compute the integrated POA
-    sim_static_integral C=C t=TIMEs GHI=GHIs DHI=DHIs POA=P
+    sim_static_integral C=C t=TIMEs p=PRESSURE T=TEMPERATURE GHI=GHIs DHI=DHIs POA=P
     write_array a0=P file={ofn}
-    """.format(ofn = ofn)
+    """.format(ofn = ofn, pressure = pressure, temperature = temperature)
 
 
 def _sample_topogrid_locations(albedo, offset, azimuth, zenith):
@@ -136,6 +148,8 @@ def _sample_topogrid_locations(albedo, offset, azimuth, zenith):
 
     make_scalar x=AZI val={azimuth}
     make_scalar x=ZEN val={zenith}
+    make_scalar x=OFFSET val={offset}
+
     deg2rad x=AZI
     deg2rad x=ZEN
 
@@ -144,7 +158,7 @@ def _sample_topogrid_locations(albedo, offset, azimuth, zenith):
     sample_topo C=C x=X y=Y z=Z azimuth=azi zenith=zen
 
     # offset topography
-    offset_topo C=C o={offset} x=X y=Y xoff=offX yoff=offY zoff=offZ
+    offset_topo C=C o=OFFSET x=X y=Y xoff=offX yoff=offY zoff=offZ
 
     # rotate POA to surface
     rotate_POA_to_surface surf_a=azi surf_z=zen poa_a=AZI poa_z=ZEN out_a=offAZI out_z=offZEN
