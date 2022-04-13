@@ -168,6 +168,7 @@ def osm_defaults():
     res = raster_defaults()
     del res['stat']
     del res['data_re']
+    del res['pdal_resolution']
     res.update({
         'tag': \
         ('building',
