@@ -1,5 +1,5 @@
 FROM mundialis/grass-py3-pdal:stable-ubuntu AS build-stage0
-RUN apt-get update -y && apt-get install -y \
+RUN apt-get update -y && apt-get upgrade -y && apt-get install -y \
     bc \
     git \
     iproute2 \
@@ -11,11 +11,13 @@ RUN apt-get update -y && apt-get install -y \
     pdal \
     python3-pip
 
-EXPOSE 8080
-EXPOSE 6379
-
 RUN mkdir /code
 WORKDIR /code
+ADD ./scripts/install_autoconf.sh /code/scripts/install_autoconf.sh
+RUN ./scripts/install_autoconf.sh
+
+EXPOSE 8080
+
 
 FROM build-stage0 AS build-stage1
 ADD ./pvgrip/storage/ipfs_io/requirements.txt /code/pvgrip/storage/ipfs_io/requirements.txt
