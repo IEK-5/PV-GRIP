@@ -8,15 +8,13 @@ import pandas as pd
 
 from pvgrip.utils.cache_fn_results \
     import cache_fn_results
-
 from pvgrip.utils.files \
     import get_tempfile, remove_file
+from pvgrip.utils.epsg \
+    import epsg2ll, ll2epsg
 
-
-_T2LL = pyproj.Transformer.from_crs(3857, 4326,
-                                    always_xy=True)
-_T2MT = pyproj.Transformer.from_crs(4326, 3857,
-                                    always_xy=True)
+from pvgrip.raster.mesh \
+    import determine_epsg
 
 
 def _build_route_index(route, box):
@@ -43,20 +41,21 @@ def _get_bigbox(box, box_delta):
             box[2]*box_delta,box[3]*box_delta)
 
 
-def _add_metric_coordinates(route):
-    x = _T2MT.transform(route['longitude'],route['latitude'])
+def _add_metric_coordinates(route, epsg):
+    x = ll2epsg(lat = route['latitude'],
+                lon = route['longitude'],
+                epsg = epsg)
     x = pd.DataFrame(np.transpose(x))
-    route['longitude_metric'] = x[0]
-    route['latitude_metric'] = x[1]
+    route['latitude_metric'] = x[0]
+    route['longitude_metric'] = x[1]
+    route['epsg'] = epsg
 
     return route
 
 
-def _box_mt2ll(box_metric):
-    box = _T2LL.transform(box_metric[1],box_metric[0]) + \
-        _T2LL.transform(box_metric[3],box_metric[2])
-    box = (box[1],box[0],box[3],box[2])
-    return box
+def _boxmetric2box(box_metric, epsg):
+    return epsg2ll(box_metric[0],box_metric[1], epsg = epsg) + \
+        epsg2ll(box_metric[2],box_metric[3], epsg = epsg)
 
 
 @cache_fn_results()
@@ -84,7 +83,12 @@ def get_list_rasters(route_fn, box, box_delta):
         raise RuntimeError\
             ("longitude or latitude is missing!")
 
-    route = _add_metric_coordinates(route)
+    epsg = determine_epsg\
+        ([min(route['latitude']), min(route['longitude']),
+          max(route['latitude']), max(route['longitude'])],
+         'utm')
+
+    route = _add_metric_coordinates(route, epsg = epsg)
     idx = _build_route_index(route = route, box = box)
     bigbox = _get_bigbox(box = box, box_delta = box_delta)
 
@@ -112,8 +116,9 @@ def get_list_rasters(route_fn, box, box_delta):
                       max(raster[3], x['bounds'][3]))
             included.add(x['index'])
         res += [{'box_metric': raster,
-                 'box': _box_mt2ll(raster),
-                 'route': points}]
+                 'box': _boxmetric2box(raster, epsg = epsg),
+                 'route': points,
+                 'epsg': epsg}]
 
     ofn = get_tempfile()
     try:

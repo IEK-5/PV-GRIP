@@ -36,7 +36,7 @@ from pvgrip.raster.gdalinterface \
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage=1647003564, path_prefix='irradiance')
+@cache_fn_results(path_prefix='irradiance', minage = 1650884152)
 @one_instance(expire = 60*10)
 def compute_irradiance_ssdp(self, ifn,
                             utc_time, lat, lon,
@@ -75,7 +75,7 @@ def compute_irradiance_ssdp(self, ifn,
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage = 1626846910, path_prefix='irradiance')
+@cache_fn_results(path_prefix='irradiance', minage = 1650884152)
 @one_instance(expire = 60*10)
 def compute_irradiance_grass(self, elevation_fn, timestr,
                              aspect_fn = None, aspect_value = None,

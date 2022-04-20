@@ -51,15 +51,15 @@ def pickle2ssdp_topography(ifn, ofn):
 
     box = data['mesh']['raster_box']
     step = data['mesh']['step']
-    nlon = len(data['mesh']['mesh'][0])
-    nlat = len(data['mesh']['mesh'][1])
+    nlat = len(data['mesh']['mesh'][0])
+    nlon = len(data['mesh']['mesh'][1])
     a = data['raster'][::-1,:,:].reshape(nlon*nlat,order='F')
 
-    grid = (nlon, nlat)\
+    grid = (nlat, nlon)\
         + (box[0],
            box[1],
-           box[0]+step*nlon,
-           box[1]+step*nlat)
+           box[0]+step*nlat,
+           box[1]+step*nlon)
 
     with open(ofn, 'w') as f:
         for i in range(nlon*nlat):
@@ -111,7 +111,7 @@ def centre_of_box(box):
 
     :box: [lat_min,lon_min,lat_max,lon_max]
 
-    :return: (lon_centre,lat_centre)
+    :return: (lat_centre, lon_centre)
     """
-    return (box[1] + (box[3]-box[1])/2,
-            box[0] + (box[2]-box[0])/2)
+    return (box[0] + (box[2]-box[0])/2,
+            box[1] + (box[3]-box[1])/2)

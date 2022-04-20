@@ -3,6 +3,8 @@ from pvgrip.utils.cache_fn_results \
 
 from pvgrip.raster.calls \
     import sample_raster, convert_from_to
+from pvgrip.raster.mesh \
+    import determine_epsg
 
 from pvgrip.integrate.tasks \
     import integrate_irradiance
@@ -18,15 +20,15 @@ from pvgrip.ssdp.utils \
     maxnrows = 300000,
     scale_name = 'Wh/m^2',
     scale_constant = 3600)
-@call_cache_fn_results(minage=1647003564)
+@call_cache_fn_results(minage = 1650884152)
 def ssdp_integrate(tsvfn_uploaded, albedo,
                    offset, azimuth, zenith,
                    nsky, **kwargs):
     output_type = kwargs['output_type']
     kwargs['output_type'] = 'pickle'
-    kwargs['mesh_type'] = 'metric'
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
 
-    lon, lat = centre_of_box(kwargs['box'])
+    lat, lon = centre_of_box(kwargs['box'])
 
     tasks = sample_raster(**kwargs)
     tasks |= integrate_irradiance.signature\

@@ -56,7 +56,7 @@ def _set_sky(nsky = 20):
 
 
 def _import_topography(topography_fname, grid):
-    nlon, nlat, lon1, lat1, lon2, lat2 = grid
+    nlat, nlon, lat1, lon1, lat2, lon2 = grid
 
     return """
 

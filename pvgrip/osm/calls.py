@@ -16,7 +16,7 @@ from pvgrip.osm.tasks \
     merge_osm, render_osm_data, readpng_asarray
 
 
-@call_cache_fn_results()
+@call_cache_fn_results(minage = 1650884152)
 def osm_render(box, step, mesh_type, tag, output_type):
     width, _ = check_box_not_too_big\
         (box = box, step = step,

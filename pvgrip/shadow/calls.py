@@ -11,12 +11,14 @@ from pvgrip.shadow.tasks \
 
 from pvgrip.raster.calls \
     import sample_raster, convert_from_to
+from pvgrip.raster.mesh \
+    import determine_epsg
 
 from pvgrip.storage.remotestorage_path \
     import searchandget_locally
 
 
-@call_cache_fn_results()
+@call_cache_fn_results(minage = 1650884152)
 def shadow(timestr, what='shadow',
            output_type='png', **kwargs):
     """Start the shadow job
@@ -35,6 +37,7 @@ def shadow(timestr, what='shadow',
         raise RuntimeError("Invalid 'what' argument")
 
     kwargs['output_type'] = 'geotiff'
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
     tasks = sample_raster(**kwargs)
 
     tasks |= compute_incidence.signature\
@@ -48,12 +51,13 @@ def shadow(timestr, what='shadow',
                            to_type = output_type)
 
 
-@call_cache_fn_results()
+@call_cache_fn_results(minage = 1650884152)
 def average_shadow(timestrs_fn, output_type='png', **kwargs):
     """Compute a heatmap of shadows over some times
 
     """
     kwargs['output_type'] = 'geotiff'
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
     tasks = sample_raster(**kwargs)
 
     # read timestrs

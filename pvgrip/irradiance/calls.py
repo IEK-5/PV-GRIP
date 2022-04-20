@@ -3,6 +3,8 @@ from pvgrip.utils.cache_fn_results \
 
 from pvgrip.raster.calls \
     import sample_raster, convert_from_to
+from pvgrip.raster.mesh \
+    import determine_epsg
 from pvgrip.irradiance.tasks \
     import compute_irradiance_ssdp, compute_irradiance_grass
 
@@ -10,7 +12,7 @@ from pvgrip.ssdp.utils \
     import timestr2utc_time, centre_of_box
 
 
-@call_cache_fn_results(minage=1647003564)
+@call_cache_fn_results(minage = 1650884152)
 def irradiance_ssdp(timestr, ghi, dhi, albedo,
                     offset, azimuth, zenith,
                     nsky, **kwargs):
@@ -33,10 +35,10 @@ def irradiance_ssdp(timestr, ghi, dhi, albedo,
     """
     output_type = kwargs['output_type']
     kwargs['output_type'] = 'pickle'
-    kwargs['mesh_type'] = 'metric'
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
 
     utc_time = timestr2utc_time(timestr)
-    lon, lat = centre_of_box(kwargs['box'])
+    lat, lon = centre_of_box(kwargs['box'])
 
     tasks = sample_raster(**kwargs)
     tasks |= compute_irradiance_ssdp.signature\
@@ -52,7 +54,7 @@ def irradiance_ssdp(timestr, ghi, dhi, albedo,
                            scale_name = 'W/m^2')
 
 
-@call_cache_fn_results()
+@call_cache_fn_results(minage = 1650884152)
 def irradiance_grass(timestr, rsun_args, **kwargs):
     """Start irradiance job
 
@@ -62,6 +64,7 @@ def irradiance_grass(timestr, rsun_args, **kwargs):
 
     """
     kwargs['output_type'] = 'geotiff'
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
     tasks = sample_raster(**kwargs)
 
     args = {'timestr': timestr}

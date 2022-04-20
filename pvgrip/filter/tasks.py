@@ -42,7 +42,7 @@ def _write_pickle(raster, mesh):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='filter',minage=1639299472)
+@cache_fn_results(path_prefix = 'filter', minage = 1650884152)
 @one_instance(expire = 10)
 def stdev(self, fns, filter_size):
     logging.debug("stdev\n{}"\
@@ -63,7 +63,7 @@ def stdev(self, fns, filter_size):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='filter')
+@cache_fn_results(path_prefix = 'filter', minage = 1650884152)
 @one_instance(expire = 10)
 def apply_filter(self, fn, filter_type, filter_size):
     logging.debug("apply_filter\n{}"\

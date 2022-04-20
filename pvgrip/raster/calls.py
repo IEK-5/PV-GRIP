@@ -112,12 +112,10 @@ def convert_from_to(tasks, from_type, to_type, **kwargs):
     return _convert_from_pickle(tasks, to_type, **kwargs)
 
 
-@call_cache_fn_results()
-def sample_raster(box, data_re, stat,
-                  mesh_type, step, output_type,
-                  pdal_resolution, ensure_las = False):
-    check_box_not_too_big(box = box, step = step,
-                          mesh_type = mesh_type)
+@call_cache_fn_results(minage = 1650884152)
+def sample_raster(box, data_re, stat, mesh_type, step,
+                  output_type, pdal_resolution, ensure_las = False):
+    check_box_not_too_big(box = box, step = step, mesh_type = mesh_type)
 
     if stat not in ("max","min","count","mean","idw","stdev"):
         raise RuntimeError("""invalid stat = {}

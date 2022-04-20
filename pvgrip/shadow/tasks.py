@@ -36,7 +36,7 @@ from pvgrip.utils.format_dictionary \
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='shadow')
+@cache_fn_results(path_prefix='shadow', minage = 1650884152)
 @one_instance(expire = 10)
 def compute_shadow_map(self, ifn):
     """convert incidence geotiff to binary shadow map
@@ -52,9 +52,10 @@ def compute_shadow_map(self, ifn):
 
     ofn = get_tempfile()
     try:
-        save_gdal(ofn, shadow,
-                  incidence.geo_transform,
-                  incidence.epsg)
+        save_gdal(ofn = ofn,
+                  array = shadow,
+                  geotransform = incidence.geo_transform,
+                  epsg = incidence.epsg)
     except Exception as e:
         remove_file(ofn)
         raise e
@@ -63,7 +64,7 @@ def compute_shadow_map(self, ifn):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage=1626846910, path_prefix='shadow')
+@cache_fn_results(path_prefix='shadow', minage = 1650884152)
 @one_instance(expire = 60*10)
 def compute_incidence(self, tif_fn, timestr):
     """compute sun incidence angle
@@ -102,7 +103,7 @@ def compute_incidence(self, tif_fn, timestr):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage=1626846910, path_prefix='shadow')
+@cache_fn_results(path_prefix='shadow', minage = 1650884152)
 @one_instance(expire = 60*10)
 def average_png(self, png_files):
     """Compute average

@@ -19,6 +19,8 @@ from pvgrip.raster.tasks \
     import sample_from_box
 from pvgrip.raster.utils \
     import check_box_not_too_big
+from pvgrip.raster.mesh \
+    import determine_epsg
 
 from pvgrip.ssdp.utils \
     import centre_of_box
@@ -30,6 +32,19 @@ from pvgrip.route.split_route \
     import split_route_calls
 
 
+def _max_box(rasters):
+    if 0 == len(rasters):
+        raise RuntimeError('length of rasters is 0!')
+
+    res = rasters[0]['box']
+    for x in rasters[1:]:
+        res = [min(x['box'][0], res[0]),
+               min(x['box'][1], res[1]),
+               max(x['box'][2], res[2]),
+               max(x['box'][3], res[3])]
+    return res
+
+
 def route_rasters(tsvfn_uploaded, box, box_delta, **kwargs):
     rasters_fn = get_list_rasters\
         (route_fn = searchandget_locally(tsvfn_uploaded),
@@ -37,12 +52,14 @@ def route_rasters(tsvfn_uploaded, box, box_delta, **kwargs):
     with open(searchandget_locally(rasters_fn),'rb') as f:
         rasters = pickle.load(f)
 
+    kwargs['mesh_type'] = determine_epsg(_max_box(rasters), 'utm')
     check_box_not_too_big(box = rasters[0]['box'],
                           step = kwargs['step'],
                           mesh_type = kwargs['mesh_type'])
 
     return check_all_data_available\
-        (rasters = rasters, **kwargs), rasters
+        (rasters = rasters, **kwargs), \
+        rasters, kwargs['mesh_type']
 
 
 @cache_fn_results()
@@ -61,20 +78,19 @@ def save_route(route):
     hows = ("region_hash","month","week","date"),
     hash_length = 4,
     maxnrows = 10000)
-@call_cache_fn_results(minage=1647003564)
+@call_cache_fn_results(minage = 1650884152)
 def ssdp_route(tsvfn_uploaded, box, box_delta,
                dhi, ghi, albedo, timestr,
                offset, azimuth, zenith, nsky, **kwargs):
-    kwargs['mesh_type'] = 'metric'
-
-    tasks, rasters = route_rasters\
+    tasks, rasters, kwargs['mesh_type'] = route_rasters\
         (tsvfn_uploaded = tsvfn_uploaded, box = box,
          box_delta = box_delta, **kwargs)
+
     group = []
     for x in rasters:
         route_fn = save_route(x['route'])
 
-        lon, lat = centre_of_box(x['box'])
+        lat, lon = centre_of_box(x['box'])
         group += \
             [sample_from_box.signature\
              (kwargs = {'box': x['box'],
@@ -96,7 +112,8 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
                'azimuth_default': azimuth,
                'zenith_default': zenith,
                'albedo': albedo,
-               'nsky': nsky})]
+               'nsky': nsky,
+               'epsg': kwargs['mesh_type']})]
     tasks |= celery.group(group)
     tasks |= merge_tsv.signature()
 

@@ -53,12 +53,12 @@ def merge_tsv(self, tsv_files):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage=1647003564, path_prefix='route')
+@cache_fn_results(path_prefix='route', minage = 1650884152)
 @one_instance(expire = 60*10)
 def compute_route(self, ifn, route_fn, lat, lon,
                   ghi_default, dhi_default, time_default,
                   offset_default, azimuth_default, zenith_default,
-                  albedo, nsky):
+                  albedo, nsky, epsg):
     logging.debug("compute_route\n{}"\
                   .format(format_dictionary(locals())))
     wdir = get_tempdir()
@@ -83,7 +83,8 @@ def compute_route(self, ifn, route_fn, lat, lon,
                                 azimuth_default = azimuth_default,
                                 zenith_default = zenith_default,
                                 offset_default = offset_default,
-                                locations_fn = locations_fn)
+                                locations_fn = locations_fn,
+                                epsg = epsg)
 
         call = poa_route\
             (topography_fname = ssdp_ifn,

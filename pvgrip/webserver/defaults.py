@@ -109,8 +109,19 @@ def raster_defaults():
                 (float(1),
                  'resolution of the sampling mesh in meters'),
                 'mesh_type': \
-                ('metric',
-                 'type of mesh_type ("metric","wgs84")'),
+                ('utm',
+                 """coordinate system to use for the mesh
+
+                 either an epsg code, or 'utm':
+
+                   - '4326' is World Geodetic System 1984 (WGS84) used
+                     in GPS
+
+                   - 'utm' is Universal Transverse Mercator coordinate
+                     system, that select coordinate system
+                     automatically, depending on the locations of
+                     interest. This is an enforced option for all
+                     procedures the requires metric coordinates."""),
                 'output_type': \
                 ('pickle',
                  """

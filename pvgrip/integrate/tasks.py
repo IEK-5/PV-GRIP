@@ -29,7 +29,7 @@ from pvgrip.integrate.utils \
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage=1647003564, path_prefix='integrate')
+@cache_fn_results(path_prefix = 'integrate', minage = 1650884152)
 @one_instance(expire = 60*10)
 def integrate_irradiance(self, ifn, times_fn,
                          lat, lon, albedo,
@@ -73,7 +73,7 @@ def integrate_irradiance(self, ifn, times_fn,
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(minage=1647003564, path_prefix='integrate')
+@cache_fn_results(path_prefix = 'integrate', minage = 1650884152)
 @one_instance(expire = 60*10)
 def sum_pickle(self, pickle_files):
     logging.info("sum_pickle\n{}"\

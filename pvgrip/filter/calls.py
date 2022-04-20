@@ -10,6 +10,8 @@ from pvgrip.raster.calls \
 from pvgrip.raster.tasks \
     import resample_from_pickle, sample_from_box, \
     sample_route_neighbour
+from pvgrip.raster.mesh \
+    import determine_epsg
 
 from pvgrip.route.calls \
     import route_rasters, save_route
@@ -22,13 +24,13 @@ from pvgrip.filter.tasks \
     import stdev, apply_filter
 
 
-@call_cache_fn_results(minage=1639299472)
+@call_cache_fn_results(minage = 1650884152)
 def lidar_stdev(filter_size, **kwargs):
     output_type = kwargs['output_type']
     step = kwargs['step']
     kwargs['step'] = kwargs['pdal_resolution']
     kwargs['output_type'] = 'pickle'
-    kwargs['mesh_type'] = 'metric'
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
 
     tasks = celery.group(
         sample_raster(stat='stdev', ensure_las=True, **kwargs),
@@ -45,11 +47,11 @@ def lidar_stdev(filter_size, **kwargs):
                            to_type = output_type)
 
 
-@call_cache_fn_results()
+@call_cache_fn_results(minage = 1650884152)
 def filter_raster(filter_type, filter_size, **kwargs):
     output_type = kwargs['output_type']
     kwargs['output_type'] = 'pickle'
-    kwargs['mesh_type'] = 'metric'
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
 
     tasks = sample_raster(**kwargs)
     tasks |= apply_filter.signature\
@@ -94,7 +96,7 @@ def _check_filtersize_boxsize(box, filter_size,
     hows = ("region_hash","month","week","date"),
     hash_length = 4,
     maxnrows = 10000)
-@call_cache_fn_results()
+@call_cache_fn_results(minage = 1650884152)
 def lidar_stdev_route(tsvfn_uploaded, filter_size,
                       neighbour_step, azimuth, **kwargs):
     _check_filtersize_boxsize(box = kwargs['box'],
@@ -102,13 +104,12 @@ def lidar_stdev_route(tsvfn_uploaded, filter_size,
                               neighbour_step = neighbour_step,
                               azimuth = azimuth)
     kwargs['ensure_las'] = True
-    kwargs['mesh_type'] = 'metric'
 
     rasters = []
     tasks = []
     for stat in ('stdev','mean','count'):
         kwargs['stat'] = stat
-        x, y = route_rasters\
+        x, y, kwargs['mesh_type'] = route_rasters\
             (tsvfn_uploaded = tsvfn_uploaded, **kwargs)
         tasks += [x]
         if not len(rasters):
@@ -125,7 +126,7 @@ def lidar_stdev_route(tsvfn_uploaded, filter_size,
                   (kwargs = {'box': x['box'],
                              'data_re': kwargs['data_re'],
                              'stat': stat,
-                             'mesh_type': 'metric',
+                             'mesh_type': kwargs['mesh_type'],
                              'step': kwargs['pdal_resolution'],
                              'pdal_resolution': kwargs['pdal_resolution'],
                              'ensure_las': kwargs['ensure_las']},
@@ -151,17 +152,15 @@ def lidar_stdev_route(tsvfn_uploaded, filter_size,
     hows = ("region_hash","month","week","date"),
     hash_length = 4,
     maxnrows = 10000)
-@call_cache_fn_results()
+@call_cache_fn_results(minage = 1650884152)
 def filter_raster_route(tsvfn_uploaded,
                         filter_type, filter_size,
                         neighbour_step, azimuth, **kwargs):
-    kwargs['mesh_type'] = 'metric'
-
     _check_filtersize_boxsize(box = kwargs['box'],
                               filter_size = filter_size,
                               neighbour_step = neighbour_step,
                               azimuth = azimuth)
-    tasks, rasters = route_rasters\
+    tasks, rasters, kwargs['mesh_type'] = route_rasters\
         (tsvfn_uploaded = tsvfn_uploaded, **kwargs)
     prefix='filter_datare{}_stat{}_{}_filtersize{}_neighbour{}_azimuth{}'\
         .format(kwargs['data_re'], kwargs['stat'],

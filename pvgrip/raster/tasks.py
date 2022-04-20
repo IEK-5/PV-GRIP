@@ -49,8 +49,8 @@ def _read_pickle(fn):
 
 
 def _process_lookup(arr, grid):
-    arr = np.array(arr).reshape(len(grid['mesh'][0]),
-                                len(grid['mesh'][1]),
+    arr = np.array(arr).reshape(len(grid['mesh'][1]),
+                                len(grid['mesh'][0]),
                                 arr.shape[1])
     arr = fill_missing(arr)
     arr = np.transpose(np.flip(arr, axis = 1),
@@ -67,7 +67,7 @@ def _process_lookup(arr, grid):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='raster')
+@cache_fn_results(path_prefix='raster', minage = 1650884152)
 @one_instance(expire = 10)
 def save_geotiff(self, pickle_fn):
     logging.debug("save_geotiff\n{}"\
@@ -83,7 +83,7 @@ def save_geotiff(self, pickle_fn):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='raster', minage=1647434114)
+@cache_fn_results(path_prefix='raster', minage = 1650884152)
 @one_instance(expire=10)
 def save_png(self, pickle_fn, normalize = False,
              scale = False, scale_name = '',
@@ -106,7 +106,7 @@ def save_png(self, pickle_fn, normalize = False,
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='raster')
+@cache_fn_results(path_prefix='raster', minage = 1650884152)
 @one_instance(expire = 10)
 def save_pnghillshade(self, geotiff_fn):
     logging.debug("save_pnghillshade\n{}"\
@@ -121,7 +121,7 @@ def save_pnghillshade(self, geotiff_fn):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='raster')
+@cache_fn_results(path_prefix='raster', minage = 1650884152)
 @one_instance(expire = 30)
 def save_pickle(self, geotiff_fn):
     logging.debug("save_pickle\n{}"\
@@ -141,10 +141,9 @@ def dummy(self):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='raster')
+@cache_fn_results(path_prefix='raster', minage = 1650884152)
 @one_instance(expire = 60*10)
-def sample_from_box(self, box, data_re, stat,
-                    mesh_type = 'metric', step = 1,
+def sample_from_box(self, box, data_re, stat, mesh_type, step,
                     pdal_resolution = 0.3, ensure_las = False):
     logging.debug("sample_from_box\n{}"\
                   .format(format_dictionary(locals())))
@@ -152,8 +151,8 @@ def sample_from_box(self, box, data_re, stat,
         SPATIAL_DATA = get_SPATIAL_DATA()
         index = SPATIAL_DATA.subset(box = box, data_re = data_re)
 
-    grid = mesh(box = box, step = step, which = mesh_type)
-    points = list(itertools.product(*grid['mesh']))
+    grid = mesh(box = box, step = step, mesh_type = mesh_type)
+    points = list(itertools.product(*grid['mesh'][::-1]))
 
     res = None
     for fn_idx in index.iterate():
@@ -182,7 +181,7 @@ def sample_from_box(self, box, data_re, stat,
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='raster')
+@cache_fn_results(path_prefix='raster', minage = 1650884152)
 @one_instance(expire = 60*10)
 def resample_from_pickle(self, pickle_fn, new_step):
     logging.debug("resample_from_pickle\n{}"\
@@ -193,14 +192,14 @@ def resample_from_pickle(self, pickle_fn, new_step):
         return pickle_fn
 
     box, mesh_type = mesh2box(src['mesh'])
-    grid = mesh(box = box, step = new_step, which = mesh_type)
-    points = list(itertools.product(*grid['mesh']))
-    return _process_lookup(arr = pickle_lookup(src,points,box),
+    grid = mesh(box = box, step = new_step, mesh_type = mesh_type)
+    points = list(itertools.product(*grid['mesh'][::-1]))
+    return _process_lookup(arr = pickle_lookup(src, points, box),
                            grid = grid)
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='raster')
+@cache_fn_results(path_prefix='raster', minage = 1650884152)
 @one_instance(expire = 10)
 def sample_route_neighbour(self, pickle_fn, route_fn,
                            azimuth_default, neighbour_step,
@@ -212,9 +211,12 @@ def sample_route_neighbour(self, pickle_fn, route_fn,
 
     src = _read_pickle(pickle_fn)
 
-    box, mesh_type = mesh2box(src['mesh'])
+    box, epsg = mesh2box(src['mesh'])
     points, names = route_neighbours\
-        (route, azimuth_default, neighbour_step)
+        (route = route,
+         azimuth_default = azimuth_default,
+         neighbour_step = neighbour_step,
+         epsg = epsg)
 
     reg = re.compile(r'[\[,\]\s\*]')
     names = [reg.sub('.','{}_{}'.format(prefix, x)) for x in names]

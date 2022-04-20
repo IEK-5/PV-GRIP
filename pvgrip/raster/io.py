@@ -68,7 +68,7 @@ def save_geotiff(data, ofn):
 
     array = data['raster']
 
-    xmin, ymin, xmax, ymax = data['mesh']['raster_box']
+    ymin, xmin, ymax, xmax = data['mesh']['raster_box']
     nrows, ncols, nchannels = array.shape
     xres = (xmax - xmin)/float(ncols)
     yres = (ymax - ymin)/float(nrows)
@@ -94,6 +94,9 @@ def save_pickle(geotiff_fn, ofn):
     ymin = ymax - yres*nrows
     mesh['raster_box'] = xmin, ymin, xmax, ymax
     mesh['step'] = max(xres,yres)
+    # TODO: here epsg is 4326, as GDALInterface always imports rasters in
+    # 4326 that's not true. look up works with 4326, but rasters
+    # itself are in arbitrary coordinate system...
     mesh['epsg'] = 4326
 
     with open(ofn,'wb') as f:
