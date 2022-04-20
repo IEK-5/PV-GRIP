@@ -93,7 +93,6 @@ set_defaults
 parse_args $@
 init_dirs
 
-
 case "${what}" in
     worker)
         start_worker

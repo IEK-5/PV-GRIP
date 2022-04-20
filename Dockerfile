@@ -61,3 +61,4 @@ RUN ./scripts/install_ssdp.sh
 FROM build-stage8 AS build-stage9
 ADD . /code/
 RUN pip3 install -e .
+RUN git config --global --add safe.directory /code
