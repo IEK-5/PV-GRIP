@@ -117,7 +117,7 @@ def _sim_route(ofn, pressure = 1010, temperature = 10):
     # compute irradiance along a route
     sim_route C=C t=TIME p=PRESSURE T=TEMPERATURE GHI=GHI DHI=DHI POA=P
     write_array a0=P file={ofn}
-    """.format(ofn = ofn)
+    """.format(ofn = ofn, pressure = pressure, temperature = temperature)
 
 
 def _config_time_irradiance(irrtimes):
