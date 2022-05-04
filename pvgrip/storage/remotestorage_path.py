@@ -9,6 +9,10 @@ from pvgrip.globals \
 REGEX = re.compile(r'^(.*)://(.*)')
 
 
+class NotInStorage(Exception):
+    pass
+
+
 def is_remote_path(path):
     if not isinstance(path, str):
         return False
@@ -35,7 +39,7 @@ def searchandget_locally(fn):
         if rpath.in_storage():
             return rpath.get_locally()
 
-    raise RuntimeError\
+    raise NotInStorage\
         ("{path} not any remote storage!"\
          .format(path=fn))
 
@@ -165,7 +169,7 @@ class RemoteStoragePath:
 
             logging.debug("get_locally: check local")
             if self.path not in self._storage:
-                raise RuntimeError\
+                raise NotInStorage\
                     ("{path} not a {remotetype}!"\
                      .format(path=self.path,
                              remotetype=self.remotetype))

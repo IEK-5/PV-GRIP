@@ -9,6 +9,9 @@ from pvgrip.utils.exceptions \
 from pvgrip.utils.timeout \
     import TIMEOUT
 
+from pvgrip.storage.remotestorage_path \
+    import NotInStorage
+
 from cassandra.cluster \
     import NoHostAvailable
 
@@ -20,6 +23,6 @@ from redis.exceptions \
 class WithRetry(celery.Task):
     autoretry_for = (FAILED_METADATA,TASK_RUNNING, TIMEOUT,
                      NoHostAvailable, BusyLoadingError,
-                     ConnectionError, )
+                     ConnectionError, NotInStorage)
     retry_backoff = True
     max_retries = 10
