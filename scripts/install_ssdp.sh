@@ -9,3 +9,7 @@ chmod 700 autogen.sh
 make
 make install
 ldconfig
+
+cd src/freespa
+make lst
+install -Dm755 lst /usr/local/bin/lst

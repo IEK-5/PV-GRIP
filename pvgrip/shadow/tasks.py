@@ -81,8 +81,10 @@ def compute_incidence(self, tif_fn, timestr):
 
     try:
         tif = GDALInterface(tif_fn)
+        centre = tif.get_centre()
         time = solar_time(timestr = timestr,
-                          lon = tif.get_centre()['lon'])
+                          lat = centre['lat'],
+                          lon = centre['lon'])
         upload_grass_data(wdir = wdir,
                           geotiff_fn = tif_fn,
                           grass_fn = 'elevation')

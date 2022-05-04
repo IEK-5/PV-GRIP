@@ -90,8 +90,10 @@ def compute_irradiance_grass(self, elevation_fn, timestr,
 
     try:
         tif = GDALInterface(elevation_fn)
+        centre = tif.get_centre()
         time = solar_time(timestr = timestr,
-                          lon = tif.get_centre()['lon'])
+                          lat = centre['lat'],
+                          lon = centre['lon'])
 
         fns = upload_grass_many(wdir = wdir,
                                 elevation = elevation_fn,
