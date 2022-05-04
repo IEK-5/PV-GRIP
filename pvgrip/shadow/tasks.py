@@ -64,7 +64,7 @@ def compute_shadow_map(self, ifn):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='shadow', minage = 1650884152)
+@cache_fn_results(path_prefix='shadow', minage = 1652770668)
 @one_instance(expire = 60*10)
 def compute_incidence(self, tif_fn, timestr):
     """compute sun incidence angle
@@ -81,8 +81,10 @@ def compute_incidence(self, tif_fn, timestr):
 
     try:
         tif = GDALInterface(tif_fn)
+        centre = tif.get_centre()
         time = solar_time(timestr = timestr,
-                          lon = tif.get_centre()['lon'])
+                          lat = centre['lat'],
+                          lon = centre['lon'])
         upload_grass_data(wdir = wdir,
                           geotiff_fn = tif_fn,
                           grass_fn = 'elevation')

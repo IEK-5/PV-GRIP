@@ -75,7 +75,7 @@ def compute_irradiance_ssdp(self, ifn,
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix='irradiance', minage = 1650884152)
+@cache_fn_results(path_prefix='irradiance', minage = 1652770668)
 @one_instance(expire = 60*10)
 def compute_irradiance_grass(self, elevation_fn, timestr,
                              aspect_fn = None, aspect_value = None,
@@ -90,8 +90,10 @@ def compute_irradiance_grass(self, elevation_fn, timestr,
 
     try:
         tif = GDALInterface(elevation_fn)
+        centre = tif.get_centre()
         time = solar_time(timestr = timestr,
-                          lon = tif.get_centre()['lon'])
+                          lat = centre['lat'],
+                          lon = centre['lon'])
 
         fns = upload_grass_many(wdir = wdir,
                                 elevation = elevation_fn,
