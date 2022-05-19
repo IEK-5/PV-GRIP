@@ -35,10 +35,9 @@ from pvgrip.utils.format_dictionary \
 @CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(path_prefix = 'osm')
 @one_instance(expire = 10)
-def find_osm_data_online(self, bbox, tag):
-    logging.debug("find_osm_data_online\n{}"\
-                  .format(format_dictionary(locals())))
-    query = form_query(bbox, tag)
+def find_osm_data_online(self, bbox, tag, add_centers:bool = True):
+    logging.debug("find_osm_data_online\n{}".format(format_dictionary(locals())))
+    query = form_query(bbox, tag, add_centers)
 
     response = requests.get\
         (PVGRIP_CONFIGS['osm']['url'],
@@ -103,6 +102,13 @@ def merge_osm(self, osm_files):
 def render_osm_data(self, osm_fn, rules_fn, box, width):
     logging.debug("render_osm_data\n{}"\
                   .format(format_dictionary(locals())))
+
+    # check if rules_fn == "NA" use default smrender rules:
+    # /usr/local/share/smrender/rules.osm in docker
+    if rules_fn is None or rules_fn == "NA":
+        rules_fn = "/usr/local/share/smrender/rules_land.osm"
+    if not os.path.isfile(rules_fn):
+        raise RuntimeError(f"{rules_fn} is not a rulesfile in pvgrip")
     wdir = get_tempdir()
     ofn = get_tempfile()
     # -P specifies dimensions in mm

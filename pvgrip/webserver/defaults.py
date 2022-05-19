@@ -177,24 +177,35 @@ def shadow_average_defaults():
 
 def osm_defaults():
     res = raster_defaults()
-    del res['stat']
-    del res['data_re']
-    del res['pdal_resolution']
-    res.update({
-        'tag': \
-        ('building',
-         """type of an OpenStreetMap tag to show
+    del res["stat"]
+    del res["data_re"]
+    del res["pdal_resolution"]
+    res.update(
+        {
+         #    "tag": (
+         #        "building",
+         #        """type of an OpenStreetMap tag to show
 
-         e.g. building, highway
+         # e.g. building, highway
 
-         See more info on available tags in OSM:
-         https://wiki.openstreetmap.org/wiki/Map_features
+         # See more info on available tags in OSM:
+         # https://wiki.openstreetmap.org/wiki/Map_features
 
-         tag can be in format: key=value
+         # tag can be in format: key=value
 
-         e.g. landuse=forest
-         """)
-    })
+         # e.g. landuse=forest
+         # """,
+         #    )
+            "rules_fn": (
+                "NA",
+                """
+                Path to rules filename used for smrender
+
+                If NA plot, rules are taken from default smrender rules, e.g. /usr/share/smrender/rules.osm
+                """
+            )
+        }
+    )
     return res
 
 
