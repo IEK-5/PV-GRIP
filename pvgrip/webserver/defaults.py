@@ -40,6 +40,7 @@ def calls_help():
     /api/osm             render binary images of rendered from OSM
     /api/osm/rules       create a rules file for smrender by collecting all pairs of tags:values, from a list of
                          provided tags from a route of points
+    /api/osm/route       render a route from OSM by using a rulesfile
 
     /api/weather         get various weather data
 
@@ -223,6 +224,28 @@ def osm_rules_defaults():
     list of openstreetmap tags to fetch keys for
     """,
     )
+    return res
+
+def osm_route_defaults():
+    res = _route()
+    del res["stat"]
+    del res["data_re"]
+    del res["pdal_resolution"]
+    res["rulesfn_uploaded"] = (
+        "NA",
+        """
+        Path to smrender rules file. if no string is provided the default smrender rules will be used
+        """,
+    )
+    res["output_type"] =  ('pickle',
+                 """
+                 type of output
+
+                 choices: "pickle","geotiff","pnghillshade","png","pngnormalize","pngnormalize_scale"
+
+                 "png" does not normalise data""",
+            )
+
     return res
 
 
@@ -611,6 +634,8 @@ def call_defaults(method):
         res = osm_defaults()
     elif "osm/rules" == method:
         res = osm_rules_defaults()
+    elif "osm/route" == method:
+        res = osm_route_defaults()
     elif "ssdp" == method:
         res = ssdp_defaults()
     elif 'upload' == method:

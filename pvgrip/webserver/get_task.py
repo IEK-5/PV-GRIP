@@ -3,7 +3,7 @@ import bottle
 from pvgrip.raster.calls \
     import sample_raster
 from pvgrip.osm.calls \
-    import osm_render, osm_create_rules_from_route
+    import osm_render, osm_create_rules_from_route, osm_render_from_route
 from pvgrip.integrate.calls \
     import ssdp_integrate
 from pvgrip.irradiance.calls \
@@ -52,6 +52,11 @@ def get_task(method, args):
         run = osm_render
     elif 'osm/rules' == method:
         run = osm_create_rules_from_route
+    elif 'osm/route' == method:
+        if 'tsvfn_uploaded' == 'NA':
+            raise RuntimeError\
+                ('tsvfn_uploaded must be provided!')
+        run = osm_render_from_route
     elif 'irradiance' == method:
         run = irradiance_ssdp
     elif 'irradiance/grass' == method:

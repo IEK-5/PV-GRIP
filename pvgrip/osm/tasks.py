@@ -1,5 +1,6 @@
 import os
 import cv2
+import json
 import shutil
 import pickle
 import logging
@@ -311,3 +312,56 @@ def tag_dicts_to_rules(self, tag_dict_path: str) -> str:
     return ofn
 
 
+@CELERY_APP.task(bind=True, base=WithRetry)
+@cache_fn_results(path_prefix="osm", get_args_locally=False)
+@one_instance(expire=10)
+def map_raster_to_box(self, raster_fn:str, box:Tuple[float, float, float, float])->str:
+    """
+    This task maps the path of a raster rendered image to a box describing the position of the image
+    this serves as an addapter-task for changing the output of osm_render
+    :param self:
+    :type self:
+    :param raster_fn: path of rasterfile
+    :type raster_fn: str
+    :param box: lon_min, lat_min, lon_max, lat_max
+    :type box:
+    :return: path of jsonfile
+    :rtype: str
+    """
+
+    ofn = get_tempfile()
+    # write to json
+    try:
+        with open(ofn, "w") as file:
+            json.dump({str(box): raster_fn},file)
+        return ofn
+    except Exception as e:
+        logging.debug(e)
+        remove_file(ofn)
+        raise e
+
+
+@CELERY_APP.task(bind=True, base=WithRetry)
+@cache_fn_results(path_prefix="osm")
+@one_instance(expire=10)
+def collect_json_dicts(self, json_fns:List[str]) -> str:
+    """
+    collect multiple json dicts and merge them into one big json dict
+    usually json_fns is a list of files produced by map_raster_to_box
+    :param self:
+    :type self:
+    :param json_fns:
+    :type json_fns:
+    :return:
+    :rtype:
+    """
+    out = dict()
+    for json_fn in json_fns:
+        with open(json_fn, "r") as f:
+            d = json.load(f)
+        out.update(d)
+
+    ofn = get_tempfile()
+    with open(ofn, "w") as f:
+        json.dump(out, f)
+    return ofn
