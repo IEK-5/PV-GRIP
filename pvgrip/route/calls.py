@@ -1,6 +1,10 @@
+from typing import Tuple
+
 import celery
 import pickle
 
+from pvgrip.filter.tasks import apply_filter
+from pvgrip.osm.tasks import map_raster_to_box
 from pvgrip.utils.cache_fn_results \
     import call_cache_fn_results
 from pvgrip.utils.cache_fn_results \
@@ -14,7 +18,7 @@ from pvgrip.route.tasks \
     import compute_route, merge_tsv
 
 from pvgrip.raster.calls \
-    import check_all_data_available
+    import check_all_data_available, sample_raster, convert_from_to
 from pvgrip.raster.tasks \
     import sample_from_box
 from pvgrip.raster.utils \
@@ -30,6 +34,7 @@ from pvgrip.storage.remotestorage_path \
 
 from pvgrip.route.split_route \
     import split_route_calls
+from pvgrip.osm.tasks import collect_json_dicts
 
 
 def _max_box(rasters):
@@ -118,3 +123,43 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
     tasks |= merge_tsv.signature()
 
     return tasks
+
+
+@call_cache_fn_results()
+def render_raster_from_route(tsvfn_uploaded:str, box: Tuple[float, float, float, float], box_delta: float,
+                             filter_type: str, filter_size: int, **kwargs):
+    # 1. collect the boxes from the tsv
+    tasks, rasters, kwargs['mesh_type'] = route_rasters \
+        (tsvfn_uploaded=tsvfn_uploaded, box=box,
+         box_delta=box_delta, **kwargs)
+
+    # 2. sample lidarfiles and render into a png and optionally apply the filter
+    # not sure if there's a cleaner way to do it
+
+    if filter_type == "NA" or filter_type is None:
+        tasks = celery.group(*[sample_raster(box=x['box'], **kwargs) |
+                               map_raster_to_box.signature(kwargs={'box': x['box']}) for x in rasters])
+    else:
+        # todo maybe change this
+        # problem is apply_filter always needs pickle but result should be output_type
+        # my solution is to first make everything as a pickle and then turn it into output_type
+        output_type = kwargs["output_type"]
+        del kwargs["output_type"]
+        tasks = celery.group(
+            *[
+                convert_from_to(
+                    sample_raster(
+                        box=x["box"], output_type="pickle", scale_name="m", **kwargs
+                    )
+                    | apply_filter(**kwargs),
+                    from_type="pickle",
+                    to_type=output_type,
+                )
+                | map_raster_to_box.signature(kwargs={"box": x["box"]})
+                for x in rasters
+            ]
+        )
+
+    # 6. collect all paths to the rendered images in a list and return it
+
+    return tasks | collect_json_dicts.signature()

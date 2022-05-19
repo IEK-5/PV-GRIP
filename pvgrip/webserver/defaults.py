@@ -30,6 +30,8 @@ def calls_help():
 
     /api/route           compute irradiance along a route
 
+    /api/route/render    render lidardate along a route
+
     /api/intergrate      integrate irradiance map over a period of time
 
     /api/shadow          compute binary map of a shadow at a time of a region
@@ -211,6 +213,19 @@ def osm_defaults():
     )
     return res
 
+def route_render_defaults():
+    res = _route()
+    res.update(_filter_type())
+    res.update(_filter())
+    res["output_type"] = ('pickle',
+                          """
+                           type of output
+
+                           choices: "pickle","geotiff","pnghillshade","png","pngnormalize","pngnormalize_scale"
+
+                           "png" does not normalise data""",
+                          )
+    return res
 
 
 def osm_rules_defaults():
@@ -644,7 +659,9 @@ def call_defaults(method):
         res = download_defaults()
     elif 'route' == method:
         res = route_defaults()
-    elif 'integrate' == method:
+    elif "route/render" == method:
+        res = route_render_defaults()
+    elif "integrate" == method:
         res = integrate_defaults()
     elif 'weather/irradiance' == method:
         res = weather_irradiance_box()
