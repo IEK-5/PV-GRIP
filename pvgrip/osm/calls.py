@@ -4,7 +4,7 @@ from pvgrip.utils.cache_fn_results \
     import call_cache_fn_results
 
 from pvgrip.osm.utils \
-    import get_box_list, create_rules
+    import get_box_list
 
 from pvgrip.raster.utils \
     import check_box_not_too_big
@@ -17,17 +17,17 @@ from pvgrip.osm.tasks \
 
 
 @call_cache_fn_results(minage = 1650884152)
-def osm_render(box, step, mesh_type, tag, output_type):
+def osm_render(rules_fn, box, step, mesh_type, output_type):
     width, _ = check_box_not_too_big\
         (box = box, step = step,
          mesh_type = mesh_type)
-    rules_fn = create_rules(tag)
 
     box_list = get_box_list(box = box)
-
+    # set add_centers to false to get the same result as with the other osm render functions
+    # if this breaks smrender somehow then it needs to be set to True
     tasks = celery.group\
         (*[find_osm_data_online.signature\
-           (kwargs={'tag': tag, 'bbox':x}) \
+           (kwargs={'tag': None, 'bbox':x}) \
            for x in box_list])
 
     tasks |= merge_osm.signature()
