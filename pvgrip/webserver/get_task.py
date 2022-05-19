@@ -9,7 +9,7 @@ from pvgrip.integrate.calls \
 from pvgrip.irradiance.calls \
     import irradiance_ssdp, irradiance_grass
 from pvgrip.route.calls \
-    import ssdp_route
+    import ssdp_route, render_raster_from_route
 from pvgrip.shadow.calls \
     import shadow, average_shadow
 from pvgrip.weather.calls \
@@ -69,6 +69,11 @@ def get_task(method, args):
                 ('tsvfn_uploaded must be provided!')
 
         run = ssdp_route
+    elif 'route/render' == method:
+        if 'tsvfn_uploaded' == 'NA':
+            raise RuntimeError \
+                ('tsvfn_uploaded must be provided!')
+        run = render_raster_from_route
     elif 'integrate' == method:
         if 'tsvfn_uploaded' == 'NA':
             raise RuntimeError\
