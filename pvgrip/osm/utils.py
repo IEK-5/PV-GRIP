@@ -1,3 +1,5 @@
+import logging
+import pickle
 import re
 import geohash
 
@@ -22,26 +24,39 @@ def get_box_list(box):
     return [(x['s'],x['w'],x['n'],x['e']) for x in f]
 
 
-def form_query(bbox, tag):
+def form_query(bbox, tag, add_center: bool = True) -> str:
+    """
+    this function creates a query for overpassapi
+    :param bbox: bounding box in lat long with form [lat_min, lon_min, lat_max, lon_max]
+    :type bbox: Tuple[float, flaot, float, float]
+    :param tag: osm tag
+    :type tag: str
+    :param add_center: flag if True centroids will be added for each way
+    :type add_center: bool
+    :return: query
+    :rtype: str
+    """
     bbox = tuple(bbox)
     query_tags = ""
     if tag:
-        query_tags = query_tags + \
-            f"""node{str(bbox)};
+        query_tags = (
+            query_tags
+            + f"""node{str(bbox)};
             way[{str(tag)}]{str(bbox)};
             relation[{str(tag)}]{str(bbox)};"""
+        )
     else:
         query_tags = f"""node{str(bbox)};
                          way{str(bbox)};
                          relation{str(bbox)};"""
-    return f"""
+    out =  f"""
     [out:xml];
     (
     {query_tags}
-
     );
-    out center;
+    out {'center' if add_center else ''};
     """
+    return out
 
 
 @cache_fn_results()
@@ -82,3 +97,22 @@ def create_rules(tag):
         raise e
 
     return ofn
+
+
+def get_rules_from_pickle(
+    rules_dict_pickle: str,
+) -> str:
+    """
+    get the path of the rulesfrome from the pickled dict created by tag_dicts_to_rules
+    :param rules_dict_pickle: path to pickled dict
+    :type rules_dict_pickle: str
+    :return: path of rulesfile
+    :rtype: str
+    """
+    try:
+        with open(rules_dict_pickle, "rb") as file:
+            out = pickle.load(file)
+            return out["rules"]
+    except Exception as e:
+        logging.error(e)
+        raise e
