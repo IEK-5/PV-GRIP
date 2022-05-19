@@ -40,7 +40,7 @@ def check_box_not_too_big(box, step, mesh_type,
         raise RuntimeError\
             ("either box or resolution is too high!")
 
-    return len(grid['mesh'][0]), len(grid['mesh'][1])
+    return len(grid['mesh'][1]), len(grid['mesh'][0])
 
 
 def index2fn(x, stat, pdal_resolution, ensure_las):
