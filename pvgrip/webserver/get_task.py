@@ -3,7 +3,7 @@ import bottle
 from pvgrip.raster.calls \
     import sample_raster
 from pvgrip.osm.calls \
-    import osm_render
+    import osm_render, osm_create_rules_from_route
 from pvgrip.integrate.calls \
     import ssdp_integrate
 from pvgrip.irradiance.calls \
@@ -50,6 +50,8 @@ def get_task(method, args):
         run = average_shadow
     elif 'osm' == method:
         run = osm_render
+    elif 'osm/rules' == method:
+        run = osm_create_rules_from_route
     elif 'irradiance' == method:
         run = irradiance_ssdp
     elif 'irradiance/grass' == method:

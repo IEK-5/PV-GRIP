@@ -38,6 +38,8 @@ def calls_help():
                          compute average value of shadows over given times
 
     /api/osm             render binary images of rendered from OSM
+    /api/osm/rules       create a rules file for smrender by collecting all pairs of tags:values, from a list of
+                         provided tags from a route of points
 
     /api/weather         get various weather data
 
@@ -205,6 +207,21 @@ def osm_defaults():
                 """
             )
         }
+    )
+    return res
+
+
+
+def osm_rules_defaults():
+    res = _route()
+    del res["stat"]
+    del res["data_re"]
+    del res["pdal_resolution"]
+    res["tags"] = (
+        ("building", "highway"),
+        """
+    list of openstreetmap tags to fetch keys for
+    """,
     )
     return res
 
@@ -592,7 +609,9 @@ def call_defaults(method):
         res = irradiance_defaults()
     elif 'osm' == method:
         res = osm_defaults()
-    elif 'ssdp' == method:
+    elif "osm/rules" == method:
+        res = osm_rules_defaults()
+    elif "ssdp" == method:
         res = ssdp_defaults()
     elif 'upload' == method:
         res = upload_defaults()

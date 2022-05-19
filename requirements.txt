@@ -11,6 +11,7 @@ matplotlib
 netcdf4
 numpy
 opencv-python
+osmium
 pandas
 pyproj
 pytest
