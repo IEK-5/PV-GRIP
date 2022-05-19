@@ -1,3 +1,5 @@
+import pickle
+import logging
 import celery
 
 from typing import Set, List, Dict, Tuple
@@ -14,7 +16,7 @@ from pvgrip.utils.cache_fn_results \
     import call_cache_fn_results
 
 from pvgrip.osm.utils \
-    import get_box_list
+    import get_box_list, get_rules_from_pickle
 
 from pvgrip.raster.utils \
     import check_box_not_too_big
@@ -24,7 +26,8 @@ from pvgrip.raster.calls \
 from pvgrip.osm.tasks \
     import find_osm_data_online, \
     merge_osm, render_osm_data, readpng_asarray, \
-    find_tags_in_osm, collect_tags_from_osm, tag_dicts_to_rules
+    find_tags_in_osm, collect_tags_from_osm, tag_dicts_to_rules,\
+    map_raster_to_box, collect_json_dicts
 
 
 @call_cache_fn_results(minage = 1650884152)
@@ -109,3 +112,48 @@ def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags: Set[str], 
     tasks |= tag_dicts_to_rules.signature()
 
     return tasks
+
+
+
+# todo: this should maybe live in route
+@call_cache_fn_results()
+def osm_render_from_route(tsvfn_uploaded, rulesfn_uploaded, box, box_delta, **kwargs):
+    """
+    This call accepts a path of an uploaded tsv and an uploaded smrender rulesfile as well as args for
+    the size of the boxes along the root to render the map according to the rules
+    :param tsvfn_uploaded: path to uploaded tsv file in pvgrip
+    :type tsvfn_uploaded: str
+    :param rulesfn_uploaded: path to uploaded or generated rules file in pvgrip or path to output from osm_create_rules_from_route
+    :type rulesfn_uploaded:
+    :param box: box that should sourround each point in the route inn the coordinates used for the mesh
+    :type box: Tuple[float, float, float, float]
+    :param box_delta:
+    :type box_delta:
+    :param kwargs:
+    :type kwargs:
+    :return:
+    :rtype:
+    """
+    logging.debug("osm_render_from__route", kwargs)
+    kwargs["output_type"]="".join([i for i in kwargs["output_type"]]) # this is just to test
+    # it seems the passing of args is broken because it turns a string into a list of chars
+    # or I am using curl wrong
+    rasters_fn = get_list_rasters \
+        (route_fn=searchandget_locally(tsvfn_uploaded),
+         box=box, box_delta=box_delta)
+    with open(searchandget_locally(rasters_fn), 'rb') as f:
+        rasters = pickle.load(f)
+    # fetch the file locally to access it
+    rulesfn_uploaded = searchandget_locally(rulesfn_uploaded)
+    # it its not an osm file assume its a pickled dict with the key "rules" in it
+    # which points to the rules file
+    if not rulesfn_uploaded.endswith(".osm"):
+        rulesfn_uploaded = get_rules_from_pickle(rulesfn_uploaded)
+    tasks = celery.group \
+        (*[osm_render(rules_fn = rulesfn_uploaded,
+                      box = x['box'],
+                      **kwargs) | \
+           map_raster_to_box.signature(kwargs={'box':x['box']}) \
+           for x in rasters])
+
+    return tasks | collect_json_dicts.signature()
