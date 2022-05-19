@@ -256,6 +256,7 @@ function start_webserver {
 
     $(start_preamble) \
         $(mount_volumes) \
+	" --user $(id -u):$(id -g)" \
         "${bind}" \
         "${registry}${name_prefix}:${image_tag}" \
         ./scripts/start.sh --what="${what}"
@@ -265,6 +266,7 @@ function start_webserver {
 function start_worker {
     $(start_preamble) \
         $(mount_volumes) \
+	" --user $(id -u):$(id -g)" \
         "${registry}${name_prefix}:${image_tag}" \
         ./scripts/start.sh --what="${what}"
 }
@@ -284,6 +286,7 @@ function start_flower {
     $(start_preamble) \
         $(mount_volumes) \
         -v "${mnt_docs}:/data" \
+	" --user $(id -u):$(id -g)" \
         "${bind}" \
         "${registry}${name_prefix}:${image_tag}" \
         ./scripts/start.sh --what="${what}"

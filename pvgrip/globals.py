@@ -6,8 +6,6 @@ import logging
 
 from cassandra_io.files \
     import Cassandra_Files
-from ipfs_io.files \
-    import IPFS_Files
 from pvgrip.storage.local_io.files \
     import LOCALIO_Files
 
@@ -135,6 +133,8 @@ def get_RESULTS_CACHE():
 
 
 def get_IPFS_STORAGE():
+    from ipfs_io.files \
+        import IPFS_Files
     return IPFS_Files\
         (ipfs_ip = _IPFS_STORAGE_IP,
          ipfs_timeout = _IPFS_TIMEOUT,

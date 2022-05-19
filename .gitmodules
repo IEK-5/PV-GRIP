@@ -3,7 +3,7 @@
 	url = https://github.com/esovetkin/cassandra_io.git
 [submodule "open_elevation/ssdp"]
 	path = pvgrip/ssdp/ssdp
-	url = git@jugit.fz-juelich.de:pearl-project/ssdp.git
+	url = gitolite:albus/juelich/ssdp
 [submodule "pvgrip/storage/ipfs_io"]
 	path = pvgrip/storage/ipfs_io
 	url = https://github.com/esovetkin/ipfs_io.git
