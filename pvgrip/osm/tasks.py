@@ -13,10 +13,11 @@ from typing import List, Dict, Tuple, Any
 
 
 from pvgrip.osm.utils \
-    import form_query
+    import form_query, is_file_valid_osm
 from pvgrip.osm.rules \
     import TagValueHandler, TagRuleContainer, \
     create_rules_from_tags
+from pvgrip.osm.overpass_error import OverpassAPIError
 
 from pvgrip.raster.mesh \
     import mesh
@@ -59,7 +60,15 @@ def find_osm_data_online(self, bbox, tag, add_centers:bool = True):
     except Exception as e:
         remove_file(ofn)
         raise e
-
+    if not is_file_valid_osm(ofn):
+        with open(ofn, "r") as f:
+            lines = []
+            for i, l in enumerate(f):
+                lines.append(l)
+                if i>50:
+                    break
+        remove_file(ofn)
+        raise OverpassAPIError("OverpassAPI response is not a valid osm file. Server might be busy", lines)
     return ofn
 
 

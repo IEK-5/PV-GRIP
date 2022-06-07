@@ -215,8 +215,14 @@ def osm_defaults():
 
 def route_render_defaults():
     res = _route()
-    res.update(_filter_type())
     res.update(_filter())
+    res.update({'filter_type': \
+                            ('average',
+    """type of filter to apply. options:
+    - average (average per m^2)
+    - sum
+    - NA (don't use a filter)
+                                                                                                """)})
     res["output_type"] = ('pickle',
                           """
                            type of output
@@ -234,7 +240,7 @@ def osm_rules_defaults():
     del res["data_re"]
     del res["pdal_resolution"]
     res["tags"] = (
-        ("building", "highway"),
+        ["building", "highway"],
         """
     list of openstreetmap tags to fetch keys for
     """,

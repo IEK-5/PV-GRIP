@@ -19,10 +19,11 @@ from redis.exceptions \
     import BusyLoadingError, \
     ConnectionError
 
+from pvgrip.osm.overpass_error import OverpassAPIError
 
 class WithRetry(celery.Task):
     autoretry_for = (FAILED_METADATA,TASK_RUNNING, TIMEOUT,
                      NoHostAvailable, BusyLoadingError,
-                     ConnectionError, NotInStorage)
+                     ConnectionError, NotInStorage, OverpassAPIError)
     retry_backoff = True
     max_retries = 10
