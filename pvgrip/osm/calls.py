@@ -41,7 +41,7 @@ def osm_render(rules_fn, box, step, mesh_type, output_type):
     # if this breaks smrender somehow then it needs to be set to True
     tasks = celery.group\
         (*[find_osm_data_online.signature\
-           (kwargs={'tag': None, 'bbox':x}) \
+        (kwargs={'tag': None, 'bbox':x, 'add_centers': False}) \
            for x in box_list])
 
     tasks |= merge_osm.signature()

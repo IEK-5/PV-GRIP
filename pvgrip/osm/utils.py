@@ -2,8 +2,10 @@ import logging
 import pickle
 import re
 import geohash
-
+from osmium import SimpleHandler
 import xml.etree.ElementTree as etree
+import shutil
+import os
 
 from cassandra_io.utils \
     import bbox2hash
@@ -14,7 +16,7 @@ from pvgrip.globals \
 from pvgrip.utils.cache_fn_results \
     import cache_fn_results
 from pvgrip.utils.files \
-    import get_tempfile, remove_file
+    import get_tempfile, remove_file, get_tempdir
 
 
 def get_box_list(box):
@@ -116,3 +118,35 @@ def get_rules_from_pickle(
     except Exception as e:
         logging.error(e)
         raise e
+
+def is_file_valid_osm(filepath: str) -> bool:
+    """
+    test if filepath is a valid osm file
+
+    :param filepath: path to a file
+    :type fielpath: str
+    :return: boolean flag true means file is osm file false means it's not
+    :rtype: bool
+    """
+    wdir = get_tempdir()
+    mapfile = os.path.join(wdir, "map.osm")
+    os.link(os.path.abspath(filepath), mapfile)
+
+    # this is maybe a bit dirty but it get's the job done
+    class DummyHandler(SimpleHandler):
+        
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+        
+        def way(self, w):
+            pass
+    
+    d = DummyHandler()
+    out = True
+    try:
+        d.apply_file(mapfile)
+    except RuntimeError as r:
+        out = False
+    finally:
+        shutil.rmtree(wdir)
+    return out
