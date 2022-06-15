@@ -15,7 +15,7 @@ from typing import List, Dict, Tuple, Any
 from pvgrip.osm.utils \
     import form_query, is_file_valid_osm
 from pvgrip.osm.rules \
-    import TagValueHandler, TagRuleContainer, \
+    import TagValueHandler, add_color_to_histogramm, \
     create_rules_from_tags
 from pvgrip.osm.overpass_error import OverpassAPIError
 
@@ -185,7 +185,7 @@ def find_tags_in_osm(self, osmfile: str, tags: List[str]) -> str:
     return ofn
 
 
-class _dict_list:
+class HistogrammCollector:
     """
     This class is a helper class for calculating a histogram of tags and values of an osm file
     """
@@ -214,7 +214,12 @@ class _dict_list:
             for value, occurrences in values.items():
                 self.default_dict[tag][value] += occurrences
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str,Dict[str, int]]:
+        """
+        Return a Dict that maps tags to Dics that map values to occurences
+        Returns: Dict[Dict[str, int]]
+
+        """
         # return normal dictionary
         out = dict()
         for k, v in self.default_dict.items():
@@ -230,95 +235,67 @@ def collect_tags_from_osm(self, tag_dicts_paths: List[str]) -> str:
     This function collects all tags and values from tag_dicts into one single dict and saves it on the disk
     :param tag_dicts: path to picked list[dict[str,dict[str,int]]]
     :type tag_dicts: str
-    :return: path to pickled dict
+    :return: path to json of Dict[str, Dict[str, Tuple[int, str]] a Histogramm of Osm Tag:Value Occurences and matched colors
     :rtype: str
     """
     # todo change input to list of pickled files
     logging.debug(f"collect_tags_from_osm\n{format_dictionary(locals())}")
 
-    res = _dict_list()
+    res = HistogrammCollector()
     for fn in tag_dicts_paths:
         with open(fn, "rb") as f:
             d = pickle.load(f)
         res.update(d)
 
     res = res.to_dict()
+    res = add_color_to_histogramm(res)
     ofn = get_tempfile()
     try:
-        with open(ofn, "wb") as f:
-            pickle.dump(res, f)
+        with open(ofn, "w") as f:
+            json.dump(res, f)
     except Exception as e:
         remove_file(ofn)
         raise e
 
     return ofn
 
-    # with open(tag_dicts_path, "rb") as file:
-    #     try:
-    #         tag_dicts = pickle.load(file)
-    #     except Exception as e:
-    #         logging.error(e)
-    #         raise e
 
-    # def default_val():
-    #     return []
-
-    # res_dir = defaultdict(lambda: [])
-    # for tag_dict in tag_dicts:
-    #     for k, v in tag_dict:
-    #         for value in v:
-    #             res_dir[k].append(value)  # bug?
-
-    # ofn = get_tempfile()
-    # try:
-    #     with open(ofn, "wb") as f:
-    #         pickle.dump(res_dir, f)
-    # except Exception as e:
-    #     remove_file(ofn)
-    #     raise e
-
-    # return ofn
-
-
-@CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix="osm")
-@one_instance(expire=10)
-def tag_dicts_to_rules(self, tag_dict_path: str) -> str:
-    """
-    This task accepts a dict that maps osm tags to dict that map osm values to their occurence does three things:
-    1. creates an smrender rules file to make pictures of thoses tag:value pairs each in distinct colors
-    2. create a dict that maps the colors used to the tag:value pair
-    3. create a dict that shows how often each tag:value pair has occurred
-
-    :param tag_dict: path to pickled dict that matches osm tags like building to osm values of that tag
-    :type tag_dict: str
-    :return: path to pickle file of dict of path of rulesfile, mapping and reverse mapping
-    :rtype: str
-    """
-    # todo add unpickling of filt to dict of tag_dict
-    try:
-        with open(tag_dict_path, "rb") as file:
-            hist = pickle.load(file)
-    except Exception as e:
-        logging.error(e)
-        raise e
-    tag_dict = {key:[val for val in values.keys()] for key, values in hist.items()}
-    container = TagRuleContainer(tag_dict)
-    tags = list(container)
-    rules = create_rules_from_tags(tags)
-    mapping = container.get_mapping()
-    rev_mapping = container.get_reverse_mapping()
-    ofn = get_tempfile()
-
-    try:
-        out_dict = {"rules": rules, "mapping": mapping, "rev_mapping": rev_mapping, "hist":hist}
-        with open(ofn, "wb") as f:
-            pickle.dump(out_dict, f)
-    except Exception as e:
-        remove_file(ofn)
-        raise e
-
-    return ofn
+# @CELERY_APP.task(bind=True, base=WithRetry)
+# @cache_fn_results(path_prefix="osm")
+# @one_instance(expire=10)
+# def add_colors_to_tag_dicts(self, tag_dict_path: str) -> str:
+#     """
+#     The job of this task is to add random colors to each unique pair of tags in dicts in the dict of tag_dict_path
+#     Args:
+#         self: present for celery reasons
+#         tag_dict_path: path to a pickled Dict[str,Dict[str,int]] which is an histogramm of osm tag:value occurrance
+#
+#     Returns:
+#
+#     """
+#     # todo add unpickling of file to dict of tag_dict
+#     try:
+#         with open(tag_dict_path, "rb") as file:
+#             hist = pickle.load(file)
+#     except Exception as e:
+#         logging.error(e)
+#         raise e
+#     tag_dict = {key:[val for val in values.keys()] for key, values in hist.items()}
+#     container = TagsToRules(tag_dict)
+#     tags = list(container)
+#     rules = create_rules_from_tags(tags)
+#     mapping = container.get_hist_with_colors()
+#     ofn = get_tempfile()
+#
+#     try:
+#         out_dict = {"rules": rules, "mapping": mapping, "hist":hist}
+#         with open(ofn, "wb") as f:
+#             pickle.dump(out_dict, f)
+#     except Exception as e:
+#         remove_file(ofn)
+#         raise e
+#
+#     return ofn
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)

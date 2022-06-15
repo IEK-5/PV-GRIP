@@ -1,14 +1,14 @@
 from unittest import TestCase
-from pvgrip.osm.tasks import _dict_list
+from pvgrip.osm.tasks import HistogrammCollector
 
 
-class Test_dict_list(TestCase):
+class HistogrammCollector(TestCase):
     def setUp(self) -> None:
         self.dicts = [
             {"building": {"house": 3, "yes": 2}},
             {"building": {"house": 3, "yes": 4}, "highway": {"yes": 2}},
         ]
-        self.d = _dict_list()
+        self.d = HistogrammCollector()
 
     def test_dict_list(self):
         self.assertDictEqual(self.d.to_dict(), dict())

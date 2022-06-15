@@ -1,9 +1,10 @@
-import os.path
-from typing import List, Set
-from importlib import resources
+import os
+from typing import List, Set, Dict, Tuple
+# from importlib import resources
 import osmium
 from pvgrip.utils import git
-from pvgrip.osm.rules import TagRuleContainer, _create_rules_from_tags, TagValueHandler
+from pvgrip.osm.rules import _create_rules_from_tags, TagValueHandler
+from unittest import TestCase, main
 
 
 class Building_Handler(osmium.SimpleHandler):
@@ -19,71 +20,78 @@ class Building_Handler(osmium.SimpleHandler):
                 if "building" == tag:
                     self.values.add(value)
 
-def get_testfile_path():
+
+def xml_from_tags_hist(tags_hist: Dict[str, Dict[str, Tuple[int, str]]]):
     """
-    Return the path of the .osm file used for testing
-    :return:
-    :rtype:
+    create a string that is an smrender rules xml from
+    Args:
+        tags_hist:
+
+    Returns:
+
     """
-    root = git.git_root()
-    testfile = os.path.join(root, "pvgrip/osm/test/test.osm")
-    return testfile
-
-
-def test_TagValueHandler():
-    handler = TagValueHandler(tags=["building"])
-    testfile = get_testfile_path()
-    handler.apply_file(testfile)
-
-    test_handler = Building_Handler()
-    test_handler.apply_file(testfile)
-    assert test_handler.values == handler.get_values()["building"]
-
-    hist = handler.get_histogramm()
-    expected = {"house": 43, "garages": 1, "garage": 1, "apartments": 2, "yes": 5}
-    assert hist["building"] == expected
-
-
-def test_TagRuleContainer():
-    test_handler = Building_Handler()
-    testfile = get_testfile_path()
-    test_handler.apply_file(testfile)
-    container = TagRuleContainer({"building": list(test_handler.values)})
-    colors = (i for i in container.random_colors())
-    mapping = container.get_mapping()
-
-    for (tag, value), color in mapping.items():
-        assert value in test_handler.values
-        c = next(colors)
-        assert color == c
-
-    rev_mapping = container.get_reverse_mapping()
-    colors = (i for i in container.random_colors())
-    for color, (tag, value) in rev_mapping.items():
-        assert value in test_handler.values
-        c = next(colors)
-        assert color == c
-
-
-def test_create_rules_from_tags():
-    rules = _create_rules_from_tags(
-        [("building", "garage", "ff0000"), ("building", "yes", "00ff00")]
-    )
+    rules = _create_rules_from_tags(tags_hist)
     xml_string = ""
     with open(rules, "r") as f:
         for line in f:
             xml_string += line
-
-    assert (
-        xml_string
-        == '<osm><way><tag k="building" v="garage" /><tag k="_action_" v="draw:color=ff0000;bcolor=black" /></way><way><tag k="building" v="yes" /><tag k="_action_" v="draw:color=00ff00;bcolor=black" /></way></osm>'
-    )
+    os.remove(rules)
+    return xml_string
 
 
-def main():
-    test_TagValueHandler()
-    test_TagRuleContainer()
-    test_create_rules_from_tags()
+class TestRules(TestCase):
+
+    @staticmethod
+    def get_testfile_path():
+        """
+        Return the path of the .osm file used for testing
+        :return:
+        :rtype:
+        """
+        root = git.git_root()
+        testfile = os.path.join(root, "pvgrip/osm/test/test.osm")
+        return testfile
+
+    def test_TagValueHandler(self):
+        handler = TagValueHandler(tags=["building"])
+        testfile = self.get_testfile_path()
+        handler.apply_file(testfile)
+
+        test_handler = Building_Handler()
+        test_handler.apply_file(testfile)
+        self.assertSetEqual(test_handler.values, set(handler.values["building"].keys()))
+
+        hist = handler.get_histogramm()
+        expected = {"house": 43, "garages": 1, "garage": 1, "apartments": 2, "yes": 5}
+        self.assertDictEqual(hist, {"building": expected})
+
+    def test_create_rules_from_tags(self):
+        #  [("building", "garage", "ff0000"), ("building", "yes", "00ff00")]
+        tags_hist = {"building": {"garage": (12, "ff0000"), "yes": (44, "00ff00")}}
+        xml_string = xml_from_tags_hist(tags_hist)
+        expected = '<osm><way><tag k="building" v="garage" /><tag k="_action_" v="draw:color=ff0000;bcolor=black" /></way><way><tag k="building" v="yes" /><tag k="_action_" v="draw:color=00ff00;bcolor=black" /></way></osm>'
+
+        assert (
+                xml_string
+                == expected
+        )
+
+        tags_hist = {}
+        xml_string = xml_from_tags_hist(tags_hist)
+        expected = '<osm />'
+        assert (
+                xml_string
+                == expected
+        )
+
+        tags_hist = {"building":{"":(100, "ff0000")}}
+        xml_string = xml_from_tags_hist(tags_hist)
+        expected = '<osm><way><tag k="building" v="" /><tag k="_action_" v="draw:color=ff0000;bcolor=black" /></way></osm>'
+        assert (
+                xml_string
+                == expected
+        )
+
 
 
 if __name__ == "__main__":

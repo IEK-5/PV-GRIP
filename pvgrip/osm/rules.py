@@ -6,6 +6,7 @@ from typing import List, Dict, Tuple
 import numpy as np
 import colorsys
 
+
 import osmium.osm
 
 from osmium import SimpleHandler
@@ -13,91 +14,46 @@ from osmium import SimpleHandler
 from pvgrip.utils.cache_fn_results import cache_fn_results
 from pvgrip.utils.files import get_tempfile
 
+# # all arguments must be json serializable so we don't use enums but we just use this class
+# class OsmRenderBackend:
+#
+#     supported_renderers = ["smrender"]
+#
+#     @classmethod
+#     def is_backend_string_valid(cls, string):
 
-class TagRuleContainer:
-    _tags_values: Dict[str, List[str]]
 
-    def random_colors(self, bright=True, seed: int = 17) -> List[str]:
-        """
-        Generate random colors one for each unique tag value pair.
-        To get visually distinct colors, generate them in HSV space then
-        convert to RGB.
-        """
-        N = 0
-        for k, v in self._tags_values.items():
-            N += len(v)
-        brightness = 1.0 if bright else 0.7
-        hsv = [(i / N, 1, brightness) for i in range(N)]
-        rng = np.random.default_rng(seed=seed)
-        offset = rng.uniform(0, 1)
-        hsv = [(h + offset, s, v) for (h, s, v) in hsv]
-        colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
-        colors = ["".join("%02X" % round(i * 255) for i in rgb) for rgb in colors]
-        colors = [f"#{c.lower()}" for c in colors]
-        return colors
 
-    def __iter__(self):
-        N = 0
-        for k, v in self._tags_values.items():
-            N += len(v)
-        colors = (i for i in self.random_colors())
+def add_color_to_histogramm(hist: Dict[str, Dict[str, int]]) -> Dict[str, Dict[str, Tuple[int, str]]]:
+    """
+    This function adds a distinct random color to each unique tag:value pair
+    Args:
+        hist: Dict[str, Dict[str, int]], Osm Histogram so a map of tags to a map of values to occurrence
 
-        for tag, values in self._tags_values.items():
-            for v in values:
-                c = next(colors)
-                yield tag, v, c
+    Returns:
+        Dict[str, Dict[str, Tuple[int, str]]] an Osm Histogram which in addition to the occurence also contains a hexcolor string
+    """
+    n = sum([len(v.keys()) for v in hist.values()])
+    colors = (c for c in random_colors(n))
+    out = {tag: {value: (occurrence, next(colors)) for value, occurrence in tag_dict.items()} for tag, tag_dict in
+           hist.items()}
+    return out
 
-    def __init__(self, tags_values: Dict[str, List[str]] = None):
-        if tags_values is None:
-            self._tags_values = defaultdict(lambda x: [])
-        else:
-            self._tags_values = tags_values
 
-    def add_pair(self, tag: str, value: str):
-        self._tags_values[tag].append(value)
+def random_colors(num_colors: int, bright=True, seed: int = 17) -> List[str]:
+    """
+    Generate num_colors distinct hex colors
+    """
 
-    def get_mapping(self) -> Dict[Tuple[str, str], str]:
-        """
-        Return a dict that maps each unique pair of tag and value to a unique colour
-        :return:
-        :rtype:
-        """
-        colors = (i for i in self.random_colors())
-        out = dict()
-        for tag, values in self._tags_values.items():
-            for value in values:
-                c = next(colors)
-                out[(tag, value)] = c
-        return out
-
-    def get_reverse_mapping(self) -> Dict[str, Tuple[str, str]]:
-        """
-        Return a dict that maps a colour to each unique pair of tag and value
-        :return:
-        :rtype:
-        """
-        mapping = self.get_mapping()
-        out = dict()
-        for k, v in mapping.items():
-            out[v] = k
-        return out
-
-    @classmethod
-    def from_osm_by_tag(cls, osmfile: str, tags: List[str]) -> "TagRuleContainer":
-        """
-        Create a TagRuleContainer which contains a unique color for each unique value for each provided Tag
-        Returns:
-            TagRuleContainer
-        """
-
-        handler = TagValueHandler(tags)
-        handler.apply_file(osmfile)
-        out = TagRuleContainer(handler._values)
-
-        return out
-
-    def __repr__(self):
-        return str(list(iter(self)))
+    brightness = 1.0 if bright else 0.7
+    hsv = [(i / num_colors, 1, brightness) for i in range(num_colors)]
+    rng = np.random.default_rng(seed=seed)
+    offset = rng.uniform(0, 1)
+    hsv = [(h + offset, s, v) for (h, s, v) in hsv]
+    colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
+    colors = ["".join("%02X" % round(i * 255) for i in rgb) for rgb in colors]
+    colors = [f"#{c.lower()}" for c in colors]
+    return colors
 
 
 class TagValueHandler(SimpleHandler):
@@ -108,6 +64,15 @@ class TagValueHandler(SimpleHandler):
 
     _values: defaultdict
 
+    @property
+    def values(self):
+        """
+        Getter function to return _values as a python dict
+        Returns:
+
+        """
+        return self.get_histogramm()
+
     def __init__(self, tags: List[str]):
         """
 
@@ -117,17 +82,6 @@ class TagValueHandler(SimpleHandler):
         super(TagValueHandler, self).__init__()
         self.tags = tags
         self._values = defaultdict(lambda: defaultdict(lambda: 0))
-
-    def get_values(self):
-        """
-        Return a copy of the result dict
-        :return:
-        :rtype:
-        """
-        out = dict()
-        for tag, values in self._values.items():
-            out[tag] = set(values.keys())
-        return out
 
     def get_histogramm(self):
         """
@@ -155,26 +109,23 @@ class TagValueHandler(SimpleHandler):
     #         if k in self.tags:
     #             self._values[k][v] += 1
 
-
-
 @cache_fn_results()
-def create_rules_from_tags(tags: List[Tuple[str, str, str]]) -> str:
+def create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int, str]]]) -> str:
     """
-        Create a rulefile to draw all ways of a certain tag in white
-        Args:
-            tags (list[tuple[str, str, str]]): list of tuples of tag, value, hexcode of color
-
-        Returns:
-
-    """
-    return _create_rules_from_tags(tags)
-
-
-def _create_rules_from_tags(tags: List[Tuple[str, str, str]]) -> str:
-    """
-    Create a rulefile to draw all ways of a certain tag in white
+    Create a rulefile to draw pairs of tags and values in a certain color perhaps changed based on their occureence
     Args:
-        tags (list[tuple[str, str, str]]): list of tuples of tag, value, hexcode of color
+        tags (Dict[str, Dict[str, Tuple[int, str]]]): Dict of Dicts {tag:{value:(number of occurences, hex rgb color}}
+
+    Returns:
+
+    """
+    return _create_rules_from_tags(tags_hist_with_colors)
+
+def _create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int, str]]]) -> str:
+    """
+    Create a rulefile to draw pairs of tags and values in a certain color perhaps changed based on their occureence
+    Args:
+        tags (Dict[str, Dict[str, Tuple[int, str]]]): Dict of Dicts {tag:{value:(number of occurences, hex rgb color}}
 
     Returns:
 
@@ -183,22 +134,23 @@ def _create_rules_from_tags(tags: List[Tuple[str, str, str]]) -> str:
 
     tree = ElementTree.ElementTree(root)
 
-    for tag, value, col in tags:
-        type_ = ElementTree.Element("way")
+    for tag, value_dict in tags_hist_with_colors.items():
+        for value, (occurences, col) in value_dict.items():
+            type_ = ElementTree.Element("way")
 
-        root.append(type_)
+            root.append(type_)
 
-        tag_name = ElementTree.Element("tag")
-        type_.append(tag_name)
+            tag_name = ElementTree.Element("tag")
+            type_.append(tag_name)
 
-        tag_name.set("k", tag)
-        tag_name.set("v", value)
+            tag_name.set("k", tag)
+            tag_name.set("v", value)
 
-        tag_action = ElementTree.Element("tag")
-        type_.append(tag_action)
+            tag_action = ElementTree.Element("tag")
+            type_.append(tag_action)
 
-        tag_action.set("k", "_action_")
-        tag_action.set("v", f"draw:color={col};bcolor=black")
+            tag_action.set("k", "_action_")
+            tag_action.set("v", f"draw:color={col};bcolor=black")
 
     ofn = get_tempfile()
     try:
