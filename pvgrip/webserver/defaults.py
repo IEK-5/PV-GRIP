@@ -185,31 +185,15 @@ def osm_defaults():
     del res["stat"]
     del res["data_re"]
     del res["pdal_resolution"]
-    res.update(
-        {
-         #    "tag": (
-         #        "building",
-         #        """type of an OpenStreetMap tag to show
-
-         # e.g. building, highway
-
-         # See more info on available tags in OSM:
-         # https://wiki.openstreetmap.org/wiki/Map_features
-
-         # tag can be in format: key=value
-
-         # e.g. landuse=forest
-         # """,
-         #    )
-            "rules_fn": (
-                "NA",
-                """
-                Path to rules filename used for smrender
-
-                If NA plot, rules are taken from default smrender rules, e.g. /usr/share/smrender/rules.osm
-                """
-            )
-        }
+    res["rules_fn"] = (
+        "NA",
+        """
+        Path to a json of type Dict[str, Dict[str, Tuple[int, str]].
+        It can be uploaded or created with osm/rules.
+        It is a map of osm tags to a map of osm tag:values to a List/Tuple,
+        where the first entry if the number of occurrences and the second entry is the hexcolor. In the form #[0-9a-f]{6}
+        If NA or no path if provided then it will default to the /usr/local/share/smrender/rules_land.osm rules file.
+        """,
     )
     return res
 
@@ -252,10 +236,14 @@ def osm_route_defaults():
     del res["stat"]
     del res["data_re"]
     del res["pdal_resolution"]
-    res["rulesfn_uploaded"] = (
+    res["rules_fn"] = (
         "NA",
         """
-        Path to smrender rules file. if no string is provided the default smrender rules will be used
+        Path to a json of type Dict[str, Dict[str, Tuple[int, str]].
+        It can be uploaded or created with osm/rules.
+        It is a map of osm tags to a map of osm tag:values to a List/Tuple,
+        where the first entry if the number of occurrences and the second entry is the hexcolor. In the form #[0-9a-f]{6}
+        If NA or no path if provided then it will default to the /usr/local/share/smrender/rules_land.osm rules file.
         """,
     )
     res["output_type"] =  ('pickle',
