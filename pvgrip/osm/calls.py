@@ -130,18 +130,18 @@ def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags: Set[str], 
 
 # todo: this should maybe live in route
 @call_cache_fn_results()
-def osm_render_from_route(tsvfn_uploaded:str, rulesfn_uploaded:str, box:Tuple[float, float, float, float], box_delta:int, **kwargs):
+def osm_render_from_route(tsvfn_uploaded:str, rules_fn:str, box:Tuple[float, float, float, float], box_delta:int, **kwargs):
     """
     This call accepts a path of an uploaded tsv and an uploaded smrender rulesfile as well as args for
     the size of the boxes along the root to render the map according to the rules
     :param tsvfn_uploaded: path to uploaded tsv file in pvgrip
     :type tsvfn_uploaded: str
-    :param rulesfn_uploaded: path to uploaded or generated json Dict[str, Dict[str, List[int, str]]
+    :param rules_fn: path to uploaded or generated json Dict[str, Dict[str, List[int, str]]
     its a map of osm tags to a map of osm values to tuples of occurrences and hexcolor string
     e.g.
     {"building":{"yes":[100, "ff0000"], "garage":[3, "00ff00"], "":[1000, "0000ff"]}
     Empty strings are interpreted as wildcard characters
-    :type rulesfn_uploaded: str
+    :type rules_fn: str
     :param box: box that should sourround each point in the route inn the coordinates used for the mesh
     :type box: Tuple[float, float, float, float]
     :param box_delta: a constant that defines a maximum raster being sampled
@@ -157,9 +157,9 @@ def osm_render_from_route(tsvfn_uploaded:str, rulesfn_uploaded:str, box:Tuple[fl
     with open(searchandget_locally(rasters_fn), 'rb') as f:
         rasters = pickle.load(f)
     # fetch the file locally to access it
-    rulesfn_uploaded = searchandget_locally(rulesfn_uploaded)
+    rules_fn = searchandget_locally(rules_fn)
     tasks = celery.group \
-        (*[osm_render(rules_fn = rulesfn_uploaded,
+        (*[osm_render(rules_fn = rules_fn,
                       box = x['box'],
                       **kwargs) | \
            map_raster_to_box.signature(kwargs={'box':x['box']}) \
