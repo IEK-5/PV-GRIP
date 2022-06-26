@@ -126,40 +126,34 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
 
 
 @call_cache_fn_results()
-def render_raster_from_route(tsvfn_uploaded:str, box: Tuple[float, float, float, float], box_delta: float,
-                             filter_type: str, filter_size: int, **kwargs):
-    # 1. collect the boxes from the tsv
+def render_raster_from_route(tsvfn_uploaded, box, box_delta,
+                             filter_type, filter_size, **kwargs):
     tasks, rasters, kwargs['mesh_type'] = route_rasters \
         (tsvfn_uploaded=tsvfn_uploaded, box=box,
          box_delta=box_delta, **kwargs)
 
-    # 2. sample lidarfiles and render into a png and optionally apply the filter
-    # not sure if there's a cleaner way to do it
+    output_type = kwargs['output_type']
+    del kwargs['output_type']
+    do_filter = 'NA' != filter_type
 
-    if filter_type == "NA" or filter_type is None:
-        tasks = celery.group(*[sample_raster(box=x['box'], **kwargs) |
-                               map_raster_to_box.signature(kwargs={'box': x['box']}) for x in rasters])
-    else:
-        # todo maybe change this
-        # problem is apply_filter always needs pickle but result should be output_type
-        # my solution is to first make everything as a pickle and then turn it into output_type
-        output_type = kwargs["output_type"]
-        del kwargs["output_type"]
-        tasks = celery.group(
-            *[
-                convert_from_to(
-                    sample_raster(
-                        box=x["box"], output_type="pickle", scale_name="m", **kwargs
-                    )
-                    | apply_filter(**kwargs),
-                    from_type="pickle",
-                    to_type=output_type,
-                )
-                | map_raster_to_box.signature(kwargs={"box": x["box"]})
-                for x in rasters
-            ]
-        )
+    tasks = []
+    for raster in rasters:
+        x = sample_raster(
+            box=raster['box'],
+            output_type='pickle' if do_filter else output_type,
+            **kwargs)
 
-    # 6. collect all paths to the rendered images in a list and return it
+        if do_filter:
+            x |= apply_filter.signature\
+                (kwargs={'filter_type': filter_type,
+                         'filter_size': filter_size})
+            x = convert_from_to(x, from_type="pickle",
+                                to_type = output_type,
+                                scale_name='m')
 
-    return tasks | collect_json_dicts.signature()
+        x |= map_raster_to_box.signature\
+            (kwargs={"box": raster["box"]})
+        tasks += [x]
+
+    return celery.group(*tasks) | \
+        collect_json_dicts.signature()
