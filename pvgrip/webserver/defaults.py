@@ -180,81 +180,58 @@ def shadow_average_defaults():
     return res
 
 
-def osm_defaults():
-    res = raster_defaults()
-    del res["stat"]
-    del res["data_re"]
-    del res["pdal_resolution"]
-    res["rules_fn"] = (
-        "NA",
-        """
-        Path to a json of type Dict[str, Dict[str, Tuple[int, str]].
-        It can be uploaded or created with osm/rules.
-        It is a map of osm tags to a map of osm tag:values to a List/Tuple,
-        where the first entry if the number of occurrences and the second entry is the hexcolor. In the form #[0-9a-f]{6}
-        If NA or no path if provided then it will default to the /usr/local/share/smrender/rules_land.osm rules file.
-        """,
-    )
+def _del_for_osm(x):
+    for what in ('stat', 'data_re', 'pdal_resolution'):
+        if what in x:
+            del x[what]
+
+    return x
+
+
+def _rules_fn(res):
+    res.update({
+        "rules_fn":
+        ("NA",
+         """path to a rules file
+
+         Path to a json of type Dict[str, Dict[str, Tuple[int,
+         str]]. It is a map of osm tags to a map of osm tag:values to a
+         List/Tuple, where the first entry if the number of occurrences
+         and the second entry is the hexcolor (hexcolor form:
+         #[0-9a-f]{6}).
+
+         File can be uploaded directly or an output of osm/rules can be
+         used.
+
+         If NA or no path if provided then it will default to the
+         /usr/local/share/smrender/rules_land.osm rules file.""")})
     return res
 
-def route_render_defaults():
-    res = _route()
-    res.update(_filter())
-    res.update({'filter_type': \
-                            ('average',
-    """type of filter to apply. options:
-    - average (average per m^2)
-    - sum
-    - NA (don't use a filter)
-                                                                                                """)})
-    res["output_type"] = ('pickle',
-                          """
-                           type of output
 
-                           choices: "pickle","geotiff","pnghillshade","png","pngnormalize","pngnormalize_scale"
-
-                           "png" does not normalise data""",
-                          )
+def osm_defaults():
+    res = raster_defaults()
+    res = _del_for_osm(res)
+    res = _rules_fn(res)
     return res
 
 
 def osm_rules_defaults():
     res = _route()
-    del res["stat"]
-    del res["data_re"]
-    del res["pdal_resolution"]
-    res["tags"] = (
-        ["building", "highway"],
-        """
-    list of openstreetmap tags to fetch keys for
-    """,
-    )
+    res = _del_for_osm(res)
+
+    res.update({
+        "tags":
+        (["building", "highway"],
+         """
+         list of openstreetmap tags to fetch keys for
+         """)})
     return res
 
+
 def osm_route_defaults():
-    res = _route()
-    del res["stat"]
-    del res["data_re"]
-    del res["pdal_resolution"]
-    res["rules_fn"] = (
-        "NA",
-        """
-        Path to a json of type Dict[str, Dict[str, Tuple[int, str]].
-        It can be uploaded or created with osm/rules.
-        It is a map of osm tags to a map of osm tag:values to a List/Tuple,
-        where the first entry if the number of occurrences and the second entry is the hexcolor. In the form #[0-9a-f]{6}
-        If NA or no path if provided then it will default to the /usr/local/share/smrender/rules_land.osm rules file.
-        """,
-    )
-    res["output_type"] =  ('pickle',
-                 """
-                 type of output
-
-                 choices: "pickle","geotiff","pnghillshade","png","pngnormalize","pngnormalize_scale"
-
-                 "png" does not normalise data""",
-            )
-
+    res = _route(with_output_type = True)
+    res = _del_for_osm(res)
+    res = _rules_fn(res)
     return res
 
 
@@ -344,9 +321,12 @@ def ssdp_defaults():
     return res
 
 
-def _route():
+def _route(with_output_type = False):
     res = raster_defaults()
-    del res['output_type']
+
+    if not with_output_type:
+        del res['output_type']
+
     res.update({'box': \
                 ([-50,-50,50,50],
                  """
@@ -391,6 +371,21 @@ def route_defaults():
                  constant value for all locations is used.
 
                  """)})
+    return res
+
+
+def route_render_defaults():
+    res = _route(with_output_type = True)
+    res.update(_filter())
+    res.update({
+        'filter_type': \
+        ('average',
+         """type of filter to apply. options:
+         - average (average per m^2)
+         - sum
+         - NA (don't use a filter)
+         """)})
+
     return res
 
 
