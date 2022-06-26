@@ -1,6 +1,6 @@
 import time
 
-from pvgrip.utils.redis_dictionary \
+from pvgrip.utils.redis.dictionary \
     import Redis_Dictionary
 
 from pvgrip.globals \
