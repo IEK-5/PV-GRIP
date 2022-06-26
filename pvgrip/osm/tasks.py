@@ -116,7 +116,7 @@ def merge_osm(self, osm_files):
 @CELERY_APP.task(bind=True, base=WithRetry)
 @cache_fn_results(path_prefix = 'osm', minage = 1650884152)
 @one_instance(expire = 10)
-def render_osm_data(self, osm_fn, rules_fn, box, width):
+def render_osm_data(self, osm_fn, rules_fn, box, width, height):
     logging.debug("render_osm_data\n{}"\
                   .format(format_dictionary(locals())))
 
@@ -138,7 +138,7 @@ def render_osm_data(self, osm_fn, rules_fn, box, width):
               '-o', 'output.png',
               f"{str(box[0])}:{str(box[1])}:{str(box[2])}:{str(box[3])}",
               '-r', rules_fn,
-              '-P','%.1fx0' % (width/5),
+              '-P','%.1fx%.1f' % (width/5, height/5),
               '-d','127',
               '-b','black'],
              cwd = wdir)

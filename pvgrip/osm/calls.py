@@ -53,7 +53,7 @@ def osm_render(rules_fn: str, box:Tuple[float, float, float, float], step:float,
         with open(searchandget_locally(rules_fn), "r") as f:
             osm_hist = json.load(f)
         smrender_rules = create_rules_from_tags(osm_hist)
-    width, _ = check_box_not_too_big\
+    width, height = check_box_not_too_big\
         (box = box, step = step,
          mesh_type = mesh_type)
 
@@ -70,7 +70,8 @@ def osm_render(rules_fn: str, box:Tuple[float, float, float, float], step:float,
     tasks |= render_osm_data.signature\
         (kwargs={'rules_fn': smrender_rules,
                  'box': box,
-                 'width': width})
+                 'width': width,
+                 'height': height})
 
     tasks |= readpng_asarray.signature\
         (kwargs={'box': box, 'step': step,
