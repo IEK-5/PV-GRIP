@@ -219,6 +219,10 @@ def osm_rules_defaults():
     res = _route()
     res = _del_for_osm(res)
 
+    for what in ('step', 'mesh_type'):
+        if what in res:
+            del res[what]
+
     res.update({
         "tags":
         (["building", "highway"],

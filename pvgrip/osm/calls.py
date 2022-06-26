@@ -17,7 +17,7 @@ from pvgrip.utils.cache_fn_results \
     import call_cache_fn_results
 
 from pvgrip.osm.utils \
-    import get_box_list, get_rules_from_pickle 
+    import get_box_list, get_rules_from_pickle
 
 from pvgrip.raster.utils \
     import check_box_not_too_big
@@ -31,20 +31,18 @@ from pvgrip.osm.tasks \
     map_raster_to_box, collect_json_dicts
 from pvgrip.osm.rules import create_rules_from_tags
 
+
 @call_cache_fn_results(minage = 1650884152)
 def osm_render(rules_fn: str, box:Tuple[float, float, float, float], step:float, mesh_type:str, output_type:str):
-    """
-    Render an osm map using smrender
-    Args:
-        rules_fn: path to a json file of a Dict[str, Dict[str, List[int, str]]
-        it maps osm tags to a map of values to occurrence and hexcolor string
-        box: (Tuple[float, float, float float] bounding box of desired locations
-        format: [lat_min, lon_min, lat_max, lon_max]
-        step: resolution of the sampling mesh in meters
-        mesh_type: coordinate system to use either espg code or "utm"
-        output_type: choices: "pickle","geotiff","pnghillshade","png","pngnormalize","pngnormalize_scale"
+    """Render an osm map using smrender
 
-    Returns: rendered image of map
+    :rules_fn: path to a json file of a Dict[str, Dict[str, List[int, str]]
+        it maps osm tags to a map of values to occurrence and hexcolor string
+
+    :box, step, mesh_type, output_type: similar to
+    ?pvgrip.raster.calls.sample_raster
+
+    :returns: rendered map image
 
     """
     if rules_fn is None or rules_fn == "NA":
@@ -53,6 +51,7 @@ def osm_render(rules_fn: str, box:Tuple[float, float, float, float], step:float,
         with open(searchandget_locally(rules_fn), "r") as f:
             osm_hist = json.load(f)
         smrender_rules = create_rules_from_tags(osm_hist)
+
     width, height = check_box_not_too_big\
         (box = box, step = step,
          mesh_type = mesh_type)
@@ -82,83 +81,69 @@ def osm_render(rules_fn: str, box:Tuple[float, float, float, float], step:float,
                            to_type = output_type)
 
 
-# todo: this should maybe live in route
 @call_cache_fn_results()
-def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags: Set[str], **kwargs):
+def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags):
+    """Create a rules file from OSM along a route
+
+    OSM data along a route is processed, and a distinct colour for
+    each tag:value pair is created.
+
+    :tsvfn_uploaded: see route_fn in ?get_list_rasters
+
+    :box, box_delta: see ?get_list_rasters
+
+    :tags: a list of tags to use
+
     """
-    Turn a specification of a route( a tsv of coordinates a box min box width and a max box width box_delta)
-    and a list of tags of interest into a smrender rules file with a unique distinct colour for each tag:value pair
-    and a pickled dict of the mapping of the tag:value pairs to the used colors and the reversed mapping
-    :param tsvfn_uploaded: path to uploaded tsv file in pvgrip
-    :type tsvfn_uploaded: str
-    :param box: box that should sourround each point in the route inn the coordinates used for the mesh
-    :type box: Tuple[float, float, float, float]
-    :param box_delta: a constant that defines a maximum raster being sampled
-    :type box_delta: int
-    :param tags:
-    :type tags:
-    :return:
-    :rtype:
-    """
-    # 1: turn the tsv, box and box_delta into a route
-    rasters:List[Dict[str,Tuple[float, float, float, float]]]
     rasters_fn = get_list_rasters \
         (route_fn=searchandget_locally(tsvfn_uploaded),
          box=box, box_delta=box_delta)
     with open(searchandget_locally(rasters_fn), 'rb') as f:
         rasters = pickle.load(f)
-    # list of list of boxes
-    # each inner list makes up a box of the route
+
     box_lists = [get_box_list(x['box']) for x in rasters]
+    # ignore any route structure, just query individual boxes
     boxes = set([x for box_list in box_lists for x in box_list])
 
-    # 2: turn the route into osm files
-    # create a task for each small box
     tasks = celery.group \
         (*[find_osm_data_online.signature \
-               (kwargs={'tag': None, 'bbox': x, 'add_centers':False}) | find_tags_in_osm.signature(kwargs={"tags":tags})\
+               (kwargs={'tag': None, 'bbox': x, 'add_centers':False}) | \
+           find_tags_in_osm.signature(kwargs={"tags":tags}) \
            for x in boxes])
 
-    # 3: distribute osm files to workers and let them in parallel work on finding the tags
-    # tasks |= find_tags_in_osm.signature(kwargs={"tags":tags})
-
-    # 4: merge the result of each worker into a single result dict
-    tasks |= collect_tags_from_osm.signature()
-
-    return tasks
+    return tasks | collect_tags_from_osm.signature()
 
 
-
-# todo: this should maybe live in route
 @call_cache_fn_results()
-def osm_render_from_route(tsvfn_uploaded:str, rules_fn:str, box:Tuple[float, float, float, float], box_delta:int, **kwargs):
-    """
-    This call accepts a path of an uploaded tsv and an uploaded smrender rulesfile as well as args for
-    the size of the boxes along the root to render the map according to the rules
-    :param tsvfn_uploaded: path to uploaded tsv file in pvgrip
-    :type tsvfn_uploaded: str
-    :param rules_fn: path to uploaded or generated json Dict[str, Dict[str, List[int, str]]
-    its a map of osm tags to a map of osm values to tuples of occurrences and hexcolor string
-    e.g.
-    {"building":{"yes":[100, "ff0000"], "garage":[3, "00ff00"], "":[1000, "0000ff"]}
-    Empty strings are interpreted as wildcard characters
-    :type rules_fn: str
-    :param box: box that should sourround each point in the route inn the coordinates used for the mesh
-    :type box: Tuple[float, float, float, float]
-    :param box_delta: a constant that defines a maximum raster being sampled
-    :type box_delta: int
-    :param kwargs:
-    :type kwargs:
-    :return:
-    :rtype:
+def osm_render_from_route(tsvfn_uploaded, rules_fn, box, box_delta, **kwargs):
+    """Generate a series of OSM rasters along a route
+
+    This call accepts a path of an uploaded tsv and an uploaded
+    smrender rulesfile as well as args for the size of the boxes along
+    the root to render the map according to the rules
+
+    :tsvfn_uploaded: path to uploaded tsv route file
+
+    :rules_fn: path to uploaded or generated json Dict[str, Dict[str,
+    List[int, str]] its a map of osm tags to a map of osm values to
+    tuples of occurrences and hexcolor string e.g.
+    {"building":{"yes":[100, "#ff0000"], "garage":[3, "#00ff00"],
+    "":[1000, "#0000ff"]} Empty strings are interpreted as wildcard
+    characters
+
+    :box, box_delta: see ?get_list_rasters
+
+    :kwargs: passed to osm_raster
+
     """
     rasters_fn = get_list_rasters \
         (route_fn=searchandget_locally(tsvfn_uploaded),
          box=box, box_delta=box_delta)
     with open(searchandget_locally(rasters_fn), 'rb') as f:
         rasters = pickle.load(f)
-    # fetch the file locally to access it
+
     rules_fn = searchandget_locally(rules_fn)
+
     tasks = celery.group \
         (*[osm_render(rules_fn = rules_fn,
                       box = x['box'],

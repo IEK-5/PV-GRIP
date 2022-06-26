@@ -64,6 +64,7 @@ class TagValueHandler(SimpleHandler):
 
     _values: defaultdict
 
+
     @property
     def values(self):
         """
@@ -72,6 +73,7 @@ class TagValueHandler(SimpleHandler):
 
         """
         return self.get_histogramm()
+
 
     def __init__(self, tags: List[str]):
         """
@@ -82,6 +84,7 @@ class TagValueHandler(SimpleHandler):
         super(TagValueHandler, self).__init__()
         self.tags = tags
         self._values = defaultdict(lambda: defaultdict(lambda: 0))
+
 
     def get_histogramm(self):
         """
@@ -94,10 +97,12 @@ class TagValueHandler(SimpleHandler):
             out[tag] = dict(values)
         return out
 
+
     def way(self, w: osmium.osm.Way):
         for k, v in dict(w.tags).items():
             if k in self.tags:
                 self._values[k][v] += 1
+
 
     # areas are closed ways
     # so each area is also a way
@@ -108,6 +113,7 @@ class TagValueHandler(SimpleHandler):
     #     for k, v in dict(a.tags).items():
     #         if k in self.tags:
     #             self._values[k][v] += 1
+
 
 @cache_fn_results()
 def create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int, str]]]) -> str:

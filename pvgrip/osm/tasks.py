@@ -189,18 +189,10 @@ class HistogrammCollector:
     """
     This class is a helper class for calculating a histogram of tags and values of an osm file
     """
-    # dict_list should not contain strange stuff to pickle
 
     def __init__(self):
         self.default_dict = defaultdict(lambda : defaultdict(lambda: 0))
 
-    # def _default_val(self):
-    #     return defaultdict(self._inner_default_val)
-    #
-    # def _inner_default_val(self):
-    #     # this class needs to be pickleable therefore defaultfunctions must be defined toplevel and can not be lambdas
-    #     return 0
-    #
 
     def update(self, d:Dict[Any, Dict[str,int]]):
         """
@@ -220,7 +212,6 @@ class HistogrammCollector:
         Returns: Dict[Dict[str, int]]
 
         """
-        # return normal dictionary
         out = dict()
         for k, v in self.default_dict.items():
             out[k] = dict(v)
@@ -238,7 +229,6 @@ def collect_tags_from_osm(self, tag_dicts_paths: List[str]) -> str:
     :return: path to json of Dict[str, Dict[str, Tuple[int, str]] a Histogramm of Osm Tag:Value Occurences and matched colors
     :rtype: str
     """
-    # todo change input to list of pickled files
     logging.debug(f"collect_tags_from_osm\n{format_dictionary(locals())}")
 
     res = HistogrammCollector()
@@ -258,44 +248,6 @@ def collect_tags_from_osm(self, tag_dicts_paths: List[str]) -> str:
         raise e
 
     return ofn
-
-
-# @CELERY_APP.task(bind=True, base=WithRetry)
-# @cache_fn_results(path_prefix="osm")
-# @one_instance(expire=10)
-# def add_colors_to_tag_dicts(self, tag_dict_path: str) -> str:
-#     """
-#     The job of this task is to add random colors to each unique pair of tags in dicts in the dict of tag_dict_path
-#     Args:
-#         self: present for celery reasons
-#         tag_dict_path: path to a pickled Dict[str,Dict[str,int]] which is an histogramm of osm tag:value occurrance
-#
-#     Returns:
-#
-#     """
-#     # todo add unpickling of file to dict of tag_dict
-#     try:
-#         with open(tag_dict_path, "rb") as file:
-#             hist = pickle.load(file)
-#     except Exception as e:
-#         logging.error(e)
-#         raise e
-#     tag_dict = {key:[val for val in values.keys()] for key, values in hist.items()}
-#     container = TagsToRules(tag_dict)
-#     tags = list(container)
-#     rules = create_rules_from_tags(tags)
-#     mapping = container.get_hist_with_colors()
-#     ofn = get_tempfile()
-#
-#     try:
-#         out_dict = {"rules": rules, "mapping": mapping, "hist":hist}
-#         with open(ofn, "wb") as f:
-#             pickle.dump(out_dict, f)
-#     except Exception as e:
-#         remove_file(ofn)
-#         raise e
-#
-#     return ofn
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
@@ -344,8 +296,7 @@ def collect_json_dicts(self, json_fns:List[str]) -> str:
     out = dict()
     for json_fn in json_fns:
         with open(json_fn, "r") as f:
-            d = json.load(f)
-        out.update(d)
+            out.update(json.load(f))
 
     ofn = get_tempfile()
     with open(ofn, "w") as f:
