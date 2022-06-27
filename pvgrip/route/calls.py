@@ -78,11 +78,7 @@ def save_route(route):
         remove_file(ofn)
 
 
-@split_route_calls(
-    fn_arg = 'tsvfn_uploaded',
-    hows = ("region_hash","month","week","date"),
-    hash_length = 4,
-    maxnrows = 10000)
+@split_route_calls(fn_arg = 'tsvfn_uploaded')
 @call_cache_fn_results(minage = 1650884152)
 def ssdp_route(tsvfn_uploaded, box, box_delta,
                dhi, ghi, albedo, timestr,
@@ -125,6 +121,8 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
     return tasks
 
 
+@split_route_calls(fn_arg = 'tsvfn_uploaded',
+                   merge_task = collect_json_dicts)
 @call_cache_fn_results()
 def render_raster_from_route(tsvfn_uploaded, box, box_delta,
                              do_filter, filter_type, filter_size, **kwargs):

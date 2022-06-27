@@ -10,6 +10,10 @@ from pvgrip.utils.times import \
     timestr2datetime, time_range2list
 
 
+class FieldMissing(Exception):
+    pass
+
+
 def bbox2hash(bbox, hash_length):
     """Split bounding box coordinates onto smaller boxes
 
@@ -31,7 +35,7 @@ def bbox2hash(bbox, hash_length):
 
 def timelocation_add_hash(tl, hash_length):
     if 'latitude' not in tl or 'longitude' not in tl:
-        raise RuntimeError\
+        raise FieldMissing\
             ("'latitude' or 'longitude' not in time_location!")
 
     tl['region_hash'] = tl.apply\
@@ -44,7 +48,7 @@ def timelocation_add_hash(tl, hash_length):
 
 def timelocation_add_datetimes(tl):
     if 'timestr' not in tl:
-        raise RuntimeError\
+        raise FieldMissing\
             ("'timestr' not in time_location!")
 
     tl['datetime'] = tl.apply\
@@ -62,7 +66,7 @@ def timelocation_add_datetimes(tl):
 
 def timelocation_add_region(tl, output):
     if 'region_hash' not in tl:
-        raise RuntimeError\
+        raise FieldMissing\
             ("'region_hash' is not in time_location!")
 
     if 'coordinate' == output:
@@ -110,12 +114,6 @@ def bbox_tl(box, time_range, time_step,
 
 def route_tl(route_fn, hash_length,region_type = 'coordinate'):
     tl = pd.read_csv(route_fn, sep=None, engine='python')
-
-    if 'timestr' not in tl or \
-       'longitude' not in tl or \
-       'latitude' not in tl:
-        raise RuntimeError\
-            ("longitude, latitude or timestr are missing!")
 
     tl = timelocation_add_datetimes(tl)
     _raiseiftoorecent(tl)

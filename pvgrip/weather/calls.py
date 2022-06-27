@@ -89,7 +89,6 @@ def irradiance_bbox(box, time_range, time_step, what):
 
 @split_route_calls(
     fn_arg = 'tsvfn_uploaded',
-    hows = ("region_hash","month","week","date"),
     hash_length = min(4,COPERNICUS_CDS_HASH_LENGTH),
     maxnrows = 3000)
 @call_cache_fn_results()
@@ -110,7 +109,6 @@ def irradiance_route(tsvfn_uploaded, what):
 
 @split_route_calls(
     fn_arg = 'tsvfn_uploaded',
-    hows = ("region_hash","month","week","date"),
     hash_length = min(4,COPERNICUS_ADS_HASH_LENGTH),
     maxnrows = 3000)
 @call_cache_fn_results()

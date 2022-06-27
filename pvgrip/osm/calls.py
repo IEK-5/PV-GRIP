@@ -12,6 +12,8 @@ from pvgrip.route.calls \
     import route_rasters
 from pvgrip.route.cluster_route_boxes \
     import get_list_rasters
+from pvgrip.route.split_route \
+    import split_route_calls
 
 from pvgrip.utils.cache_fn_results \
     import call_cache_fn_results
@@ -81,6 +83,8 @@ def osm_render(rules_fn: str, box:Tuple[float, float, float, float], step:float,
                            to_type = output_type)
 
 
+@split_route_calls(fn_arg = 'tsvfn_uploaded',
+                   merge_task = collect_json_dicts)
 @call_cache_fn_results()
 def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags):
     """Create a rules file from OSM along a route
@@ -114,6 +118,8 @@ def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags):
     return tasks | collect_tags_from_osm.signature()
 
 
+@split_route_calls(fn_arg = 'tsvfn_uploaded',
+                   merge_task = collect_json_dicts)
 @call_cache_fn_results()
 def osm_render_from_route(tsvfn_uploaded, rules_fn, box, box_delta, **kwargs):
     """Generate a series of OSM rasters along a route

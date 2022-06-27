@@ -8,7 +8,7 @@ from functools import wraps
 
 from pvgrip.weather.utils \
     import timelocation_add_hash, \
-    timelocation_add_datetimes
+    timelocation_add_datetimes, FieldMissing
 
 from pvgrip.storage.upload \
     import upload, Saveas_Requestdata
@@ -28,28 +28,28 @@ def _read_route(route_fn, hows, hash_length):
     """
     route = pd.read_csv(route_fn, sep=None, engine='python')
 
-    if 'latitude' not in route or \
-       'longitude' not in route or \
-       'timestr' not in route:
-        raise RuntimeError\
-            ("'latitude' or 'longitude' or 'timestr' " +\
-             "not in the route file!")
+    try:
+        if 'region_hash' in hows:
+            route = timelocation_add_hash(route, hash_length)
+    except FieldMissing as e:
+        hows = tuple([x for x in hows if x != 'region_hash'])
 
-    if 'region_hash' in hows:
-        route = timelocation_add_hash(route, hash_length)
+    try:
+        if 'month' in hows or \
+           'week' in hows or \
+           'date' in hows:
+            route = timelocation_add_datetimes(route)
+            route['month'], route['week'] = \
+                zip(*route['datetime']\
+                    .map(lambda x: \
+                         datetime.strftime\
+                         (x, '%m|%G-W%V')\
+                         .split('|')))
+    except FieldMissing as e:
+        hows = tuple([x for x in hows \
+                      if x not in ('month', 'week', 'date')])
 
-    if 'month' in hows or \
-       'week' in hows or \
-       'date' in hows:
-        route = timelocation_add_datetimes(route)
-        route['month'], route['week'] = \
-            zip(*route['datetime']\
-                .map(lambda x: \
-                     datetime.strftime\
-                     (x, '%m|%G-W%V')\
-                     .split('|')))
-
-    return route
+    return route, hows
 
 
 def _drop_columns(route, hows):
@@ -87,10 +87,7 @@ def _split_route(route, hows, maxnrows):
     return res
 
 
-def split_route(route_fn,
-                hows = ("region_hash","month","week","date"),
-                hash_length = 4,
-                maxnrows = 3000):
+def split_route(route_fn, hows, hash_length = 4, maxnrows = 3000):
     """Split route file on chunks
 
     :route_fn: path to the route file containing
@@ -107,8 +104,8 @@ def split_route(route_fn,
     """
     route_fn = searchandget_locally(route_fn)
 
-    route = _read_route(route_fn, hows = hows,
-                        hash_length = hash_length)
+    route, hows = _read_route(route_fn, hows = hows,
+                              hash_length = hash_length)
     chunks = _split_route(route,
                           hows = hows,
                           maxnrows = maxnrows)
@@ -121,10 +118,13 @@ def split_route_calls\
     (fn_arg,
      hows = ("region_hash","month","week","date"),
      hash_length = 4,
-     maxnrows = 3000):
+     maxnrows = 10000,
+     merge_task = merge_tsv):
     """A decorator that splits route onto chunks
 
-    The result of the passed tasks should be a tsv file.
+    The result of the passed tasks is together. The combiner is
+    defined my the `merge_task` argument.
+
     """
     def wrapper(fun):
         @wraps(fun)
@@ -144,9 +144,7 @@ def split_route_calls\
                 chunk_kwargs = kwargs
                 chunk_kwargs.update({fn_arg: x})
                 tasks += [fun(*args, **chunk_kwargs)]
-            tasks = celery.group(tasks)
-            tasks |= merge_tsv.signature()
 
-            return tasks
+            return celery.group(tasks) | merge_task.signature()
         return wrap
     return wrapper

@@ -91,11 +91,7 @@ def _check_filtersize_boxsize(box, filter_size,
                            .format(box))
 
 
-@split_route_calls(
-    fn_arg = 'tsvfn_uploaded',
-    hows = ("region_hash","month","week","date"),
-    hash_length = 4,
-    maxnrows = 10000)
+@split_route_calls(fn_arg = 'tsvfn_uploaded')
 @call_cache_fn_results(minage = 1650884152)
 def lidar_stdev_route(tsvfn_uploaded, filter_size,
                       neighbour_step, azimuth, **kwargs):
@@ -147,11 +143,7 @@ def lidar_stdev_route(tsvfn_uploaded, filter_size,
     return tasks
 
 
-@split_route_calls(
-    fn_arg = 'tsvfn_uploaded',
-    hows = ("region_hash","month","week","date"),
-    hash_length = 4,
-    maxnrows = 10000)
+@split_route_calls(fn_arg = 'tsvfn_uploaded')
 @call_cache_fn_results(minage = 1650884152)
 def filter_raster_route(tsvfn_uploaded,
                         filter_type, filter_size,
