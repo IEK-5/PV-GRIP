@@ -380,14 +380,11 @@ def route_defaults():
 
 def route_render_defaults():
     res = _route(with_output_type = True)
-    res.update(_filter())
+    res.update(_filter_type())
     res.update({
-        'filter_type': \
-        ('average',
-         """type of filter to apply. options:
-         - average (average per m^2)
-         - sum
-         - NA (don't use a filter)
+        'do_filter': \
+        ('no',
+         """if "yes", then apply filter
          """)})
 
     return res
