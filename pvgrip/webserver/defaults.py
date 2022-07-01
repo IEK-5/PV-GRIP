@@ -30,9 +30,9 @@ def calls_help():
 
     /api/route           compute irradiance along a route
 
-    /api/route/render    render lidardate along a route
+        /api/route/render  render raster images along a route
 
-    /api/intergrate      integrate irradiance map over a period of time
+    /api/integrate       integrate irradiance map over a period of time
 
     /api/shadow          compute binary map of a shadow at a time of a region
 
@@ -40,9 +40,12 @@ def calls_help():
                          compute average value of shadows over given times
 
     /api/osm             render binary images of rendered from OSM
-    /api/osm/rules       create a rules file for smrender by collecting all pairs of tags:values, from a list of
-                         provided tags from a route of points
-    /api/osm/route       render a route from OSM by using a rulesfile
+
+        /api/osm/rules   create a colour rules file by collecting all
+                         pairs of tags:values from the OSM data along
+                         a given route
+
+        /api/osm/route   render a route from OSM by using a rulesfile
 
     /api/weather         get various weather data
 
