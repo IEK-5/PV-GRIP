@@ -140,7 +140,7 @@ def render_osm_data(self, osm_fn, rules_fn, box, width, height):
               '-r', rules_fn,
               '-P','%.1fx%.1f' % (width/5, height/5),
               '-d','127',
-              '-b','black'],
+              '-b','white'],
              cwd = wdir)
         os.rename(os.path.join(wdir,'output.png'), ofn)
     finally:

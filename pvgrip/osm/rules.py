@@ -156,7 +156,7 @@ def _create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int
             type_.append(tag_action)
 
             tag_action.set("k", "_action_")
-            tag_action.set("v", f"draw:color={col};bcolor=black")
+            tag_action.set("v", f"draw:color={col};bcolor=white")
 
     ofn = get_tempfile()
     try:
