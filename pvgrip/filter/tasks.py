@@ -21,7 +21,7 @@ from pvgrip.utils.files \
 from pvgrip.filter.variance \
     import variance
 from pvgrip.filter.filters \
-    import const_weights, average_per_sqm, convolve
+    import const_weights, average_per_sqm, convolve, average_in_filter
 
 
 def _read_pickle(fn):
@@ -72,6 +72,10 @@ def apply_filter(self, fn, filter_type, filter_size):
 
     if 'average' == filter_type:
         weights = average_per_sqm\
+            (filter_size = filter_size,
+             step = raster['mesh']['step'])
+    elif 'average_in_filter' == filter_type:
+        weights = average_in_filter\
             (filter_size = filter_size,
              step = raster['mesh']['step'])
     elif 'sum' == filter_type:
