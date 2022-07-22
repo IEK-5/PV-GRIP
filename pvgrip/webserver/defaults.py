@@ -564,11 +564,12 @@ def _filter():
 def _filter_type():
     res = _filter()
     res.update({'filter_type': \
-                ('average',
+                ('average_per_sqm',
                  """type of filter to apply. options:
 
-                 - average (average per m^2)
+                 - average_per_sqm (average per m^2)
                  - sum
+                 - average_in_filter (average in filer with size (filer_size[0]*step, filter_size[1]*step)
                  """)})
     return res
 

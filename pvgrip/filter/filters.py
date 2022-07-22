@@ -27,3 +27,16 @@ def sum_convolve(raster, filter_size, step):
 
 def average_per_sqm(filter_size, step):
     return const_weights(filter_size, step)/np.prod(filter_size)
+
+
+def average_in_filter(filter_size, step):
+    """
+    Create a convolution kernel for an average over the area defined by filter_size and step.
+    Each value in this kernel is the same and they add up to 1.
+
+    e.g. if filter_size = (2,3) and step=0.5
+    then a 4 x 6 array where each value is 1/24 is created.
+    """
+    kernel = const_weights(filter_size, step)
+    n = np.prod(kernel.shape)
+    return kernel / n
