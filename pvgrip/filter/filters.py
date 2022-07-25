@@ -1,12 +1,12 @@
 import numpy as np
 
-from scipy.signal import fftconvolve
+from scipy.signal import fftconvolve, oaconvolve, convolve as scipy_convolve
 
 
 def convolve(raster, weights):
     res = []
     for i in range(raster.shape[2]):
-        res += [fftconvolve(raster[:,:,i],weights,mode='same')]
+        res += [scipy_convolve(raster[:,:,i],weights,mode='same')]
     return np.transpose(np.array(res),axes=(1,2,0))
 
 
