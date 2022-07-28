@@ -1,13 +1,42 @@
 import numpy as np
-
+from typing import Tuple
 from scipy.signal import fftconvolve, oaconvolve, convolve as scipy_convolve
+
+
+def pad_raster(raster: np.ndarray, pad_shape: Tuple[int, int]) -> np.ndarray:
+    """
+    pad a 3d numpy array using the reflect method
+    each dimension is padded individually.
+    e.g. if the raster is a 3 channel rgb image each color is only padded using the values of that color
+    """
+    raster_padded = np.empty((raster.shape[0] + 2*pad_shape[0], raster.shape[1] + 2*pad_shape[1], raster.shape[2]))
+    for i in range(raster.shape[2]):
+        p = np.pad(raster[:, :, i], pad_shape, "reflect")
+        raster_padded[:, :, i] = p
+    return raster_padded
+
+
+def unpad_raster(padded_raster: np.ndarray, pad_shape: Tuple[int, int]) -> np.ndarray:
+    """"
+    Undo the padding done with pad_raster
+    """
+    width, height = padded_raster.shape[:2]
+    raster = np.empty((width - 2*pad_shape[0], height - 2*pad_shape[1], padded_raster.shape[2]))
+
+    for i in range(padded_raster.shape[2]):
+        raster[:, :, i] = padded_raster[pad_shape[0]:width-pad_shape[0], pad_shape[1]:height-pad_shape[1], i]
+    return raster
 
 
 def convolve(raster, weights):
     res = []
+    kerne_width, kernel_height = weights.shape
+    raster_padded = pad_raster(raster, (kerne_width//2, kernel_height//2))
     for i in range(raster.shape[2]):
-        res += [scipy_convolve(raster[:,:,i],weights,mode='same')]
-    return np.transpose(np.array(res),axes=(1,2,0))
+        res += [scipy_convolve(raster_padded[:, :, i], weights, mode='same')]
+    res = np.array(res)
+    res = unpad_raster(res, (kerne_width//2, kernel_height//2))
+    return np.transpose(res, axes=(1, 2, 0))
 
 
 def const_weights(filter_size, step):
