@@ -202,7 +202,12 @@ def _rules_fn(res):
          List/Tuple, where the first entry if the number of occurrences
          and the second entry is the hexcolor (hexcolor form:
          #[0-9a-f]{6}).
-
+         
+         The order of the keys of the outer dict (the osm tags) determine the order of the rendering.
+         E.g. if natural is before building then natural will be painted first and building will be painted over them.
+         If natural is before building then first buildings are painted and then natural will be painted over
+         potentially covering the buildings.
+        
          File can be uploaded directly or an output of osm/rules can be
          used.
 
@@ -228,9 +233,12 @@ def osm_rules_defaults():
 
     res.update({
         "tags":
-        (["building", "highway"],
+        (["natural", "landuse", "highway", "building"],
          """
-         list of openstreetmap tags to fetch keys for
+         List of openstreetmap tags to fetch keys for.
+         The order of the tags determines the order of the rendering.
+         e.g. for the default building will be drawn last atop of first
+         highway then landuse and then lastly natural.
          """)})
     return res
 
