@@ -8,8 +8,8 @@ import requests
 
 import numpy as np
 
-from collections import defaultdict
-from typing import List, Dict, Tuple, Any
+from collections import defaultdict, OrderedDict
+from typing import List, Dict, Tuple, Any, TypeVar
 
 
 from pvgrip.osm.utils \
@@ -226,7 +226,7 @@ def collect_tags_from_osm(self, tag_dicts_paths: List[str]) -> str:
     This function collects all tags and values from tag_dicts into one single dict and saves it on the disk
     :param tag_dicts: path to picked list[dict[str,dict[str,int]]]
     :type tag_dicts: str
-    :return: path to json of Dict[str, Dict[str, Tuple[int, str]] a Histogramm of Osm Tag:Value Occurences and matched colors
+    :return: path to json of Dict[str, Dict[str, int] mapping osm tag to mappings of osm values to occurrence
     :rtype: str
     """
     logging.debug(f"collect_tags_from_osm\n{format_dictionary(locals())}")
@@ -238,7 +238,6 @@ def collect_tags_from_osm(self, tag_dicts_paths: List[str]) -> str:
         res.update(d)
 
     res = res.to_dict()
-    res = add_color_to_histogramm(res)
     ofn = get_tempfile()
     try:
         with open(ofn, "w") as f:
@@ -302,3 +301,68 @@ def collect_json_dicts(self, json_fns:List[str]) -> str:
     with open(ofn, "w") as f:
         json.dump(out, f)
     return ofn
+
+
+@CELERY_APP.task(bind=True, base=WithRetry)
+@cache_fn_results(path_prefix="osm")
+@one_instance(expire=10)
+def merge_and_order_osm_rules(self, json_dicts: List[str], order_by:List[str]) -> str:
+    """
+    This function merges dictionaries of dictionaries used for generating smrender rules.
+    It collects dictionaries, adds random colors to them and then orders the entries by the osm tags in "order_by"
+    This function is intented to be used as a merge task.
+    Args:
+        self (): used for celery only
+        json_dicts (List[str]):
+        list of paths to json files cointaining Dict[str, Dict[str, int]]
+        that is a mapping osm tag to mappings of osm value to occurrence
+        order_by (List[str]): list of osm tags to order the entried of the dict by
+
+    Returns:
+        path to jsonfile containing a Dict[str, Dict[str, Tuple[int, str]]] which is
+        a mapping osm tag to mappings of osm value to tuple of occurrence and hexcolor string
+    """
+    collector = HistogrammCollector()
+    for json_dict_path in json_dicts:
+        with open(json_dict_path, "r") as f:
+            json_dict = json.load(f)
+        collector.update(json_dict)
+    output_dict = collector.to_dict()
+    output_dict = add_color_to_histogramm(output_dict)
+    output_dict_ordered = order_dict_by_list(output_dict, order_by)
+    ofn = get_tempfile()
+    try:
+        with open(ofn, "w") as f:
+            json.dump(output_dict_ordered, f)
+    except Exception as e:
+        remove_file(ofn)
+        raise e
+
+    return ofn
+
+def order_dict_by_list(to_order:Dict, order_by:List) -> List[Tuple[Any, Any]]:
+    """
+        Read the contents of "json_dict_path" to a dict and order the keys in the dict according to the keys in "keys".
+        The rest is put back in the same order.
+
+        Example:
+            to_order = {1:"1", "3":3, "2":"2", "foo":"foo", "bar": "bar"}, keys = [1, foo, bar]
+            result {1:"1", "foo":"foo", "bar": "bar", "3":3, "2":"2"}
+
+        args:
+            to_order (Dict[K, Any]): python dict
+            keys (List[K]): list of keys used to order the dict
+
+        return: path to a file with the new json dict in the form of a list of keys and values
+        """
+    old_keys = list(order_by)
+
+    out = OrderedDict()
+    for k in order_by:
+        if k in old_keys and k in to_order.keys():
+            out[k] = to_order.pop(k)
+
+    out.update(to_order)
+    out = [(k, v) for (k, v) in out.items()]
+    return out
+

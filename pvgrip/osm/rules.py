@@ -140,10 +140,17 @@ def _create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int
 
     tree = ElementTree.ElementTree(root)
 
-    for tag, value_dict in tags_hist_with_colors.items():
+    for i, (tag, value_dict) in enumerate(tags_hist_with_colors.items()):
         for value, (occurences, col) in value_dict.items():
+            # todo this needs to be changed if we also use relations for rules
+            # probably easiest would be to changes this function to accecpt multiple dicts one for each way, relation etc
             type_ = ElementTree.Element("way")
+            # to add version and id they should(?) be added here <way version="-100" id="100">
+            # gotta add sem like this type_.set("version", version) and type_.set("id", id)
 
+            # smrender documentation states ids are automatically given by the order of which the rule is in the file
+            # to we omit the id and only specificy the version
+            type_.set("version", f"{i}")
             root.append(type_)
 
             tag_name = ElementTree.Element("tag")

@@ -30,7 +30,7 @@ from pvgrip.osm.tasks \
     import find_osm_data_online, \
     merge_osm, render_osm_data, readpng_asarray, \
     find_tags_in_osm, collect_tags_from_osm,\
-    map_raster_to_box, collect_json_dicts
+    map_raster_to_box, collect_json_dicts, order_dict_by_list, merge_and_order_osm_rules
 from pvgrip.osm.rules import create_rules_from_tags
 
 
@@ -52,6 +52,7 @@ def osm_render(rules_fn: str, box:Tuple[float, float, float, float], step:float,
     else:
         with open(searchandget_locally(rules_fn), "r") as f:
             osm_hist = json.load(f)
+            osm_hist = dict(osm_hist)
         smrender_rules = create_rules_from_tags(osm_hist)
 
     width, height = check_box_not_too_big\
@@ -84,7 +85,8 @@ def osm_render(rules_fn: str, box:Tuple[float, float, float, float], step:float,
 
 
 @split_route_calls(fn_arg = 'tsvfn_uploaded',
-                   merge_task = collect_json_dicts)
+                   merge_task = merge_and_order_osm_rules,
+                   merge_task_args={"order_by":"tags"})
 @call_cache_fn_results()
 def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags):
     """Create a rules file from OSM along a route
@@ -98,6 +100,8 @@ def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags):
 
     :tags: a list of tags to use
 
+    :return: path to a json with a list of lists with 2 elements:
+    tag and dict, dict maps values to list of 2 elements: occurrence and color
     """
     rasters_fn = get_list_rasters \
         (route_fn=searchandget_locally(tsvfn_uploaded),
@@ -114,7 +118,6 @@ def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags):
                (kwargs={'tag': None, 'bbox': x, 'add_centers':False}) | \
            find_tags_in_osm.signature(kwargs={"tags":tags}) \
            for x in boxes])
-
     return tasks | collect_tags_from_osm.signature()
 
 
