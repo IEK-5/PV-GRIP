@@ -1,3 +1,5 @@
+from typing import Dict
+
 import celery
 import geohash
 
@@ -119,13 +121,21 @@ def split_route_calls\
      hows = ("region_hash","month","week","date"),
      hash_length = 4,
      maxnrows = 10000,
-     merge_task = merge_tsv):
+     merge_task = merge_tsv,
+     merge_task_args: Dict[str, str] = None):
     """A decorator that splits route onto chunks
 
     The result of the passed tasks is together. The combiner is
-    defined my the `merge_task` argument.
+    defined by the `merge_task` argument.
+
+    If the merge_task should have access some arguments of the
+    decoratored task they can be specified in `merge_task_args`.
+    `merge_task_args` is a dict that maps names of the args of the merge task
+    to names of the args of the decorated task
 
     """
+    if merge_task_args is None:
+        merge_task_args = dict()
     def wrapper(fun):
         @wraps(fun)
         def wrap(*args, **kwargs):
@@ -133,7 +143,11 @@ def split_route_calls\
                 raise RuntimeError\
                     ("{} was not passed as kwargs"\
                      .format(fn_arg))
-
+            for decorated_task_args in merge_task_args.values():
+                if decorated_task_args not in kwargs:
+                    raise RuntimeError \
+                        ("Merge task args:{} was not passed as kwargs" \
+                         .format(fn_arg))
             chunks = split_route\
                 (route_fn = kwargs[fn_arg],
                  hows = hows,
@@ -145,6 +159,8 @@ def split_route_calls\
                 chunk_kwargs.update({fn_arg: x})
                 tasks += [fun(*args, **chunk_kwargs)]
 
-            return celery.group(tasks) | merge_task.signature()
+            return celery.group(tasks) | merge_task.signature(
+                kwargs={merge_task_arg: kwargs[decorated_task_arg]
+                        for (merge_task_arg, decorated_task_arg) in merge_task_args.items()})
         return wrap
     return wrapper
