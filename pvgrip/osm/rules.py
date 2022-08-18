@@ -88,7 +88,7 @@ class TagValueHandler(SimpleHandler):
             out[tag] = dict(values)
         return out
 
-    def add_values(self, osm_thing: Union[osmium.osm.Way, osmium.osm.Relation]):
+    def add_values(self, osm_thing: Union[osmium.osm.Way, osmium.osm.Relation, osmium.osm.Node]):
         for k, v in dict(osm_thing.tags).items():
             if k in self.tags:
                 self._values[k][v] += 1
@@ -98,6 +98,9 @@ class TagValueHandler(SimpleHandler):
 
     def relation(self, r: osmium.osm.Way):
         self.add_values(r)
+
+    def node(self, n: osmium.osm.Node):
+        self.add_values(n)
 
 
 @cache_fn_results()
@@ -127,7 +130,7 @@ def _create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int
 
     for i, (tag, value_dict) in enumerate(tags_hist_with_colors.items()):
         for value, (occurences, col) in value_dict.items():
-            for osm_type in ["way", "relation"]:
+            for osm_type in ["way", "relation", "node"]:
                 osm_type = ElementTree.Element(osm_type)
                 # smrender documentation states ids are automatically given by the order of which the rule is in the file
                 # to we omit the id and only specificy the version
