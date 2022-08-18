@@ -127,23 +127,24 @@ def _create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int
 
     for i, (tag, value_dict) in enumerate(tags_hist_with_colors.items()):
         for value, (occurences, col) in value_dict.items():
-            way_type = ElementTree.Element("way")
-            # smrender documentation states ids are automatically given by the order of which the rule is in the file
-            # to we omit the id and only specificy the version
-            way_type.set("version", f"{i}")
-            root.append(way_type)
+            for osm_type in ["way", "relation"]:
+                osm_type = ElementTree.Element(osm_type)
+                # smrender documentation states ids are automatically given by the order of which the rule is in the file
+                # to we omit the id and only specificy the version
+                osm_type.set("version", f"{i}")
+                root.append(osm_type)
 
-            way_tag_name = ElementTree.Element("tag")
-            way_type.append(way_tag_name)
+                way_tag_name = ElementTree.Element("tag")
+                osm_type.append(way_tag_name)
 
-            way_tag_name.set("k", tag)
-            way_tag_name.set("v", value)
+                way_tag_name.set("k", tag)
+                way_tag_name.set("v", value)
 
-            way_tag_action = ElementTree.Element("tag")
-            way_type.append(way_tag_action)
+                way_tag_action = ElementTree.Element("tag")
+                osm_type.append(way_tag_action)
 
-            way_tag_action.set("k", "_action_")
-            way_tag_action.set("v", f"draw:color={col}")
+                way_tag_action.set("k", "_action_")
+                way_tag_action.set("v", f"draw:color={col}")
 
     for i, (tag, value_dict) in enumerate(tags_hist_with_colors.items()):
         relation_type = ElementTree.Element("relation")
