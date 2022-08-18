@@ -136,11 +136,12 @@ def render_osm_data(self, osm_fn, rules_fn, box, width, height):
              ['smrender',
               '-i', osm_fn,
               '-o', 'output.png',
-              f"{str(box[0])}:{str(box[1])}:{str(box[2])}:{str(box[3])}",
               '-r', rules_fn,
               '-P','%.1fx%.1f' % (width/5, height/5),
               '-d','127',
-              '-b','white'],
+              '-b','white',
+              '-a',
+              f"{str(box[0])}:{str(box[1])}:{str(box[2])}:{str(box[3])}"],
              cwd = wdir)
         os.rename(os.path.join(wdir,'output.png'), ofn)
     finally:
