@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from xml.etree import ElementTree
 import tempfile
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 import numpy as np
 import colorsys
 
@@ -13,15 +13,6 @@ from osmium import SimpleHandler
 
 from pvgrip.utils.cache_fn_results import cache_fn_results
 from pvgrip.utils.files import get_tempfile
-
-# # all arguments must be json serializable so we don't use enums but we just use this class
-# class OsmRenderBackend:
-#
-#     supported_renderers = ["smrender"]
-#
-#     @classmethod
-#     def is_backend_string_valid(cls, string):
-
 
 
 def add_color_to_histogramm(hist: Dict[str, Dict[str, int]]) -> Dict[str, Dict[str, Tuple[int, str]]]:
@@ -97,22 +88,16 @@ class TagValueHandler(SimpleHandler):
             out[tag] = dict(values)
         return out
 
-
-    def way(self, w: osmium.osm.Way):
-        for k, v in dict(w.tags).items():
+    def add_values(self, osm_thing: Union[osmium.osm.Way, osmium.osm.Relation]):
+        for k, v in dict(osm_thing.tags).items():
             if k in self.tags:
                 self._values[k][v] += 1
 
+    def way(self, w: osmium.osm.Way):
+        self.add_values(w)
 
-    # areas are closed ways
-    # so each area is also a way
-    # this causes the handler to view objects twice
-    # since we want highways and buildings we only look at ways
-
-    # def area(self, a: osmium.osm.Area):
-    #     for k, v in dict(a.tags).items():
-    #         if k in self.tags:
-    #             self._values[k][v] += 1
+    def relation(self, r: osmium.osm.Way):
+        self.add_values(r)
 
 
 @cache_fn_results()
@@ -142,28 +127,43 @@ def _create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int
 
     for i, (tag, value_dict) in enumerate(tags_hist_with_colors.items()):
         for value, (occurences, col) in value_dict.items():
-            # todo this needs to be changed if we also use relations for rules
-            # probably easiest would be to changes this function to accecpt multiple dicts one for each way, relation etc
-            type_ = ElementTree.Element("way")
-            # to add version and id they should(?) be added here <way version="-100" id="100">
-            # gotta add sem like this type_.set("version", version) and type_.set("id", id)
-
+            way_type = ElementTree.Element("way")
             # smrender documentation states ids are automatically given by the order of which the rule is in the file
             # to we omit the id and only specificy the version
-            type_.set("version", f"{i}")
-            root.append(type_)
+            way_type.set("version", f"{i}")
+            root.append(way_type)
 
-            tag_name = ElementTree.Element("tag")
-            type_.append(tag_name)
+            way_tag_name = ElementTree.Element("tag")
+            way_type.append(way_tag_name)
 
-            tag_name.set("k", tag)
-            tag_name.set("v", value)
+            way_tag_name.set("k", tag)
+            way_tag_name.set("v", value)
 
-            tag_action = ElementTree.Element("tag")
-            type_.append(tag_action)
+            way_tag_action = ElementTree.Element("tag")
+            way_type.append(way_tag_action)
 
-            tag_action.set("k", "_action_")
-            tag_action.set("v", f"draw:color={col};bcolor=white")
+            way_tag_action.set("k", "_action_")
+            way_tag_action.set("v", f"draw:color={col}")
+
+    for i, (tag, value_dict) in enumerate(tags_hist_with_colors.items()):
+        relation_type = ElementTree.Element("relation")
+        relation_type.set("version", f"{i+len(tags_hist_with_colors)}")
+        root.append(relation_type)
+
+        relation_tag_name = ElementTree.Element("tag")
+        relation_type.append(relation_tag_name)
+        relation_tag_name.set("k", tag)
+        relation_tag_name.set("v", "")
+
+        relation_tag_type = ElementTree.Element("tag")
+        relation_type.append(relation_tag_type)
+        relation_tag_name.set("k", "type")
+        relation_tag_name.set("v", "multipolygon")
+
+        relation_tag_action = ElementTree.Element("tag")
+        relation_type.append(relation_tag_action)
+        relation_tag_action.set("k", "_action_")
+        relation_tag_action.set("v", "cat_poly")
 
     ofn = get_tempfile()
     try:
