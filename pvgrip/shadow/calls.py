@@ -37,7 +37,7 @@ def shadow(timestr, what='shadow',
         raise RuntimeError("Invalid 'what' argument")
 
     kwargs['output_type'] = 'geotiff'
-    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], kwargs['mesh_type'])
     tasks = sample_raster(**kwargs)
 
     tasks |= compute_incidence.signature\
@@ -57,7 +57,7 @@ def average_shadow(timestrs_fn, output_type='png', **kwargs):
 
     """
     kwargs['output_type'] = 'geotiff'
-    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], kwargs['mesh_type'])
     tasks = sample_raster(**kwargs)
 
     # read timestrs

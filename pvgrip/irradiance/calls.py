@@ -35,7 +35,7 @@ def irradiance_ssdp(timestr, ghi, dhi, albedo,
     """
     output_type = kwargs['output_type']
     kwargs['output_type'] = 'pickle'
-    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], kwargs['mesh_type'])
 
     utc_time = timestr2utc_time(timestr)
     lat, lon = centre_of_box(kwargs['box'])
@@ -64,7 +64,7 @@ def irradiance_grass(timestr, rsun_args, **kwargs):
 
     """
     kwargs['output_type'] = 'geotiff'
-    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], kwargs['mesh_type'])
     tasks = sample_raster(**kwargs)
 
     args = {'timestr': timestr}

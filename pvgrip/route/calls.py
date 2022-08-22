@@ -57,7 +57,7 @@ def route_rasters(tsvfn_uploaded, box, box_delta, **kwargs):
     with open(searchandget_locally(rasters_fn),'rb') as f:
         rasters = pickle.load(f)
 
-    kwargs['mesh_type'] = determine_epsg(_max_box(rasters), 'utm')
+    kwargs['mesh_type'] = determine_epsg(_max_box(rasters), kwargs['mesh_type'])
     check_box_not_too_big(box = rasters[0]['box'],
                           step = kwargs['step'],
                           mesh_type = kwargs['mesh_type'])
@@ -126,7 +126,7 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
 @call_cache_fn_results()
 def render_raster_from_route(tsvfn_uploaded, box, box_delta,
                              do_filter, filter_type, filter_size, **kwargs):
-    tasks, rasters, kwargs['mesh_type'] = route_rasters \
+    _, rasters, kwargs['mesh_type'] = route_rasters \
         (tsvfn_uploaded=tsvfn_uploaded, box=box,
          box_delta=box_delta, **kwargs)
 
