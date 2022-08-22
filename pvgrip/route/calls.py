@@ -126,7 +126,7 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
 @call_cache_fn_results()
 def render_raster_from_route(tsvfn_uploaded, box, box_delta,
                              do_filter, filter_type, filter_size, **kwargs):
-    tasks, rasters, kwargs['mesh_type'] = route_rasters \
+    _, rasters, kwargs['mesh_type'] = route_rasters \
         (tsvfn_uploaded=tsvfn_uploaded, box=box,
          box_delta=box_delta, **kwargs)
 
