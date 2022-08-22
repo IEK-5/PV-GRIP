@@ -43,7 +43,7 @@ def determine_epsg(box, mesh_type):
         pass
 
     raise RuntimeError("mesh_type = {}, but should be "
-                       "either 'metric' or an integer")
+                       "either 'utm' or an integer")
 
 
 def _mesh_epsg(box, step, epsg):
