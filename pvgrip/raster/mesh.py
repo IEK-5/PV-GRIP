@@ -35,6 +35,7 @@ def determine_epsg(box, mesh_type):
                 ("cannot determine any single utm for the box = {box}"\
                  .format(box))
 
+        # select the first option!
         return int(utm_crs_list[0].code)
 
     try:

@@ -30,7 +30,7 @@ def lidar_stdev(filter_size, **kwargs):
     step = kwargs['step']
     kwargs['step'] = kwargs['pdal_resolution']
     kwargs['output_type'] = 'pickle'
-    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], kwargs['mesh_type'])
 
     tasks = celery.group(
         sample_raster(stat='stdev', ensure_las=True, **kwargs),
@@ -51,7 +51,7 @@ def lidar_stdev(filter_size, **kwargs):
 def filter_raster(filter_type, filter_size, **kwargs):
     output_type = kwargs['output_type']
     kwargs['output_type'] = 'pickle'
-    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], kwargs['mesh_type'])
 
     tasks = sample_raster(**kwargs)
     tasks |= apply_filter.signature\

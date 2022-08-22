@@ -129,7 +129,10 @@ def raster_defaults():
                      system, that select coordinate system
                      automatically, depending on the locations of
                      interest. This is an enforced option for all
-                     procedures the requires metric coordinates."""),
+                     procedures the requires metric coordinates.
+
+                 beware to use 'utm' (default) for any computations
+                 where one requires accurate meters for coordinates!"""),
                 'output_type': \
                 ('pickle',
                  """
@@ -289,7 +292,6 @@ def download_defaults():
 
 def ssdp_defaults():
     res = raster_defaults()
-    del res['mesh_type']
 
     res.update({'ghi': \
                 (float(1000),
@@ -584,7 +586,6 @@ def _filter_type():
 
 def filter_lidar_stdev():
     res = raster_defaults()
-    del res['mesh_type']
     del res['stat']
     res.update(_filter())
     return res
@@ -592,7 +593,6 @@ def filter_lidar_stdev():
 
 def filter_raster():
     res = raster_defaults()
-    del res['mesh_type']
     res.update(_filter_type())
     return res
 
@@ -619,7 +619,6 @@ def _filter_route():
 
 def filter_lidar_stdev_route():
     res = _route()
-    del res['mesh_type']
     del res['stat']
     res.update(_filter())
     res.update(_filter_route())
@@ -628,7 +627,6 @@ def filter_lidar_stdev_route():
 
 def filter_raster_route():
     res = _route()
-    del res['mesh_type']
     res.update(_filter_type())
     res.update(_filter_route())
     return res

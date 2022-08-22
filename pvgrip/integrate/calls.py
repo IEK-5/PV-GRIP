@@ -26,7 +26,7 @@ def ssdp_integrate(tsvfn_uploaded, albedo,
                    nsky, **kwargs):
     output_type = kwargs['output_type']
     kwargs['output_type'] = 'pickle'
-    kwargs['mesh_type'] = determine_epsg(kwargs['box'], 'utm')
+    kwargs['mesh_type'] = determine_epsg(kwargs['box'], kwargs['mesh_type'])
 
     lat, lon = centre_of_box(kwargs['box'])
 
