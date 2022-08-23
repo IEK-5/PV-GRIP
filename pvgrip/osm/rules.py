@@ -44,6 +44,7 @@ def random_colors(num_colors: int, bright=True, seed: int = 17) -> List[str]:
     colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
     colors = ["".join("%02X" % round(i * 255) for i in rgb) for rgb in colors]
     colors = [f"#{c.lower()}" for c in colors]
+    np.random.shuffle(colors)
     return colors
 
 

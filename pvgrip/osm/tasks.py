@@ -114,7 +114,7 @@ def merge_osm(self, osm_files):
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix = 'osm', minage = 1660806237)
+@cache_fn_results(path_prefix = 'osm', minage = 1661253156)
 @one_instance(expire = 10)
 def render_osm_data(self, osm_fn, rules_fn, box, width, height):
     logging.debug("render_osm_data\n{}"\
@@ -305,7 +305,7 @@ def collect_json_dicts(self, json_fns:List[str]) -> str:
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix="osm")
+@cache_fn_results(path_prefix="osm", minage=1661253156)
 @one_instance(expire=10)
 def merge_and_order_osm_rules(self, json_dicts: List[str], order_by:List[str]) -> str:
     """
