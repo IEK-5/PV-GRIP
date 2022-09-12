@@ -104,7 +104,9 @@ def merge_osm(self, osm_files):
         run_command\
             (what = ['osmconvert',
                      *osm_files,
-                     '-o='+'output.osm'],
+                     '-o='+'output.osm',
+                     '--complete-ways',
+                     '--complete-multipolygons'],
              cwd = wdir)
         os.rename(os.path.join(wdir,'output.osm'), ofn)
     finally:
