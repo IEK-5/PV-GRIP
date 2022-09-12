@@ -161,8 +161,8 @@ def _create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int
 
         relation_tag_type = ElementTree.Element("tag")
         relation_type.append(relation_tag_type)
-        relation_tag_name.set("k", "type")
-        relation_tag_name.set("v", "multipolygon")
+        relation_tag_type.set("k", "type")
+        relation_tag_type.set("v", "multipolygon")
 
         relation_tag_action = ElementTree.Element("tag")
         relation_type.append(relation_tag_action)
