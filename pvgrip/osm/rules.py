@@ -36,9 +36,9 @@ def random_colors(num_colors: int, bright=True, seed: int = 17) -> List[str]:
     Generate num_colors distinct hex colors
     """
 
-    brightness = 1.0 if bright else 0.7
-    hsv = [(i / num_colors, 1, brightness) for i in range(num_colors)]
+    # brightness = 1.0 if bright else 0.7
     rng = np.random.default_rng(seed=seed)
+    hsv = [(i / num_colors, rng.uniform(0.7, 1.0), rng.uniform(0.7, 1.0)) for i in range(num_colors)]
     offset = rng.uniform(0, 1)
     hsv = [(h + offset, s, v) for (h, s, v) in hsv]
     colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
