@@ -34,7 +34,7 @@ from pvgrip.osm.tasks \
 from pvgrip.osm.rules import create_rules_from_tags
 
 
-@call_cache_fn_results(minage = 1660806237)
+@call_cache_fn_results(minage = 1663931590)
 def osm_render(rules_fn: str, box:Tuple[float, float, float, float], step:float, mesh_type:str, output_type:str):
     """Render an osm map using smrender
 
@@ -87,7 +87,7 @@ def osm_render(rules_fn: str, box:Tuple[float, float, float, float], step:float,
 @split_route_calls(fn_arg = 'tsvfn_uploaded',
                    merge_task = merge_and_order_osm_rules,
                    merge_task_args={"order_by":"tags"})
-@call_cache_fn_results(minage = 1660806237)
+@call_cache_fn_results(minage = 1663931590)
 def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags):
     """Create a rules file from OSM along a route
 
@@ -123,7 +123,7 @@ def osm_create_rules_from_route(tsvfn_uploaded, box, box_delta, tags):
 
 @split_route_calls(fn_arg = 'tsvfn_uploaded',
                    merge_task = collect_json_dicts)
-@call_cache_fn_results()
+@call_cache_fn_results(minage = 1663931590)
 def osm_render_from_route(tsvfn_uploaded, rules_fn, box, box_delta, **kwargs):
     """Generate a series of OSM rasters along a route
 

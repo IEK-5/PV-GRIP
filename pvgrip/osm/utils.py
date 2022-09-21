@@ -48,9 +48,9 @@ def form_query(bbox, tag, add_center: bool = True) -> str:
             relation[{str(tag)}]{str(bbox)};"""
         )
     else:
-        query_tags = f"""node{str(bbox)};
-                         way{str(bbox)};
-                         relation{str(bbox)};"""
+        query_tags = f"""node{str(bbox)};<;>;
+                         way{str(bbox)};<;>;
+                         relation{str(bbox)};<;>;"""
     out =  f"""
     [out:xml];
     (

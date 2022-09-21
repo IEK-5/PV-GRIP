@@ -42,7 +42,7 @@ from pvgrip.utils.format_dictionary \
 
 
 @CELERY_APP.task(bind=True, base=WithRetry)
-@cache_fn_results(path_prefix = 'osm')
+@cache_fn_results(path_prefix = 'osm', minage = 1650884152)
 @one_instance(expire = 10)
 def find_osm_data_online(self, bbox, tag, add_centers:bool = True):
     logging.debug("find_osm_data_online\n{}".format(format_dictionary(locals())))
