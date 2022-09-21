@@ -103,7 +103,7 @@ class TagValueHandler(SimpleHandler):
 
 
 
-@cache_fn_results()
+@cache_fn_results(minage = 1663931590)
 def create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int, str]]]) -> str:
     """
     Create a rulefile to draw pairs of tags and values in a certain color perhaps changed based on their occureence
@@ -128,6 +128,26 @@ def _create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int
 
     tree = ElementTree.ElementTree(root)
 
+
+    relation_type = ElementTree.Element("relation")
+    relation_type.set("version", f"{0}")
+    root.append(relation_type)
+
+    tag_name = ElementTree.Element("tag")
+    relation_type.append(tag_name)
+    tag_name.set("k", "")
+    tag_name.set("v", "")
+
+    relation_tag_type = ElementTree.Element("tag")
+    relation_type.append(relation_tag_type)
+    relation_tag_type.set("k", "type")
+    relation_tag_type.set("v", "multipolygon")
+
+    relation_tag_action = ElementTree.Element("tag")
+    relation_type.append(relation_tag_action)
+    relation_tag_action.set("k", "_action_")
+    relation_tag_action.set("v", "cat_poly:ign_incomplete=1")
+
     for i, (tag, value_dict) in enumerate(tags_hist_with_colors.items()):
         for value, (occurences, col) in value_dict.items():
             for osm_type in ["way", "relation"]:
@@ -148,26 +168,6 @@ def _create_rules_from_tags(tags_hist_with_colors: Dict[str, Dict[str, Tuple[int
 
                 way_tag_action.set("k", "_action_")
                 way_tag_action.set("v", f"draw:color={col}")
-
-    for i, (tag, value_dict) in enumerate(tags_hist_with_colors.items()):
-        relation_type = ElementTree.Element("relation")
-        relation_type.set("version", f"{i+len(tags_hist_with_colors)}")
-        root.append(relation_type)
-
-        relation_tag_name = ElementTree.Element("tag")
-        relation_type.append(relation_tag_name)
-        relation_tag_name.set("k", tag)
-        relation_tag_name.set("v", "")
-
-        relation_tag_type = ElementTree.Element("tag")
-        relation_type.append(relation_tag_type)
-        relation_tag_type.set("k", "type")
-        relation_tag_type.set("v", "multipolygon")
-
-        relation_tag_action = ElementTree.Element("tag")
-        relation_type.append(relation_tag_action)
-        relation_tag_action.set("k", "_action_")
-        relation_tag_action.set("v", "cat_poly")
 
     ofn = get_tempfile()
     try:
