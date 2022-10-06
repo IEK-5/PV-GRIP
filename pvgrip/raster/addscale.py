@@ -11,7 +11,7 @@ from pvgrip.utils.files \
     import remove_file
 
 
-def draw_scale(height, map_axis, wdir, title, nticks = 5, dpi = 150, fmt = '{:.0f}'):
+def draw_scale(height, map_axis, wdir, title, nticks = 5, dpi = 150, fmt = '{:.2f}'):
     fig, ax = plt.subplots(1,1)
     fig.set_dpi(dpi)
     fig.set_size_inches(height/dpi/10, height/dpi)
