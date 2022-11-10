@@ -43,7 +43,7 @@ def timelocation_add_hash(tl, hash_length):
          geohash.encode(x['latitude'],x['longitude'],
                         precision = hash_length),
          axis = 1)
-    return tl
+    return tl, 'region_hash'
 
 
 def timelocation_add_datetimes(tl):
@@ -61,7 +61,7 @@ def timelocation_add_datetimes(tl):
                  datetime.strftime\
                  (x,'%Y-%m-%d|%G|%V')\
                  .split('|')))
-    return tl
+    return tl, ('datetime','date','year','week')
 
 
 def timelocation_add_region(tl, output):
@@ -74,12 +74,12 @@ def timelocation_add_region(tl, output):
             zip(*tl['region_hash']\
                 .map(lambda x: \
                      geohash.decode_exactly(x)[:2]))
-        return tl
+        return tl, ('region_latitude', 'region_longitude')
 
     tl['region_bbox'] = tl['region_hash'].apply\
         (lambda x: tuple(geohash.bbox(x).values()))
 
-    return tl
+    return tl, ('region_bbox', )
 
 
 def _raiseiftoorecent(tl):
@@ -106,17 +106,17 @@ def bbox_tl(box, time_range, time_step,
                             time_format = '%Y-%m-%d_%H:%M:%S')
     times = pd.DataFrame(times, columns = ['timestr'])
     tl = tl.merge(times, how='cross')
-    tl = timelocation_add_datetimes(tl)
+    tl, _ = timelocation_add_datetimes(tl)
     _raiseiftoorecent(tl)
-    tl = timelocation_add_region(tl, region_type)
+    tl, _ = timelocation_add_region(tl, region_type)
     return tl
 
 
 def route_tl(route_fn, hash_length,region_type = 'coordinate'):
     tl = pd.read_csv(route_fn, sep=None, engine='python')
 
-    tl = timelocation_add_datetimes(tl)
+    tl, _ = timelocation_add_datetimes(tl)
     _raiseiftoorecent(tl)
-    tl = timelocation_add_hash(tl, hash_length)
-    tl = timelocation_add_region(tl, region_type)
+    tl, _ = timelocation_add_hash(tl, hash_length)
+    tl, _ = timelocation_add_region(tl, region_type)
     return tl

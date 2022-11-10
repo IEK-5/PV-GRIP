@@ -1,5 +1,4 @@
-from typing import Dict
-
+import re
 import celery
 import geohash
 
@@ -7,6 +6,7 @@ import pandas as pd
 
 from datetime import datetime
 from functools import wraps
+from typing import Dict
 
 from pvgrip.weather.utils \
     import timelocation_add_hash, \
@@ -22,58 +22,50 @@ from pvgrip.storage.remotestorage_path \
     import searchandget_locally
 
 
-def _read_route(route_fn, hows, hash_length):
+def _read_route(route_fn, hows):
     """read route
 
     :route_fn: path to the route file containing
     'latitude','longitude','timestr'
     """
     route = pd.read_csv(route_fn, sep=None, engine='python')
+    drop = []
+    rex = re.compile(r'^region_hash(\d{1,})')
 
     try:
-        if 'region_hash' in hows:
-            route = timelocation_add_hash(route, hash_length)
+        for how in hows:
+            if not rex.match(how):
+                continue
+
+            l = int(rex.match(how).groups()[0])
+            route, d = timelocation_add_hash(route, l)
+            route = route.rename(columns={f'{d}': f'region_hash{l}'})
+            drop += list([f'region_hash{l}'])
     except FieldMissing as e:
-        hows = tuple([x for x in hows if x != 'region_hash'])
+        hows = tuple([x for x in hows if not rex.match(x)])
 
     try:
         if 'month' in hows or \
            'week' in hows or \
            'date' in hows:
-            route = timelocation_add_datetimes(route)
+            route, d = timelocation_add_datetimes(route)
             route['month'], route['week'] = \
                 zip(*route['datetime']\
                     .map(lambda x: \
                          datetime.strftime\
                          (x, '%m|%G-W%V')\
                          .split('|')))
+            drop += list(set(list(d) + ['month', 'week']))
     except FieldMissing as e:
         hows = tuple([x for x in hows \
                       if x not in ('month', 'week', 'date')])
 
-    return route, hows
+    return route, hows, drop
 
 
-def _drop_columns(route, hows):
-    drop = []
-
-    if 'region_hash' in hows:
-        drop += ['region_hash']
-
-    if 'month' in hows or \
-       'week' in hows or \
-       'date' in hows:
-        drop += ['month','week','datetime',
-                 'date','year','week']
-
-    route = route.drop(drop, axis=1)
-
-    return route
-
-
-def _split_route(route, hows, maxnrows):
+def _split_route(route, hows, drop, maxnrows):
     if hows == ():
-        return [_drop_columns(route, hows = hows)]
+        return [route.drop(drop, axis=1)]
     car, cdr = hows[0], hows[1:]
 
     res = []
@@ -81,15 +73,15 @@ def _split_route(route, hows, maxnrows):
 
     for chunk in chunks:
         if chunk.shape[0] < maxnrows:
-            res += [_drop_columns(chunk, hows = hows)]
+            res += [chunk.drop(drop, axis=1)]
             continue
 
-        res += _split_route(chunk, cdr, maxnrows)
+        res += _split_route(chunk, cdr, drop, maxnrows)
 
     return res
 
 
-def split_route(route_fn, hows, hash_length = 4, maxnrows = 3000):
+def split_route(route_fn, hows, maxnrows = 3000):
     """Split route file on chunks
 
     :route_fn: path to the route file containing
@@ -98,18 +90,15 @@ def split_route(route_fn, hows, hash_length = 4, maxnrows = 3000):
     :hows: defines how to split the file.
     the order defines rules how to split the file.
 
-    :hash_length: hash length that defines the locations split.
-    the value of 4 corresponds to the a square with ~22km side.
-
     :maxnrows: defines when to try to split the file on chunk
 
     """
     route_fn = searchandget_locally(route_fn)
 
-    route, hows = _read_route(route_fn, hows = hows,
-                              hash_length = hash_length)
+    route, hows, drop = _read_route(route_fn, hows = hows)
     chunks = _split_route(route,
                           hows = hows,
+                          drop = drop,
                           maxnrows = maxnrows)
 
     return [upload(Saveas_Requestdata(x))['storage_fn']
@@ -118,8 +107,7 @@ def split_route(route_fn, hows, hash_length = 4, maxnrows = 3000):
 
 def split_route_calls\
     (fn_arg,
-     hows = ("region_hash","month","week","date"),
-     hash_length = 4,
+     hows = ("region_hash4","region_hash5","region_hash6"),
      maxnrows = 10000,
      merge_task = merge_tsv,
      merge_task_args: Dict[str, str] = None):
@@ -151,7 +139,6 @@ def split_route_calls\
             chunks = split_route\
                 (route_fn = kwargs[fn_arg],
                  hows = hows,
-                 hash_length = hash_length,
                  maxnrows = maxnrows)
             tasks = []
             for x in chunks:
