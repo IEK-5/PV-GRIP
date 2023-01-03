@@ -126,7 +126,7 @@ def ssdp_route(tsvfn_uploaded, box, box_delta,
 @call_cache_fn_results()
 def render_raster_from_route(tsvfn_uploaded, box, box_delta,
                              do_filter, filter_type, filter_size, **kwargs):
-    _, rasters, kwargs['mesh_type'] = route_rasters \
+    tasks, rasters, kwargs['mesh_type'] = route_rasters \
         (tsvfn_uploaded=tsvfn_uploaded, box=box,
          box_delta=box_delta, **kwargs)
 
@@ -134,7 +134,7 @@ def render_raster_from_route(tsvfn_uploaded, box, box_delta,
     del kwargs['output_type']
     do_filter = 'yes' == do_filter
 
-    tasks = []
+    group = []
     for raster in rasters:
         x = sample_raster(
             box=raster['box'],
@@ -151,10 +151,11 @@ def render_raster_from_route(tsvfn_uploaded, box, box_delta,
 
         x |= map_raster_to_box.signature\
             (kwargs={"box": raster["box"]})
-        tasks += [x]
+        group += [x]
+    tasks |= celery.group(group)
+    tasks |= collect_json_dicts.signature()
 
-    return celery.group(*tasks) | \
-        collect_json_dicts.signature()
+    return tasks
 
 
 @split_route_calls(fn_arg = 'tsvfn_uploaded')
