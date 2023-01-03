@@ -9,7 +9,8 @@ from pvgrip.integrate.calls \
 from pvgrip.irradiance.calls \
     import irradiance_ssdp, irradiance_grass
 from pvgrip.route.calls \
-    import ssdp_route, render_raster_from_route
+    import ssdp_route, render_raster_from_route, \
+    query_raster_value
 from pvgrip.shadow.calls \
     import shadow, average_shadow
 from pvgrip.weather.calls \
@@ -44,6 +45,8 @@ def get_task(method, args):
 
     if 'raster' == method:
         run = sample_raster
+    elif 'raster/route' == method:
+        run = query_raster_value
     elif 'shadow' == method:
         run = shadow
     elif 'shadow/average' == method:

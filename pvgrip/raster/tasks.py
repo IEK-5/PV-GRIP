@@ -149,7 +149,8 @@ def sample_from_box(self, box, data_re, stat, mesh_type, step,
                   .format(format_dictionary(locals())))
     with Timeout(600):
         SPATIAL_DATA = get_SPATIAL_DATA()
-        index = SPATIAL_DATA.subset(box = box, data_re = data_re)
+        index = SPATIAL_DATA.subset(box = box,
+                                    data_re = data_re)
 
     grid = mesh(box = box, step = step, mesh_type = mesh_type)
     points = list(itertools.product(*grid['mesh'][::-1]))
@@ -232,6 +233,62 @@ def sample_route_neighbour(self, pickle_fn, route_fn,
     ofn = get_tempfile()
     try:
         res.to_csv(ofn, sep='\t', index=False)
+        return ofn
+    except Exception as e:
+        remove_file(ofn)
+        raise e
+
+
+@CELERY_APP.task(bind=True, base=WithRetry)
+@cache_fn_results(path_prefix='raster')
+@one_instance(expire = 60*10)
+def sample_from_points(self, route_fn, box,
+                       data_re, stat,
+                       pdal_resolution = 0.3,
+                       ensure_las = False):
+    logging.debug("sample_from_box\n{}"\
+                  .format(format_dictionary(locals())))
+
+    with open(route_fn, 'rb') as f:
+        route = pickle.load(f)
+
+    with Timeout(600):
+        SPATIAL_DATA = get_SPATIAL_DATA()
+        index = SPATIAL_DATA.subset(box = box,
+                                    data_re = data_re)
+
+    points = [(x['longitude'],x['latitude']) for x in route]
+
+    res = None
+    for fn_idx in index.iterate():
+        fn = index2fn(fn_idx, stat = stat,
+                      pdal_resolution = pdal_resolution,
+                      ensure_las = ensure_las)
+        fn = searchandget_locally(fn)
+        interface = GDALInterface(fn)
+        x = np.array(interface.lookup(points = points,
+                                      box = box))
+
+        if res is None:
+            res = x
+            continue
+
+        if x.shape != res.shape:
+            raise RuntimeError\
+                ("""cannot join data sources of different shape!
+                data_re matches data sources with shapes:
+                {} and {}""".format(x.shape, res.shape))
+
+        # take maximum among multiple data sources!
+        res = np.array((res,x)).max(axis=0)
+
+    for i in range(len(route)):
+        for k in range(res[i].shape[0]):
+            route[i][f'raster_value_{k}'] = res[i][k]
+
+    ofn = get_tempfile()
+    try:
+        pd.DataFrame(route).to_csv(ofn, sep='\t', index=False)
         return ofn
     except Exception as e:
         remove_file(ofn)

@@ -19,6 +19,9 @@ def calls_help():
 
     /api/raster          get a raster image of a region
 
+        /api/raster/route
+                         get raster image values from coordinates specified in a route
+
     /api/irradiance      compute irradiance raster map.
 
         Several library bindings are available (default ssdp):
@@ -373,6 +376,17 @@ def _route(with_output_type = False):
     return res
 
 
+def raster_route_defaults():
+    res = _route()
+
+    del res['box']
+    del res['box_delta']
+    del res['step']
+    del res['mesh_type']
+
+    return res
+
+
 def route_defaults():
     res = ssdp_defaults()
     res.update(_route())
@@ -635,6 +649,8 @@ def filter_raster_route():
 def call_defaults(method):
     if 'raster' == method:
         res = raster_defaults()
+    elif 'raster/route' == method:
+        res = raster_route_defaults()
     elif 'shadow' == method:
         res = shadow_defaults()
     elif 'shadow/average' == method:

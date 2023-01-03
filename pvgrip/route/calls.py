@@ -20,7 +20,7 @@ from pvgrip.route.tasks \
 from pvgrip.raster.calls \
     import check_all_data_available, sample_raster, convert_from_to
 from pvgrip.raster.tasks \
-    import sample_from_box
+    import sample_from_box, sample_from_points
 from pvgrip.raster.utils \
     import check_box_not_too_big
 from pvgrip.raster.mesh \
@@ -155,3 +155,39 @@ def render_raster_from_route(tsvfn_uploaded, box, box_delta,
 
     return celery.group(*tasks) | \
         collect_json_dicts.signature()
+
+
+@split_route_calls(fn_arg = 'tsvfn_uploaded')
+@call_cache_fn_results()
+def query_raster_value(tsvfn_uploaded, **kwargs):
+    """
+
+    :tsvfn_uploaded: must contain route coordinates with longitude and latitude columns
+
+    :kwargs: contains pdal_resolution, stat, data_re
+
+    """
+    # each element in rasters will queue at most 1 + 3? files,
+    # assuming each raster is no larger than 1x1 km^2
+    tasks, rasters, _ = route_rasters\
+        (tsvfn_uploaded,
+         box = [-1,-1,1,1],
+         box_delta = 1000,
+         mesh_type = 'utm',
+         step = 1, **kwargs)
+
+    group = []
+    for x in rasters:
+        route_fn = save_route(x['route'])
+
+        group += [sample_from_points.signature\
+                  (kwargs = {'route_fn': route_fn,
+                             'box': x['box'],
+                             'data_re': kwargs['data_re'],
+                             'stat': kwargs['stat'],
+                             'pdal_resolution': kwargs['pdal_resolution']},
+                   immutable = True)]
+    tasks |= celery.group(group)
+    tasks |= merge_tsv.signature()
+
+    return tasks
